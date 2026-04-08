@@ -56,6 +56,65 @@
   }
 }
 
+/*sidebar to add aim trainer tab etc.*/
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40px;
+
+  background: rgba(255,255,255, 0.05);
+  backdrop-filter: blur(2px);
+
+  border-right: 1px solid var(--border);
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+/*hover effect of bar so it pops out*/
+.sidebar:hover {
+  width: 180px;
+}
+
+/*arrow indicator to show that where the bar is*/
+.sidebar::before {
+  content: "➤";
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: none;
+
+  padding: 6px 8px;
+  border-radius: 0 6px 6px 0;
+
+  font-size: 16px;
+  box-shadow: var(--shadow);
+
+  pointer-events: none;
+}
+
+/*content inside of the sidebar*/
+.sidebar-content {
+  margin-top: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 10px;
+
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/*show the content when expanded*/
+.sidebar:hover .sidebar-content {
+  opacity: 1;
+}
+
 #center {
   display: flex;
   flex-direction: column;
@@ -68,6 +127,36 @@
     padding: 32px 20px 24px;
     gap: 18px;
   }
+}
+
+.practice {
+  font-size: 16px;
+  padding: 8px 14px;
+  border-radius: 8px;
+
+  /*giving the button itself a glass look like the sidebar*/
+  background: rgba(255,255,255, 0.05);
+  backdrop-filter: blur(2px);
+
+  /*added a border to the button so the edge is clear*/
+  border: 1px solid var(--border);
+
+  color: var(--text-h);
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.practice:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent);
+  color: var(--accent);
+}
+
+/*adding the click effect*/
+.practice:active {
+  transform: scale(0.96);
 }
 
 #next-steps {
