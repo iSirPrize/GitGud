@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import DarkModeToggle from './components/DarkModeToggle'   // ← ADD THIS for Dark Mode
 
 function App() {
   const [count, setCount] = useState(0)
@@ -10,6 +11,10 @@ function App() {
   return (
     <>
       <section id="center">
+        {/* 🌙 Dark Mode Toggle - TOP RIGHT */}
+        <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+          <DarkModeToggle />
+        </div>
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
