@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const router = express.Router();
 
+console.log("!!! UPLOAD ROUTE LOADED !!!");
 //change this file if we going to cloud storage
 const store = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -11,20 +12,20 @@ const store = multer.diskStorage({
 
     filename: (req, file, cb) => {
         //using x-user-id til db is setup, probably change to a check if logged in when complete
-        const userId = req.headers['userIdData'] || 'unknownIdData';
+        const userId = req.headers['useriddata'] || 'unknowniddata';
         cb(null, `user-${userId}-${Date.now()}${path.extname(file.originalname)}`);
     }
 });
 
 const upload = multer({
-    store: store,
+    storage: store,
     limits: {
         //adjust size if needed
         fileSize: 5 * 1024 * 1024
     },
     
     fileFilter: (req, file, cb) => {
-        const fileCheck = ['image/jpeg', 'image/jpg', 'image/jpg'];
+        const fileCheck = ['image/jpeg', 'image/jpg', 'image/png'];
         
         if(fileCheck.includes(file.mimetype))
         {
@@ -41,9 +42,9 @@ router.post('/', (req, res) => {
     const uploadSingle = upload.single('ProfilePic');
 
     uploadSingle(req, res, (err) => {
-        const userId = req.headers['userIdData'];
+        const userId = req.headers['useriddata'];
 
-        if(!userID)
+        if(!userId)
         {
             //401 = unauth
             return res.status(401).json({message: "User Id not found"});
@@ -58,9 +59,9 @@ router.post('/', (req, res) => {
             return res.status(400).json({ message: "No file"});
         }
 
-        req.json({
+        res.json({
             url: `http://localhost:3001/uploads/${req.file.filename}`,
-            owner: userID
+            owner: userId
         });
     });
 });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function picUpload()
+function PicUpload()
 {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -24,15 +24,15 @@ function picUpload()
             return;
         }
 
-        const formData = new formData();
-        formData.append('picUpload', file);
+        const formData = new FormData();
+        formData.append('ProfilePic', file);
 
         try
         {
             const response = await fetch('http://localhost:3001/api/upload', {
                 method: 'POST',
                 headers: {
-                    'userIdData': currentUser
+                    'useriddata': currentUser
                 },
                 body: formData,
             });
@@ -66,6 +66,7 @@ function picUpload()
 
             <input type="file" accept="image/jpeg, image/jpg, image/png" onChange={handleFileChange} />
             <button onClick={handleUpload}>Save Image</button>
+            <p>{message}</p>
         </div>
     );
 }
