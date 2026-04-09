@@ -1,9 +1,16 @@
 const express = require('express');
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 
-console.log("!!! UPLOAD ROUTE LOADED !!!");
+//should make upload dir if doesnt exist since i have upload in .ign atm
+const uploadDir = 'uploads/';
+if(!fs.existsSync(uploadDir))
+{
+    fs.mkdirSync(uploadDir, {recursive: true});
+}
+
 //change this file if we going to cloud storage
 const store = multer.diskStorage({
     destination: (req, file, cb) => {
