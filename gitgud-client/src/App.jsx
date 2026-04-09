@@ -4,6 +4,7 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 import DarkModeToggle from './components/DarkModeToggle'   // ← ADD THIS for Dark Mode
+import PicUpload from './PicUpload'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -15,6 +16,7 @@ function App() {
         <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
           <DarkModeToggle />
         </div>
+        <PicUpload />
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
