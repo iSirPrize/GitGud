@@ -4,6 +4,8 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 import DarkModeToggle from './components/DarkModeToggle'   // ← ADD THIS for Dark Mode
+import QuizCarousel from './components/QuizCarousel'      // Quiz Carousel (Window and panel)
+
 
 function App() {
   const [count, setCount] = useState(0)
@@ -36,6 +38,8 @@ function App() {
 
       <div className="ticks"></div>
 
+      <QuizCarousel /> 
+      
       <section id="next-steps">
         <div id="docs">
           <svg className="icon" role="presentation" aria-hidden="true">
