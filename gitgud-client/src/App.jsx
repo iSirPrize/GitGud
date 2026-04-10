@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
-import DarkModeToggle from './components/DarkModeToggle'   // ← ADD THIS for Dark Mode
 import Practice from './Practice'
+import DarkModeToggle from './components/DarkModeToggle'   // ← Dark Mode
+import QuizCarousel from './components/QuizCarousel'      // Quiz Carousel (Window and panel)
+import PicUpload from './PicUpload'                       // Profile picture upload
 
 function App() {
   const [page, setPage] = useState("home")
@@ -32,30 +31,33 @@ function App() {
         </div>
         {/*makeshift home page */}
         {page == "home" && (
-        <>
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-          <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-        </>
+          <>
+            <div>
+              <h1>Get started</h1>
+              <p>Welcome to GitGud 🚀</p>
+            </div>
+
+            <button
+              className="counter"
+              onClick={() => setCount((count) => count + 1)}
+            >
+              Count is {count}
+            </button>
+          </>
         )}
 
         {/* PRACTICE PAGE */}
         {page === "practice" && <Practice setPage={setPage} />}
       </section>
+
+      <PicUpload />
+
+      <div className="ticks"></div>
+
+      <QuizCarousel />
+
+      <div className="ticks"></div>
+      <section id="spacer"></section>
     </>
   )
 }
