@@ -3,13 +3,9 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
-import DarkModeToggle from './components/DarkModeToggle'   // ← ADD THIS for Dark Mode
-<<<<<<< HEAD
+import DarkModeToggle from './components/DarkModeToggle'   // ← Dark Mode
 import QuizCarousel from './components/QuizCarousel'      // Quiz Carousel (Window and panel)
-
-=======
-import PicUpload from './PicUpload'
->>>>>>> origin/main
+import PicUpload from './PicUpload'                       // Profile picture upload
 
 function App() {
   const [count, setCount] = useState(0)
@@ -22,14 +18,13 @@ function App() {
           <DarkModeToggle />
         </div>
         <PicUpload />
-  
       </section>
-<<<<<<< HEAD
 
       <div className="ticks"></div>
 
-      <QuizCarousel /> 
-      
+      {/* 🎮 Quiz Carousel - YouTube window + multi-choice panel */}
+      <QuizCarousel />
+
       <section id="next-steps">
         <div id="docs">
           <svg className="icon" role="presentation" aria-hidden="true">
@@ -113,8 +108,6 @@ function App() {
 
       <div className="ticks"></div>
       <section id="spacer"></section>
-=======
->>>>>>> origin/main
     </>
   )
 }
