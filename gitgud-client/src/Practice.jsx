@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 function Practice({ setPage }) {
+  const navigate = useNavigate();
   return (
     <>
     <center>
@@ -7,7 +10,7 @@ function Practice({ setPage }) {
       <div style={{ display: "flex", gap: "16px" }}>
         <button
           className="practice"
-          onClick={() => setPage("aim")}
+          onClick={() => navigate("/practice/aim")}
         >
           Aim Trainer
         </button>

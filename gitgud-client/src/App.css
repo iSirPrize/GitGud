@@ -64,6 +64,8 @@
   height: 100%;
   width: 40px;
 
+  z-index: 1000;
+
   background: rgba(255,255,255, 0.05);
   backdrop-filter: blur(2px);
 
@@ -74,7 +76,7 @@
 
 /*hover effect of bar so it pops out*/
 .sidebar:hover {
-  width: 180px;
+  width: 200px;
 }
 
 /*arrow indicator to show that where the bar is*/
@@ -119,29 +121,30 @@
   display: flex;
   flex-direction: column;
   gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
+  align-items: stretch;   
+  justify-content: flex-start;
+     
+  padding: 40px;
 
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .practice {
-  font-size: 16px;
-  padding: 8px 14px;
-  border-radius: 8px;
+  display: block;
+  width: 100%;
 
-  /*giving the button itself a glass look like the sidebar*/
-  background: rgba(255,255,255, 0.05);
-  backdrop-filter: blur(2px);
+  padding: 10px 14px;
+  border-radius: 10px;
 
-  /*added a border to the button so the edge is clear*/
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
 
   color: var(--text-h);
+  font-size: 14px;
+  font-weight: 500;
+
+  text-decoration: none;
   cursor: pointer;
 
   transition: all 0.25s ease;
