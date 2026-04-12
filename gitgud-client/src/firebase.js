@@ -1,6 +1,6 @@
 // firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";  // ← add this
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,8 +11,5 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-// firebase.js
-export const db = getFirestore(app)  // replace with the actual name// ← add this
-
-console.log("Firebase config:", firebaseConfig)
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);

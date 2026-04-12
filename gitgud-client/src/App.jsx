@@ -1,11 +1,12 @@
-// App.jsx — Firebase-safe version
-import { useState } from 'react'
+// App.jsx — Firebase-safe version with auth gate
+import { useState, useEffect } from 'react'
 import './App.css'
 import DarkModeToggle from './components/DarkModeToggle'
 import QuizCarousel from './components/QuizCarousel'
 import PicUpload from './PicUpload'
+import AuthPage from './AuthPage'
+import { onAuth } from './auth'
 
-// ✅ Safely import Firebase — errors won't crash the module
 let db = null
 let collection = null
 let addDoc = null
@@ -19,26 +20,38 @@ try {
   console.error('Firebase init failed:', e)
 }
 
-// ✅ testDB now lives INSIDE the component so React controls it
 function App() {
   const [count, setCount] = useState(0)
   const [dbStatus, setDbStatus] = useState('')
+  const [user, setUser] = useState(undefined) // undefined = loading, null = logged out
+
+  useEffect(() => {
+    const unsub = onAuth((u) => setUser(u))
+    return () => unsub()
+  }, [])
 
   async function testDB() {
-  console.log("db instance:", db)
-  try {
-    const docRef = await addDoc(collection(db, "test"), {
-      message: "Firestore is working",
-      timestamp: new Date()
-    })
-    console.log("Document written with ID:", docRef.id)  // ← if this logs, write succeeded
-    setDbStatus(`Write successful! Doc ID: ${docRef.id}`)
-  } catch (e) {
-    console.error("Full error:", e)
-    setDbStatus(`Error: ${e.message}`)
+    console.log("db instance:", db)
+    try {
+      const docRef = await addDoc(collection(db, "test"), {
+        message: "Firestore is working",
+        timestamp: new Date()
+      })
+      console.log("Document written with ID:", docRef.id)
+      setDbStatus(`Write successful! Doc ID: ${docRef.id}`)
+    } catch (e) {
+      console.error("Full error:", e)
+      setDbStatus(`Error: ${e.message}`)
+    }
   }
-}
 
+  // Still checking auth state
+  if (user === undefined) return null
+
+  // Not logged in — show auth page
+  if (!user) return <AuthPage onAuthed={() => {}} />
+
+  // Logged in — show the app
   return (
     <>
       <section id="center">
@@ -50,7 +63,6 @@ function App() {
       <section>
         <div>
           <button onClick={testDB}>Test Firestore</button>
-          {/* ✅ Show result on screen, not just console */}
           {dbStatus && <p style={{ marginTop: '8px' }}>{dbStatus}</p>}
         </div>
       </section>
