@@ -1,0 +1,301 @@
+/* CommentSection.css
+   Place at: gitgud-client/src/components/CommentSection.css
+   Matches dark mode (black + orange) and light mode (white + blue)
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ── Theme tokens ─────────────────────────────────────────────────────── */
+.quiz-carousel.dark  { --cs-bg:          #141414;
+                       --cs-surface:     #1e1e1e;
+                       --cs-border:      rgba(255, 106, 0, 0.25);
+                       --cs-accent:      #ff6a00;
+                       --cs-accent-text: #000;
+                       --cs-text:        #f0f0f0;
+                       --cs-subtext:     #888;
+                       --cs-input-bg:    #252525;
+                       --cs-input-border:#333;
+                       --cs-avatar-bg:   #ff6a00;
+                       --cs-avatar-text: #000;
+                       --cs-empty-color: #555;
+                       --cs-link-color:  #ff6a00;
+                       --cs-header-border: rgba(255,106,0,0.4); }
+
+.quiz-carousel.light { --cs-bg:          #f7f9fc;
+                       --cs-surface:     #ffffff;
+                       --cs-border:      rgba(0, 102, 204, 0.18);
+                       --cs-accent:      #1a73e8;
+                       --cs-accent-text: #fff;
+                       --cs-text:        #111;
+                       --cs-subtext:     #777;
+                       --cs-input-bg:    #f0f4f8;
+                       --cs-input-border:#d0dcea;
+                       --cs-avatar-bg:   #1a73e8;
+                       --cs-avatar-text: #fff;
+                       --cs-empty-color: #aaa;
+                       --cs-link-color:  #1a73e8;
+                       --cs-header-border: rgba(0,102,204,0.3); }
+
+/* ── Root wrapper ─────────────────────────────────────────────────────── */
+.cs-root {
+  width: 100%;
+  max-width: 700px;
+  margin-top: 2rem;
+  background: var(--cs-bg);
+  border: 2px solid var(--cs-border);
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+.cs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--cs-header-border);
+}
+
+.cs-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cs-accent);
+  letter-spacing: 0.03em;
+}
+
+.cs-count {
+  font-size: 12px;
+  color: var(--cs-subtext);
+  font-weight: 500;
+}
+
+/* ── Comment list ─────────────────────────────────────────────────────── */
+.cs-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 12px 20px;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Thin scrollbar */
+.cs-list::-webkit-scrollbar        { width: 4px; }
+.cs-list::-webkit-scrollbar-track  { background: transparent; }
+.cs-list::-webkit-scrollbar-thumb  { background: var(--cs-border); border-radius: 4px; }
+
+/* ── Empty / loading state ────────────────────────────────────────────── */
+.cs-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 0;
+  font-size: 13px;
+  color: var(--cs-subtext);
+}
+
+.cs-empty {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cs-empty-icon {
+  font-size: 26px;
+  opacity: 0.5;
+}
+
+/* Loading spinner */
+.cs-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--cs-border);
+  border-top-color: var(--cs-accent);
+  border-radius: 50%;
+  animation: cs-spin 0.7s linear infinite;
+}
+
+@keyframes cs-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Single comment ───────────────────────────────────────────────────── */
+.cs-comment {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  animation: cs-fade-in 0.25s ease both;
+}
+
+@keyframes cs-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cs-comment-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cs-username {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cs-text);
+  line-height: 1;
+}
+
+.cs-timestamp {
+  font-size: 11px;
+  color: var(--cs-subtext);
+}
+
+.cs-comment-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--cs-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* ── Avatar ───────────────────────────────────────────────────────────── */
+.cs-avatar {
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.cs-avatar img {
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.cs-avatar-fallback {
+  border-radius: 50%;
+  background: var(--cs-avatar-bg);
+  color: var(--cs-avatar-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  user-select: none;
+}
+
+/* ── Input area ───────────────────────────────────────────────────────── */
+.cs-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--cs-border);
+  background: var(--cs-surface);
+}
+
+.cs-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--cs-input-bg);
+  border: 1.5px solid var(--cs-input-border);
+  border-radius: 24px;
+  padding: 0 8px 0 14px;
+  transition: border-color 0.2s;
+}
+
+.cs-input-wrap:focus-within {
+  border-color: var(--cs-accent);
+}
+
+.cs-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--cs-text);
+  padding: 10px 0;
+  font-family: inherit;
+}
+
+.cs-input::placeholder {
+  color: var(--cs-subtext);
+}
+
+.cs-post-btn {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 18px;
+  background: var(--cs-accent);
+  color: var(--cs-accent-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.cs-post-btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: scale(1.04);
+}
+
+.cs-post-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Login prompt ─────────────────────────────────────────────────────── */
+.cs-login-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--cs-border);
+  font-size: 13px;
+  color: var(--cs-subtext);
+  background: var(--cs-surface);
+}
+
+.cs-login-link {
+  color: var(--cs-link-color);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cs-login-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Mobile responsive ────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .cs-root {
+    border-radius: 10px;
+    margin-top: 1.25rem;
+  }
+
+  .cs-list {
+    max-height: 280px;
+    padding: 10px 14px;
+  }
+
+  .cs-input-area {
+    padding: 10px 14px;
+  }
+
+  .cs-header {
+    padding: 12px 14px 10px;
+  }
+}
