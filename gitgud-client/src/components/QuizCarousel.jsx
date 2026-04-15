@@ -1,8 +1,12 @@
 // QuizCarousel.jsx
 // Drop this file into: gitgud-client/src/components/QuizCarousel.jsx
+// Changes from original:
+//   1. Imported CommentSection
+//   2. Added <CommentSection quizId={scenario.id} /> below the quiz panel inside the slide
 
 import { useState, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
+import CommentSection from "./CommentSection";
 import "./QuizCarousel.css";
 
 // ─── Quiz data ───────────────────────────────────────────────────────────────
@@ -55,20 +59,20 @@ export default function QuizCarousel() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [current, setCurrent] = useState(0);
-  const [selected, setSelected] = useState(Array(SCENARIOS.length).fill(null));
+  const [current, setCurrent]     = useState(0);
+  const [selected, setSelected]   = useState(Array(SCENARIOS.length).fill(null));
   const [submitted, setSubmitted] = useState(Array(SCENARIOS.length).fill(false));
-  const [sliding, setSliding] = useState(null); // "left" | "right" | null
-  const [feedback, setFeedback] = useState(null); // "correct" | "wrong" | null
+  const [sliding, setSliding]     = useState(null); // "left" | "right" | null
+  const [feedback, setFeedback]   = useState(null); // "correct" | "wrong" | null
 
   const touchStartX = useRef(null);
 
-  const total = SCENARIOS.length;
-  const scenario = SCENARIOS[current];
+  const total      = SCENARIOS.length;
+  const scenario   = SCENARIOS[current];
   const isSubmitted = submitted[current];
   const selectedIdx = selected[current];
-  const isCorrect = isSubmitted && selectedIdx === scenario.correctIndex;
-  const isWrong = isSubmitted && selectedIdx !== scenario.correctIndex;
+  const isCorrect   = isSubmitted && selectedIdx === scenario.correctIndex;
+  const isWrong     = isSubmitted && selectedIdx !== scenario.correctIndex;
 
   // ── Navigation with slide animation ─────────────────────────────────────────
   const goTo = (direction) => {
@@ -273,6 +277,12 @@ export default function QuizCarousel() {
           </button>
 
         </div>
+
+        {/* ── Comment Section ───────────────────────────────────────────────── */}
+        {/* quizId uses scenario.id so each quiz has its own isolated comments   */}
+        {/* Comments are visible to everyone but posting requires login           */}
+        <CommentSection quizId={scenario.id} />
+
       </div>
     </div>
   );
