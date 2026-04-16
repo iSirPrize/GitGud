@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { db, auth } from "./firebase";
+import { updateProfile } from 'firebase/auth';
+import { doc, updateDoc} from "firebase/firestore"
 
-function PicUpload()
+
+function PicUpload({ onUploadSuccess })
 {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [message, setMessage] = useState('');
-    //using a forced user til our user creation is done
-    const currentUser = "GitGudAdmin";
 
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
@@ -19,36 +21,55 @@ function PicUpload()
     };
 
     const handleUpload = async () => {
+
+        const userId = auth.currentUser?.uid || "";
+
         if(!file)
         {
+            setMessage("Select appropriate file");
             return;
         }
 
-        const formData = new FormData();
-        formData.append('ProfilePic', file);
+        setMessage("Uploading");
 
         try
         {
-            const response = await fetch('http://localhost:3001/api/upload', {
-                method: 'POST',
-                headers: {
-                    'useriddata': currentUser
-                },
-                body: formData,
-            });
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET);
+            formData.append("folder", `avatars/${userId}`);
+
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,                
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+
+            if(!response.ok)
+            {
+                const errorData = await response.json();
+                console.error("Cloudinary error: ", errorData);
+                throw new Error(errorData.error?.message || "Cloudinary upload failed")
+            }
 
             const data = await response.json();
+            const downloadURL = data.secure_url;
 
-            if(response.ok)
+            if(onUploadSuccess)
             {
-                setMessage(`Image uploaded Successfully`);
+                onUploadSuccess(downloadURL);
             }
-            else
-            {
-                setMessage(`Error: ${data.message}`);
-            }
-        }catch (err){
-            setMessage("Server error")
+            const userDoc = doc(db, "users", userId);
+            await updateDoc(userDoc, { photoURL: downloadURL});
+            await updateProfile(auth.currentUser, { photoURL: downloadURL});
+
+            setMessage("image updated successfully");
+
+        } catch(err) {
+            console.error(err);
+            setMessage("upload failed: " + err.message);
         }
     };
 

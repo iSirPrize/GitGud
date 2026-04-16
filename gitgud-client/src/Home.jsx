@@ -1,14 +1,12 @@
 import { Outlet, Link } from "react-router-dom";
-import PicUpload from './PicUpload'
+import ProfilePage from "./ProfilePage"
 
-function Homepage() {
+function Home({user}) {
   return (
-    <>
-      <h1>Home</h1>
-      <p>Welcome to GitGud 🚀</p>
-       <PicUpload />
-    </>
+   
+    <ProfilePage user={user}/>
+    
   );
 }
 
-export default Homepage;
+export default Home;

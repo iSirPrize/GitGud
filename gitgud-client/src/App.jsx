@@ -3,26 +3,13 @@ import Layout from './Layout'
 import Home from './Home'
 import Practice from './Practice'
 import Quiz from './Quiz'
+import { db } from './firebase'
+import { collection, addDoc } from 'firebase/firestore'
 import AimTrainer from './AimTrainer'
-
 import { useState, useEffect } from 'react'
 import './App.css'
 import AuthPage from './AuthPage'
 import { onAuth } from './auth'
-
-let db = null
-let collection = null
-let addDoc = null
-
-try {
-  const fb = await import('./firebase')
-  db = fb.db
-  const fs = await import('firebase/firestore')
-  collection = fs.collection
-  addDoc = fs.addDoc
-} catch (e) {
-  console.error('Firebase init failed:', e)
-}
 
 function App() {
   const [dbStatus, setDbStatus] = useState('')
@@ -34,9 +21,14 @@ function App() {
   }, [])
 
   async function testDB() {
+    if(!db)
+    {
+      return;
+    }
     try {
       const docRef = await addDoc(collection(db, "test"), {
         message: "Firestore is working",
+        userId: user?.uid,
         timestamp: new Date()
       })
       setDbStatus(`Write successful! Doc ID: ${docRef.id}`)
@@ -46,8 +38,8 @@ function App() {
   }
 
   // Auth handling
-  if (user === undefined) return null
-  if (!user) return <AuthPage onAuthed={() => {}} />
+  if (user === undefined) return <div className="loading">Loading page...</div>
+  if (!user) return <AuthPage />
 
   // Logged in
   return (
@@ -58,7 +50,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
+          <Route index element={<Home user={user} />} />
           <Route path="practice" element={<Practice />} />
           <Route path="practice/aim" element={<AimTrainer />} />
           <Route path="quiz" element={<Quiz />} />

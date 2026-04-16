@@ -1,0 +1,198 @@
+.quiz-carousel.dark
+{
+    --qc-bg:    #0d0d0d;
+    --qc-surface:   #181818;
+    --qc-frame:     #ff6a00;
+    --qc-text:  #f0f0f0;
+    --qc-subtext:   #999;
+    --qc-input-bg:  #222222;
+    --qc-input-border: #333;
+    --qc-submit-bg:  #000;
+    --qc-header-line: rgba(255, 105, 0, 0.35);
+}
+
+.quiz-carousel.light
+{
+    --qc-bg:    #f4f4f4;
+    --qc-surface:   #ffffff;
+    --qc-frame:     #0066cc;
+    --qc-text:  #111111;
+    --qc-subtext:   #666;
+    --qc-input-bg:  #f0f4f8;
+    --qc-input-border: #d0dcea;
+    --qc-submit-bg:  #fff;
+    --qc-header-line: rgba(0, 102, 204, 0.2);
+}
+
+.profile-container
+{
+    min-height: 100vh;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: var(--qc-bg);
+    color: var(--qc-text);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 40px 20px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.profile-card
+{
+    width: 100%;
+    max-width: 600px;
+    background-color: var(--qc-surface);
+    border: 2px solid var(--qc-frame);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 0 20px var(--qc-frame-glow, rgba(0, 0, 0, 0.5));
+}
+
+.profile-header
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.avatar
+{
+    width: 100px;
+    height: 100px;
+    background-color: var(--qc-frame);
+    color: var(--qc-submit-text);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    overflow: hidden;
+    box-shadow: 0 0 10px var(--qc-frame-glow);
+}
+
+.avatar img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-edit
+{
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn
+{
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.username-display
+{
+    text-align: center;
+    font-size: 2rem;
+    margin: 0;
+    color: var(--qc-subtext);
+    font-size: 2rem;
+}
+
+.profile-input
+{
+    text-align: center;
+    width: 100%;
+    background-color: var(--qc-input-bg);
+    border: 1px solid var(--qc-input-border);
+    color: var(--qc-text);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.profile-textarea
+{
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 150px;
+    max-width: 100%;
+    min-width: 100%;
+    resize: none;
+    background-color: var(--qc-input-bg);
+    border: 1px solid var(--qc-input-border);
+    color: var(--qc-text);
+    padding: 12px;
+    border-radius: 12px;
+    font-family: inherit;
+    line-height: 1.6;
+    display: block;
+    border-left: 3px solid var(--qc-frame);
+}
+
+.about-section
+{
+    margin-top: 25px;
+    width: 100%;
+    align-self: stretch;
+}
+
+.about-text
+{
+    color: var(--qc-text);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    line-height: 1.6;
+    border-left: 3px solid var(--qc-frame)
+}
+
+.divider
+{
+    border: 0;
+    border-top: 1px solid var(--qc-header-line);
+    margin: 30px 0;
+}
+
+.profile-actions
+{
+    margin-top: 25px;
+    display: flex;
+    gap: 12px;
+}
+
+.save-btn
+{
+    background-color: var(--qc-submit-bg);
+    color: var(--qc-submit-text);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.save-btn:active
+{
+    transform: scale(0.95);
+}
+
+.edit-btn, .cancel-btn
+{
+    background-color: transparent;
+    color: var(--qc-text);
+    border: 1px solid var(--qc-frame);
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.edit-btn:hover
+{
+    background-color: rgba(255,106, 0, 0.1);
+}
