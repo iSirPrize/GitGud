@@ -9,6 +9,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
   query,
   orderBy,
   onSnapshot,
@@ -34,6 +35,30 @@ function CommentSection({ quizId }) {
   const [postingReply, setPostingReply] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({}); // { commentId: bool }
   const bottomRef = useRef(null);
+  // Cache of uid -> { userName, userPhoto } fetched fresh from Firestore
+  const [userProfiles, setUserProfiles] = useState({});
+  const fetchingProfiles = useRef(new Set());
+
+  // Fetch fresh profile data for a userId we haven't loaded yet
+  const fetchUserProfile = async (userId) => {
+    if (!userId || userProfiles[userId] || fetchingProfiles.current.has(userId)) return;
+    fetchingProfiles.current.add(userId);
+    try {
+      const snap = await getDoc(doc(db, "users", userId));
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserProfiles(prev => ({
+          ...prev,
+          [userId]: {
+            userName:  data.username  || null,
+            userPhoto: data.photoURL  || null,
+          }
+        }));
+      }
+    } catch (err) {
+      // Non-fatal — fall back to stored comment data
+    }
+  };
 
   // FIX 1: Always keep userRef in sync and re-render on auth changes
   useEffect(() => {
@@ -56,8 +81,12 @@ function CommentSection({ quizId }) {
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      setComments(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setComments(docs);
       setLoading(false);
+      // Fetch fresh profiles for all unique userIds in this batch
+      const uniqueIds = [...new Set(docs.map(d => d.userId).filter(Boolean))];
+      uniqueIds.forEach(uid => fetchUserProfile(uid));
     });
 
     return () => unsub();
@@ -237,6 +266,11 @@ function CommentSection({ quizId }) {
   const isOwner = (comment) => userRef.current?.uid === comment.userId;
 
   const renderComment = (c, isReply = false) => {
+    // Use fresh Firestore profile if available, fall back to stored snapshot
+    const freshProfile = userProfiles[c.userId];
+    const displayName  = freshProfile?.userName  || c.userName;
+    const displayPhoto = freshProfile?.userPhoto || c.userPhoto;
+
     const liked      = c.likes?.includes(userRef.current?.uid);
     const disliked   = c.dislikes?.includes(userRef.current?.uid);
     const likeCount  = c.likes?.length ?? 0;
@@ -250,13 +284,13 @@ function CommentSection({ quizId }) {
         key={c.id}
         className={`cs-comment ${isReply ? "cs-reply" : ""}`}
       >
-        {/* FIX 1: Pass the stored userPhoto (captured at post time) */}
-        <Avatar photo={c.userPhoto} name={c.userName} size={isReply ? 30 : 40} />
+        {/* Always use the freshest photo/name from Firestore */}
+        <Avatar photo={displayPhoto} name={displayName} size={isReply ? 30 : 40} />
 
         <div className="cs-comment-body">
           {/* FIX 5: Username now uses cs-username class with accent colour + bold */}
           <div className="cs-comment-meta">
-            <span className="cs-username">{c.userName}</span>
+            <span className="cs-username">{displayName}</span>
             <span className="cs-timestamp">{formatTime(c.createdAt)}</span>
             {c.edited && <span className="cs-edited">(edited)</span>}
           </div>
