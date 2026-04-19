@@ -1,0 +1,202 @@
+/* =========================
+   THEME VARIABLES
+========================= */
+
+.quiz-carousel.dark {
+  --qc-bg:          #0d0d0d;
+  --qc-surface:     #181818;
+  --qc-frame:       #ff6a00;
+  --qc-frame-glow:  rgba(255, 106, 0, 0.35);
+  --qc-text:        #f0f0f0;
+  --qc-subtext:     #999;
+  --qc-choice-bg:   #222222;
+  --qc-choice-hover:#2e2e2e;
+  --qc-selected-bg: #1a0e00;
+  --qc-selected-border: #ff6a00;
+  --qc-arrow-bg:    #1e1e1e;
+  --qc-arrow-color: #ff6a00;
+  --qc-submit-bg:   #ff6a00;
+  --qc-submit-text: #000;
+  --qc-submit-done: #2a2a2a;
+  --qc-badge-bg:    #ff6a00;
+  --qc-badge-text:  #000;
+  --qc-dot-active:  #ff6a00;
+  --qc-dot:         #333;
+  --qc-dot-done:    #7a3a00;
+  --qc-explain-correct-bg:  rgba(34, 197, 94, 0.08);
+  --qc-explain-correct-border: #22c55e;
+  --qc-explain-wrong-bg:    rgba(239, 68, 68, 0.08);
+  --qc-explain-wrong-border: #ef4444;
+}
+
+.quiz-carousel.light {
+  --qc-bg:          #f4f4f4;
+  --qc-surface:     #ffffff;
+  --qc-frame:       #0066cc;
+  --qc-frame-glow:  rgba(0, 102, 204, 0.2);
+  --qc-text:        #111111;
+  --qc-subtext:     #666;
+  --qc-choice-bg:   #f0f4f8;
+  --qc-choice-hover:#e2eaf3;
+  --qc-selected-bg: #dceeff;
+  --qc-selected-border: #0066cc;
+  --qc-arrow-bg:    #e8e8e8;
+  --qc-arrow-color: #0066cc;
+  --qc-submit-bg:   #0066cc;
+  --qc-submit-text: #fff;
+  --qc-submit-done: #ccc;
+  --qc-badge-bg:    #0066cc;
+  --qc-badge-text:  #fff;
+  --qc-dot-active:  #0066cc;
+  --qc-dot:         #ccc;
+  --qc-dot-done:    #7aaad4;
+  --qc-explain-correct-bg:  rgba(34, 197, 94, 0.1);
+  --qc-explain-correct-border: #22c55e;
+  --qc-explain-wrong-bg:    rgba(239, 68, 68, 0.08);
+  --qc-explain-wrong-border: #ef4444;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40px;
+  z-index: 1000;
+
+  background: linear-gradient(
+    to right,
+    rgba(0,0,0,0.85),
+    rgba(0,0,0,0.4)
+  );
+  backdrop-filter: blur(8px);
+
+  border-right: 1px solid var(--qc-input-border);
+  overflow: visible;
+
+  transition: width 0.3s ease;
+}
+
+.sidebar:hover {
+  width: 200px;
+}
+
+/* Arrow indicator */
+.sidebar::before {
+  content: "➤"; 
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translate(-50%);
+
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border);
+  border-left: none;
+
+  padding: 6px 8px;
+  border-radius: 0 6px 6px 0;
+
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* Sidebar content */
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  padding: 20px 10px 0;
+
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar:hover .sidebar-content {
+  opacity: 1;
+}
+
+/* =========================
+   MAIN LAYOUT
+========================= */
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  align-items: stretch;
+  justify-content: flex-start;
+  margin-left: 40px;
+
+  padding: 40px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* =========================
+   NAV BUTTONS
+========================= */
+
+.practice {
+  display: block;
+  width: 100%;
+
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-sizing: border-box;
+
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border);
+
+  color: var(--qc-text);
+  font-size: 14px;
+  font-weight: 500;
+
+  text-decoration: none;
+  cursor: pointer;
+
+  transition: all 0.25s ease, box-shadow 0.3s ease;
+}
+
+/* Hover = orange interaction */
+.practice:hover {
+  transform: translateY(-2px);
+  border-color: var(--qc-frame);
+
+  box-shadow:
+    0 0 8px var(--qc-frame-glow),
+    0 0 20px var(--qc-frame-glow);
+
+  color: var(--qc-text);
+}
+
+.practice:hover:not(.active) {
+  box-shadow: 0 0 10px var(--qc-frame-glow);
+}
+
+.practice.active:hover {
+  box-shadow:
+    0 0 14px var(--qc-frame-glow),
+    0 0 28px var(--qc-frame-glow);
+}
+
+/* Active click effect */
+.practice:active {
+  transform: scale(0.96);
+}
+
+/* Selected state (NavLink active) = blue */
+.practice.active {
+  background: var(--qc-input-bg);
+  border-color: var(--qc-frame);
+
+  box-shadow:
+    0 0 10px var(--qc-frame-glow),
+    0 0 20px var(--qc-frame-glow);
+
+  color: var(--qc-text);
+}

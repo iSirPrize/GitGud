@@ -1,23 +1,49 @@
 /* AimGame.css */
+.quiz-carousel.dark
+{
+    --qc-bg:    #0d0d0d;
+    --qc-surface:   #181818;
+    --qc-frame:     #ff6a00;
+    --qc-text:  #f0f0f0;
+    --qc-subtext:   #999;
+    --qc-input-bg:  #222222;
+    --qc-input-border: #333;
+    --qc-submit-bg:  #000;
+    --qc-header-line: rgba(255, 105, 0, 0.35);
+}
+
+.quiz-carousel.light
+{
+    --qc-bg:    #f4f4f4;
+    --qc-surface:   #ffffff;
+    --qc-frame:     #0066cc;
+    --qc-text:  #111111;
+    --qc-subtext:   #666;
+    --qc-input-bg:  #f0f4f8;
+    --qc-input-border: #d0dcea;
+    --qc-submit-bg:  #fff;
+    --qc-header-line: rgba(0, 102, 204, 0.2);
+}
 
 .aim-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #0d0d0d;
+  background: var(--qc-bg);
+  color: var(--qc-text);
   min-height: 100vh;
   padding: 20px 0;
   font-family: 'Segoe UI', sans-serif;
 }
 
 .aim-menu {
-  background: #181818;
-  border: 2px solid #ff6a00;
+  background: var(--qc-surface);
+  border: 2px solid var(--qc-frame);
   border-radius: 10px;
   padding: 12px 20px;
   margin-bottom: 15px;
-  color: #f0f0f0;
-  box-shadow: 0 0 12px rgba(255, 106, 0, 0.3);
+  color: var(--qc-text);
+  box-shadow: 0 0 12px var(--qc-header-line);
 }
 
 .crosshair-options {
@@ -48,36 +74,49 @@
 }
 
 .option-btn {
-  background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
-  color: #f0f0f0;
-  transition: all 0.2s ease;
+  background: var(--qc-input-bg);
+  color: var(--qc-text);
+  transition: all 0.2s ease, box-shadow 0.25s ease;
+}
+
+.option-btn:hover,
+.option-btn.active {
+  border: 2px, solid var(--qc-frame);
+  box-shadow: 0 0 10px var(--qc-header-line); 
 }
 
 .option-btn:hover {
-  background: linear-gradient(90deg, #2a2a2a, #3a3a3a);
+  background: var(--qc-input-border);
   transform: scale(1.02);
+  box-shadow: 0 0 10px var(--qc-frame-glow);
 }
 
 .option-btn.active {
-  border: 2px solid #ff6a00;
-  box-shadow: 0 0 10px rgba(255, 106, 0, 0.5);
+  box-shadow: 0 0 12px var(--qc-header-line);
 }
 
 .aim-gamebox {
-  width: 80%;
-  height: 90vh;
+  flex: 1;
+  min-width: 0;
+  height: 80vh;
+  width: 100%;
+
   position: relative;
   overflow: hidden;
-  border: 3px solid #ff6a00;
+
+  border: 3px solid var(--qc-frame);
   border-radius: 12px;
+
   background-size: cover;
   background-position: center;
-  box-shadow: 0 0 20px rgba(255, 106, 0, 0.35);
+
+  box-shadow: 0 0 20px var(--qc-header-line);
+  aspect-ratio: 16 / 9;
 }
 
 .aim-hud {
   padding: 20px;
-  color: #f0f0f0;
+  color: var(--qc-text);
 }
 
 .aim-results {
@@ -85,11 +124,11 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.9);
-  border: 2px solid #ff6a00;
+  background: var(--qc-surface);
+  border: 2px solid var(--qc-frame);
   padding: 25px 50px;
   border-radius: 12px;
-  color: white;
+  color: var(--qc-text);
   text-align: center;
   box-shadow: 0 0 20px rgba(255, 106, 0, 0.4);
 }
@@ -100,6 +139,8 @@
   align-items: flex-start;
   justify-content: center;
   width: 100%;
+  max-width: 2800px;
+  margin: 0 auto;
 }
 
 /* Makes the game take most of the space */
@@ -109,18 +150,15 @@
 
 /* Menu on the right */
 .aim-menu {
-  flex: none;
+  flex: 0 0 220px;
   min-width: 140px;
 
   display: flex;
   flex-direction: column;
   gap: 8px;
 
-  background: #181818;
-  border: 2px solid #ff6a00;
   border-radius: 12px;
   padding: 10px;
-  color: #f0f0f0;
 
-  box-shadow: 0 0 11px rgba(255, 106, 0, 0.3);
+  box-shadow: 0 0 11px var(--qc-header-line);
 }

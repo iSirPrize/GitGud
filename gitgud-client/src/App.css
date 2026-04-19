@@ -274,19 +274,6 @@
     border-right-color: var(--border);
   }
 }
-<<<<<<< HEAD
-
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body, #root {
-  height: 100%;
-  width: 100%;
-}
-=======
 /* ── Comment Section ───────────────────────────────── */
 .comment-section {
   margin-top: 2rem;
@@ -442,4 +429,3 @@ html, body, #root {
   .comment-input-row { flex-wrap: wrap; }
   .comment-input { min-width: 0; }
 }
->>>>>>> bb64d7f (Added comment section (CSS + JSX), updated QuizCarousel import, edited firebase.js, added .env)
