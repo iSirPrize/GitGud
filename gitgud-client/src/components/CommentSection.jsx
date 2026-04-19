@@ -1,113 +1,489 @@
-import { useState, useEffect } from "react";
+// CommentSection.jsx
+// Place this file at: gitgud-client/src/components/CommentSection.jsx
+
+import { useState, useEffect, useRef } from "react";
 import { auth, db } from "../firebase";
 import {
   collection,
   addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDoc,
   query,
   orderBy,
   onSnapshot,
   serverTimestamp,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
+import "./CommentSection.css";
 
 function CommentSection({ quizId }) {
-  const [comments, setComments] = useState([]);
-  const [text, setText] = useState("");
-  const [user, setUser] = useState(null);
+  const [comments, setComments]     = useState([]);
+  const [text, setText]             = useState("");
+  // FIX 1: Use a ref + state both so we always have the freshest user
+  const [user, setUser]             = useState(() => auth.currentUser);
+  const userRef                     = useRef(auth.currentUser);
+  const [loading, setLoading]       = useState(true);
+  const [posting, setPosting]       = useState(false);
+  const [editingId, setEditingId]   = useState(null);
+  const [editText, setEditText]     = useState("");
+  // Reply state
+  const [replyingTo, setReplyingTo] = useState(null); // { id, userName }
+  const [replyText, setReplyText]   = useState("");
+  const [postingReply, setPostingReply] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState({}); // { commentId: bool }
+  const bottomRef = useRef(null);
+  // Cache of uid -> { userName, userPhoto } fetched fresh from Firestore
+  const [userProfiles, setUserProfiles] = useState({});
+  const fetchingProfiles = useRef(new Set());
 
-  // Track auth state
+  // Fetch fresh profile data for a userId we haven't loaded yet
+  const fetchUserProfile = async (userId) => {
+    if (!userId || userProfiles[userId] || fetchingProfiles.current.has(userId)) return;
+    fetchingProfiles.current.add(userId);
+    try {
+      const snap = await getDoc(doc(db, "users", userId));
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserProfiles(prev => ({
+          ...prev,
+          [userId]: {
+            userName:  data.username  || null,
+            userPhoto: data.photoURL  || null,
+          }
+        }));
+      }
+    } catch (err) {
+      // Non-fatal — fall back to stored comment data
+    }
+  };
+
+  // FIX 1: Always keep userRef in sync and re-render on auth changes
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
-    return () => unsubscribe();
+    const unsub = auth.onAuthStateChanged((u) => {
+      userRef.current = u;
+      setUser(u);
+    });
+    return () => unsub();
   }, []);
 
-  // Listen to comments for this specific quiz in real time
+  // Real-time comments listener — top-level only (parentId == null)
   useEffect(() => {
-    if (!quizId) return;
+    if (quizId === undefined || quizId === null) return;
+    setLoading(true);
+    setComments([]);
+
     const q = query(
       collection(db, "quizComments", String(quizId), "comments"),
       orderBy("createdAt", "asc")
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setComments(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setComments(docs);
+      setLoading(false);
+      // Fetch fresh profiles for all unique userIds in this batch
+      const uniqueIds = [...new Set(docs.map(d => d.userId).filter(Boolean))];
+      uniqueIds.forEach(uid => fetchUserProfile(uid));
     });
-    return () => unsubscribe();
+
+    return () => unsub();
   }, [quizId]);
 
-  const handleSubmit = async () => {
-    if (!text.trim() || !user) return;
-    await addDoc(
-      collection(db, "quizComments", String(quizId), "comments"),
-      {
-        text: text.trim(),
-        userId: user.uid,
-        userName: user.displayName || user.email?.split("@")[0] || "User",
-        userPhoto: user.photoURL || null,
-        createdAt: serverTimestamp(),
+  const commentRef = (commentId) =>
+    doc(db, "quizComments", String(quizId), "comments", commentId);
+
+  // ── Post new top-level comment ────────────────────────────────────────
+  const handlePost = async () => {
+    const currentUser = userRef.current;
+    if (!text.trim() || !currentUser || posting) return;
+    setPosting(true);
+    try {
+      await addDoc(
+        collection(db, "quizComments", String(quizId), "comments"),
+        {
+          text:      text.trim(),
+          userId:    currentUser.uid,
+          // FIX 1: Always read the freshest photoURL from auth.currentUser
+          userName:  currentUser.displayName || currentUser.email?.split("@")[0] || "Player",
+          userPhoto: auth.currentUser?.photoURL || null,
+          createdAt: serverTimestamp(),
+          likes:     [],
+          dislikes:  [],
+          parentId:  null,   // top-level
+          replyCount: 0,
+        }
+      );
+      setText("");
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
+    } catch (err) {
+      console.error("Comment post failed:", err);
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  // ── Post reply ────────────────────────────────────────────────────────
+  const handlePostReply = async (parentId) => {
+    const currentUser = userRef.current;
+    if (!replyText.trim() || !currentUser || postingReply) return;
+    setPostingReply(true);
+    try {
+      await addDoc(
+        collection(db, "quizComments", String(quizId), "comments"),
+        {
+          text:      replyText.trim(),
+          userId:    currentUser.uid,
+          userName:  currentUser.displayName || currentUser.email?.split("@")[0] || "Player",
+          userPhoto: auth.currentUser?.photoURL || null,
+          createdAt: serverTimestamp(),
+          likes:     [],
+          dislikes:  [],
+          parentId:  parentId,
+        }
+      );
+      // Increment parent replyCount
+      await updateDoc(commentRef(parentId), {
+        replyCount: (comments.find(c => c.id === parentId)?.replyCount || 0) + 1,
+      });
+      setReplyText("");
+      setReplyingTo(null);
+      // Auto-expand replies for this thread
+      setExpandedReplies(prev => ({ ...prev, [parentId]: true }));
+    } catch (err) {
+      console.error("Reply post failed:", err);
+    } finally {
+      setPostingReply(false);
+    }
+  };
+
+  // ── Delete ────────────────────────────────────────────────────────────
+  const handleDelete = async (commentId) => {
+    if (!window.confirm("Delete this comment?")) return;
+    try {
+      await deleteDoc(commentRef(commentId));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
+  // ── Edit ──────────────────────────────────────────────────────────────
+  const startEdit = (comment) => {
+    setEditingId(comment.id);
+    setEditText(comment.text);
+  };
+  const cancelEdit = () => { setEditingId(null); setEditText(""); };
+
+  const handleSaveEdit = async (commentId) => {
+    if (!editText.trim()) return;
+    try {
+      await updateDoc(commentRef(commentId), { text: editText.trim(), edited: true });
+      cancelEdit();
+    } catch (err) {
+      console.error("Edit failed:", err);
+    }
+  };
+
+  // ── Like / Dislike ────────────────────────────────────────────────────
+  const handleReaction = async (comment, type) => {
+    const currentUser = userRef.current;
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const hasLiked    = comment.likes?.includes(uid);
+    const hasDisliked = comment.dislikes?.includes(uid);
+    const ref = commentRef(comment.id);
+    try {
+      if (type === "like") {
+        await updateDoc(ref, hasLiked
+          ? { likes: arrayRemove(uid) }
+          : { likes: arrayUnion(uid), dislikes: arrayRemove(uid) }
+        );
+      } else {
+        await updateDoc(ref, hasDisliked
+          ? { dislikes: arrayRemove(uid) }
+          : { dislikes: arrayUnion(uid), likes: arrayRemove(uid) }
+        );
       }
+    } catch (err) {
+      console.error("Reaction failed:", err);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePost(); }
+  };
+  const handleEditKeyDown = (e, commentId) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEdit(commentId); }
+    if (e.key === "Escape") cancelEdit();
+  };
+  const handleReplyKeyDown = (e, parentId) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostReply(parentId); }
+    if (e.key === "Escape") { setReplyingTo(null); setReplyText(""); }
+  };
+
+  // FIX 1: Avatar always reads from fresh photoURL passed in, not stale closure
+  const Avatar = ({ photo, name, size = 40 }) => (
+    <div className="cs-avatar" style={{ width: size, height: size }}>
+      {photo ? (
+        <img
+          src={photo}
+          alt={name}
+          style={{ width: size, height: size }}
+          // FIX 1: On error (e.g., stale URL), fall back to initials
+          onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
+        />
+      ) : null}
+      <div
+        className="cs-avatar-fallback"
+        style={{
+          width: size, height: size, fontSize: size * 0.42,
+          display: photo ? "none" : "flex",
+        }}
+      >
+        {name?.[0]?.toUpperCase() ?? "?"}
+      </div>
+    </div>
+  );
+
+  const formatTime = (ts) => {
+    if (!ts?.toDate) return "";
+    const d = ts.toDate();
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60)    return "just now";
+    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return d.toLocaleDateString();
+  };
+
+  // Separate top-level and replies
+  const topLevel = comments.filter(c => !c.parentId);
+  const getReplies = (parentId) => comments.filter(c => c.parentId === parentId);
+
+  // FIX 3: isOwner uses the live userRef so it works for ALL logged-in users
+  const isOwner = (comment) => userRef.current?.uid === comment.userId;
+
+  const renderComment = (c, isReply = false) => {
+    // Use fresh Firestore profile if available, fall back to stored snapshot
+    const freshProfile = userProfiles[c.userId];
+    const displayName  = freshProfile?.userName  || c.userName;
+    const displayPhoto = freshProfile?.userPhoto || c.userPhoto;
+
+    const liked      = c.likes?.includes(userRef.current?.uid);
+    const disliked   = c.dislikes?.includes(userRef.current?.uid);
+    const likeCount  = c.likes?.length ?? 0;
+    const dislikeCount = c.dislikes?.length ?? 0;
+    const isEditing  = editingId === c.id;
+    const replies    = getReplies(c.id);
+    const showReplies = expandedReplies[c.id];
+
+    return (
+      <div
+        key={c.id}
+        className={`cs-comment ${isReply ? "cs-reply" : ""}`}
+      >
+        {/* Always use the freshest photo/name from Firestore */}
+        <Avatar photo={displayPhoto} name={displayName} size={isReply ? 30 : 40} />
+
+        <div className="cs-comment-body">
+          {/* FIX 5: Username now uses cs-username class with accent colour + bold */}
+          <div className="cs-comment-meta">
+            <span className="cs-username">{displayName}</span>
+            <span className="cs-timestamp">{formatTime(c.createdAt)}</span>
+            {c.edited && <span className="cs-edited">(edited)</span>}
+          </div>
+
+          {isEditing ? (
+            <div className="cs-edit-wrap">
+              <input
+                className="cs-edit-input"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={(e) => handleEditKeyDown(e, c.id)}
+                maxLength={500}
+                autoFocus
+              />
+              <div className="cs-edit-actions">
+                <button className="cs-edit-save"   onClick={() => handleSaveEdit(c.id)}>Save</button>
+                <button className="cs-edit-cancel" onClick={cancelEdit}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <p className="cs-comment-text">{c.text}</p>
+          )}
+
+          <div className="cs-comment-footer">
+            <button
+              className={`cs-react-btn ${liked ? "active-like" : ""}`}
+              onClick={() => handleReaction(c, "like")}
+              disabled={!userRef.current}
+              title={userRef.current ? "Like" : "Log in to react"}
+            >
+              👍 <span className="cs-react-count">{likeCount > 0 ? likeCount : ""}</span>
+            </button>
+
+            <button
+              className={`cs-react-btn ${disliked ? "active-dislike" : ""}`}
+              onClick={() => handleReaction(c, "dislike")}
+              disabled={!userRef.current}
+              title={userRef.current ? "Dislike" : "Log in to react"}
+            >
+              👎 <span className="cs-react-count">{dislikeCount > 0 ? dislikeCount : ""}</span>
+            </button>
+
+            {/* FIX 4: Reply button for all logged-in users, on top-level only */}
+            {!isReply && userRef.current && (
+              <button
+                className="cs-reply-btn"
+                onClick={() => {
+                  if (replyingTo?.id === c.id) {
+                    setReplyingTo(null);
+                    setReplyText("");
+                  } else {
+                    setReplyingTo({ id: c.id, userName: c.userName });
+                    setReplyText("");
+                  }
+                }}
+              >
+                💬 Reply
+              </button>
+            )}
+
+            {/* FIX 3: Show Edit/Delete for the comment's OWN author */}
+            {isOwner(c) && !isEditing && (
+              <>
+                <button className="cs-owner-btn" onClick={() => startEdit(c)}>Edit</button>
+                <button className="cs-owner-btn cs-delete-btn" onClick={() => handleDelete(c.id)}>Delete</button>
+              </>
+            )}
+          </div>
+
+          {/* FIX 4: Reply input box */}
+          {!isReply && replyingTo?.id === c.id && (
+            <div className="cs-reply-input-wrap">
+              <Avatar
+                photo={auth.currentUser?.photoURL}
+                name={userRef.current?.displayName || userRef.current?.email}
+                size={28}
+              />
+              <div className="cs-input-wrap cs-reply-input-inner">
+                <input
+                  className="cs-input"
+                  type="text"
+                  placeholder={`Replying to ${replyingTo.userName}…`}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => handleReplyKeyDown(e, c.id)}
+                  maxLength={500}
+                  disabled={postingReply}
+                  autoFocus
+                />
+                <button
+                  className="cs-post-btn"
+                  onClick={() => handlePostReply(c.id)}
+                  disabled={!replyText.trim() || postingReply}
+                >
+                  {postingReply ? "…" : "Reply"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* FIX 4: Show/hide replies toggle */}
+          {!isReply && replies.length > 0 && (
+            <button
+              className="cs-toggle-replies"
+              onClick={() => setExpandedReplies(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+            >
+              {showReplies
+                ? `▲ Hide ${replies.length} repl${replies.length !== 1 ? "ies" : "y"}`
+                : `▼ Show ${replies.length} repl${replies.length !== 1 ? "ies" : "y"}`}
+            </button>
+          )}
+
+          {/* FIX 4: Nested replies */}
+          {!isReply && showReplies && replies.length > 0 && (
+            <div className="cs-replies-list">
+              {replies.map(r => renderComment(r, true))}
+            </div>
+          )}
+        </div>
+      </div>
     );
-    setText("");
   };
 
   return (
-    <div className="comment-section">
-      <h3 className="comment-heading">Comments</h3>
-
-      {/* Comment list */}
-      <div className="comment-list">
-        {comments.length === 0 && (
-          <p className="comment-empty">No comments yet. Be the first!</p>
-        )}
-        {comments.map((c) => (
-          <div key={c.id} className="comment-item">
-            <div className="comment-avatar">
-              {c.userPhoto ? (
-                <img src={c.userPhoto} alt={c.userName} />
-              ) : (
-                <div className="comment-avatar-placeholder">
-                  {c.userName?.[0]?.toUpperCase() || "?"}
-                </div>
-              )}
-            </div>
-            <div className="comment-body">
-              <span className="comment-username">{c.userName}</span>
-              <p className="comment-text">{c.text}</p>
-            </div>
-          </div>
-        ))}
+    <div className="cs-root">
+      <div className="cs-header">
+        <span className="cs-title">💬 Discussion</span>
+        <span className="cs-count">
+          {loading ? "—" : `${topLevel.length} comment${topLevel.length !== 1 ? "s" : ""}`}
+        </span>
       </div>
 
-      {/* Input area */}
-      {user ? (
-        <div className="comment-input-row">
-          <div className="comment-avatar">
-            {user.photoURL ? (
-              <img src={user.photoURL} alt="You" />
-            ) : (
-              <div className="comment-avatar-placeholder">
-                {(user.displayName || user.email)?.[0]?.toUpperCase() || "?"}
-              </div>
-            )}
+      <div className="cs-list">
+        {loading && (
+          <div className="cs-state">
+            <span className="cs-spinner" />
+            <span>Loading comments…</span>
           </div>
-          <input
-            className="comment-input"
-            type="text"
-            placeholder="Add a comment..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+        )}
+
+        {!loading && topLevel.length === 0 && (
+          <div className="cs-state cs-empty">
+            <span className="cs-empty-icon">🎮</span>
+            <span>No comments yet — start the discussion!</span>
+          </div>
+        )}
+
+        {!loading && topLevel.map((c, i) => (
+          <div key={c.id} style={{ animationDelay: `${i * 40}ms` }} className="cs-comment-animated">
+            {renderComment(c, false)}
+          </div>
+        ))}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {userRef.current ? (
+        <div className="cs-input-area">
+          {/* FIX 1: Always read photoURL fresh from auth.currentUser */}
+          <Avatar
+            photo={auth.currentUser?.photoURL}
+            name={userRef.current?.displayName || userRef.current?.email}
+            size={36}
           />
-          <button
-            className="comment-submit"
-            onClick={handleSubmit}
-            disabled={!text.trim()}
-          >
-            Post
-          </button>
+          <div className="cs-input-wrap">
+            {/* FIX 2: Input text color explicitly set via CSS class */}
+            <input
+              className="cs-input"
+              type="text"
+              placeholder="Add a comment…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              maxLength={500}
+              disabled={posting}
+            />
+            <button
+              className="cs-post-btn"
+              onClick={handlePost}
+              disabled={!text.trim() || posting}
+              aria-label="Post comment"
+            >
+              {posting ? "…" : "Post"}
+            </button>
+          </div>
         </div>
       ) : (
-        <p className="comment-login-prompt">
-          <a href="/auth">Log in</a> to leave a comment.
-        </p>
+        <div className="cs-login-prompt">
+          <span>🔒</span>
+          <span>
+            <a href="/auth" className="cs-login-link">Log in</a> to join the discussion
+          </span>
+        </div>
       )}
     </div>
   );
