@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./AimGame.css";
+import { useTheme } from '../context/ThemeContext';
 
 export default function AimGame() {
     const GAME_TIME = 30
@@ -13,6 +14,7 @@ const [result, setResult] = useState(null);
 const [crosshairType, setCrosshairType] = useState("plus");
 const [crosshairColor, setCrosshairColor] = useState("#ffffff");
 const [inGame, setInGame] = useState(false);
+const { theme } = useTheme();
 
 //Below will spawn the targets randomly
 const spawnTarget = () => { 
@@ -113,8 +115,9 @@ const getCursor = () => {
       return "crosshair";
     }
 }
-
+console.log("theme =", theme);
 return (
+    <div className={`quiz-carousel ${theme?.toLowerCase?.()}`}>
     <div className="aim-container">
         <div className="aim-layout">
 
@@ -124,13 +127,9 @@ return (
         onMouseLeave={() => setInGame(false)}
         onClick={handleMisses}
         style={{
-            width: "80%",
-            height: "90vh",
-            margin: "0 auto",
-            display: "block",
             position: "relative",
             overflow: "hidden",
-            border: "3px solid #333",
+            border: "3px solid var(--qc-frame)",
             borderRadius: "12px",
             backgroundImage: "url('/mirage.png')",
             cursor: getCursor(),
@@ -162,11 +161,10 @@ return (
             left: `${target.x}%`,
             width: "50px",
             height: "50px",
-            backgroundColor: "red",
             borderRadius: "50%",
             zIndex: 5,
-            boxShadow: "0 0 15px red",
-            border: "2px solid white",
+            backgroundColor: "var(--qc-frame)",
+            boxShadow: "0 0 15px var(--qc-frame)",
           }}
         />
       )}
@@ -195,7 +193,7 @@ return (
                      >
                         Default
                         </button>
-            <button  className={`option-btn ${crosshairType === "+" ? "active" : ""}`} 
+            <button  className={`option-btn ${crosshairType === "plus" ? "active" : ""}`} 
             onClick={() => setCrosshairType("plus")}
             >
                 +
@@ -205,7 +203,7 @@ return (
             >
                 X
             </button>
-            <button  className={`option-btn ${crosshairType === "x" ? "active" : ""}`} 
+            <button  className={`option-btn ${crosshairType === "dot" ? "active" : ""}`} 
             onClick={() => setCrosshairType("dot")}
             >
                 •
@@ -222,6 +220,7 @@ return (
                     onClick={() => setCrosshairColor("#0000ff")}>Blue</button>
         </div>
     </div>
+        </div>
         </div>
   );
 }
