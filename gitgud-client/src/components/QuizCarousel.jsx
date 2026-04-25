@@ -7,6 +7,7 @@
 import { useState, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
 import CommentSection from "./CommentSection";
+import CommunityVote from "./CommunityVote";
 import "./QuizCarousel.css";
 
 // ─── Quiz data ───────────────────────────────────────────────────────────────
@@ -273,10 +274,20 @@ export default function QuizCarousel() {
             onClick={handleSubmit}
             disabled={selectedIdx === null || isSubmitted}
           >
-            {isSubmitted ? "✓  Answer Submitted" : "Submit Answer"}
+            {isSubmitted ? "✓  Answer Submitted" : "Check Answer — Submit"}
           </button>
 
         </div>
+
+        {/* ── Community Vote Bubble ─────────────────────────────────────────── */}
+        {/* Shown only after the user submits — real-time via Firestore          */}
+        <CommunityVote
+          quizId={scenario.id}
+          choices={scenario.choices}
+          userChoice={selectedIdx}
+          correctIndex={scenario.correctIndex}
+          isSubmitted={isSubmitted}
+        />
 
         {/* ── Comment Section ───────────────────────────────────────────────── */}
         {/* quizId uses scenario.id so each quiz has its own isolated comments   */}
