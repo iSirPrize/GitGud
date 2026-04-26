@@ -19,9 +19,11 @@ const Games = [
     }
 ];
 
-const { theme } = useTheme();
 
-const Category = ({ theme }) => {
+const Category = () => {
+
+    const { theme } = useTheme();
+
     return (
         <div className={`category-page quiz-carousel ${theme}`}>
             <div className="category-header">
@@ -31,7 +33,7 @@ const Category = ({ theme }) => {
 
             <div className="games-grid">
                 {Games.map((game) => (
-                    <link
+                    <Link
                     to={`/quiz/${game.id}`}
                     key={game.id}
                     className={`game-card ${game.id}`}
@@ -43,9 +45,8 @@ const Category = ({ theme }) => {
                         <div className="card-content">
                             <h2>{game.name}</h2>
                             <p>{game.description}</p>
-                            <span className="play-button"></span>
                         </div>
-                    </link>
+                    </Link>
                 ))}
             </div>
         </div>
