@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./AimGame.css";
 import { useTheme } from '../context/ThemeContext';
+import { db, auth } from "../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function AimGame() {
-    const GAME_TIME = 30
+    const GAME_TIME = 15
 
 const [score, setScore] = useState(0);
 const [timeLeft, setTimeLeft] = useState(GAME_TIME);
@@ -15,18 +17,34 @@ const [crosshairType, setCrosshairType] = useState("plus");
 const [crosshairColor, setCrosshairColor] = useState("#ffffff");
 const [inGame, setInGame] = useState(false);
 const { theme } = useTheme();
+const scoreRef = useRef(score);
+const clicksRef = useRef(clicks);
+const gameEndedRef = useRef(false);
 
-//Below will spawn the targets randomly
+//Below will spawn the targets randomly, adjusted later 
 const spawnTarget = () => { 
-    setTarget({
-        x: Math.random() * 90,
-        y: Math.random() * 90,
-    });
+  const x = Math.random() * 90;
+
+  // Left side higher (75%), right side lower (50%)
+  const maxY = 75 - (x / 90) * 25;
+
+  const y = Math.random() * maxY;
+
+  setTarget({ x, y });
 };
 
 //For when the target is clicked
 const handleTargetClick = () => {
     if (!gameActive) return;
+
+    playShootSound();
+
+    // delay hit sound slightly
+    const delay = 50 + Math.random() * 30;
+
+    setTimeout(() => {
+        playHitSound();
+    }, delay);
 
     setScore((prev) => prev + 1);
     setClicks((prev) => prev + 1);
@@ -39,6 +57,12 @@ const handleMisses = () => {
     setClicks((prev) => prev + 1);
 };
 
+//score and clicks logic keeps the refs updated
+useEffect(() => {
+  scoreRef.current = score;
+  clicksRef.current = clicks;
+}, [score, clicks]);
+
 //Timer logic
 useEffect(() => {
 
@@ -46,20 +70,24 @@ useEffect(() => {
         return;
     }
 
-    if (timeLeft === 0) {
-        endGame(score, clicks);
-        return;
-    }
+      const timer = setInterval(() => {
+    setTimeLeft((prev) => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        endGame(scoreRef.current, clicksRef.current);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
-    const timer = setTimeout(() => {
-        setTimeLeft((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-}, [timeLeft, gameActive]);
+  return () => clearInterval(timer);
+}, [gameActive]);
 
 //When game has started
 const startGame = () => {
+    gameEndedRef.current = false; //reset
+
     setScore(0);
     setClicks(0);
     setTimeLeft(GAME_TIME);
@@ -67,8 +95,44 @@ const startGame = () => {
     spawnTarget();
 }
 
+//gun shot sound pool
+const gunSounds = [
+    "/sounds/Gun sound 1.m4a",
+    "/sounds/Gun sound 2.m4a",
+    "/sounds/Gun sound 3.m4a",
+    "/sounds/Gun sound 4.m4a",
+]
+
+const playShootSound = () => {
+    const src = gunSounds[Math.floor(Math.random() * gunSounds.length)];
+    const sound = new Audio(src);
+
+    sound.volume = 0.1 + Math.random() * 0.2;
+    sound.play();
+};
+
+//Target hit sound effects sounds pool
+const hitSounds = [
+    "/sounds/hit EFX 1.m4a",
+    "/sounds/hit EFX 2.m4a",
+    "/sounds/hit EFX 3.m4a",
+    "/sounds/hit EFX 4.m4a",
+];
+
+const playHitSound = () => {
+    const src = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+    const sound = new Audio(src);
+
+    sound.volume = 0.1 + Math.random() * 0.2;
+    sound.play();
+};
+
 //When game has ended (will adjust once firebase has been set up)
-const endGame = (finalScore, finalClicks) => {
+const endGame = async (finalScore, finalClicks) => {
+    if (gameEndedRef.current) {
+        return; //was running into issue where it was creating duplicate scores for the same game
+    }
+    gameEndedRef.current = true;
     setGameActive(false);
 
     //calculates the misses
@@ -83,12 +147,28 @@ const endGame = (finalScore, finalClicks) => {
     misses,
     accuracy,
     duration: GAME_TIME,
-    date: new Date(),
+    createdAt: serverTimestamp(),
   };
 
   setResult(resultData); 
 
   console.log("Aim Trainer Results:", resultData);
+
+  //save to firebase
+
+  try {
+    const user = auth.currentUser;
+
+    await addDoc(collection(db, "aimResults"), {
+        userId: user ? user.uid : "guest",
+        username: user?.displayName || "Anonymous",
+        ...resultData,
+    });
+
+    console.log("Saved to Firebase");
+  } catch (error) {
+    console.error("Error saving result:", error);
+  }
 };
 
 const getCursor = () => {
@@ -100,16 +180,16 @@ const getCursor = () => {
 
     switch(crosshairType) {
         case "plus":
-            return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><line x1='32' y1='8' x2='32' y2='56' stroke='${color}' stroke-width='3'/><line x1='8' y1='32' x2='56' y2='32' stroke='${color}' stroke-width='3'/></svg>") 32 32, crosshair`;
+            return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><line x1='20' y1='6' x2='20' y2='34' stroke='${color}' stroke-width='2'/><line x1='6' y1='20' x2='34' y2='20' stroke='${color}' stroke-width='2'/></svg>") 20 20, crosshair`;
 
     case "x":
-      return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><line x1='12' y1='12' x2='52' y2='52' stroke='${color}' stroke-width='3'/><line x1='52' y1='12' x2='12' y2='52' stroke='${color}' stroke-width='3'/></svg>") 32 32, crosshair`;
+      return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><line x1='8' y1='8' x2='32' y2='32' stroke='${color}' stroke-width='2'/><line x1='32' y1='8' x2='8' y2='32' stroke='${color}' stroke-width='2'/></svg>") 20 20, crosshair`;
 
     case "dotCross":
-      return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='4' fill='${color}'/><line x1='32' y1='8' x2='32' y2='20' stroke='${color}' stroke-width='2'/><line x1='32' y1='44' x2='32' y2='56' stroke='${color}' stroke-width='2'/><line x1='8' y1='32' x2='20' y2='32' stroke='${color}' stroke-width='2'/><line x1='44' y1='32' x2='56' y2='32' stroke='${color}' stroke-width='2'/></svg>") 32 32, crosshair`;
+      return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><circle cx='20' cy='20' r='3' fill='${color}'/><line x1='20' y1='6' x2='20' y2='14' stroke='${color}' stroke-width='2'/><line x1='20' y1='26' x2='20' y2='34' stroke='${color}' stroke-width='2'/><line x1='6' y1='20' x2='14' y2='20' stroke='${color}' stroke-width='2'/><line x1='26' y1='20' x2='34' y2='20' stroke='${color}' stroke-width='2'/></svg>") 20 20, crosshair`;
 
     case "dot":
-      return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='6' fill='${color}'/></svg>") 32 32, crosshair`;
+      return `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><circle cx='20' cy='20' r='4' fill='${color}'/></svg>") 20 20, crosshair`;
 
     default:
       return "crosshair";
@@ -125,7 +205,12 @@ return (
     <div className="aim-gamebox"
         onMouseEnter={() => setInGame(true)}
         onMouseLeave={() => setInGame(false)}
-        onClick={handleMisses}
+        onClick={() => {
+            if (!gameActive) return;
+
+                playShootSound();
+                handleMisses();   
+            }}
         style={{
             position: "relative",
             overflow: "hidden",
@@ -159,11 +244,22 @@ return (
             position: "absolute",
             top: `${target.y}%`,
             left: `${target.x}%`,
-            width: "50px",
-            height: "50px",
+            width: "75px",
+            height: "75px",
             borderRadius: "50%",
             zIndex: 5,
-            backgroundColor: "var(--qc-frame)",
+            background: `radial-gradient(circle,
+                        var(--qc-frame) 0%,
+                        var(--qc-frame) 20%,
+                        white 20%,
+                        white 35%,
+                        var(--qc-frame) 35%,
+                        var(--qc-frame) 55%,
+                        white 55%,
+                        white 70%,
+                        var(--qc-text) 70%,
+                        var(--qc-text) 100%
+                        )`,
             boxShadow: "0 0 15px var(--qc-frame)",
           }}
         />
