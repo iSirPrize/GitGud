@@ -10,6 +10,8 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import AuthPage from './AuthPage'
 import { onAuth } from './auth'
+import Category from './Category'
+import QuizCarousel from './components/QuizCarousel'
 
 function App() {
   const [dbStatus, setDbStatus] = useState('')
@@ -53,7 +55,8 @@ function App() {
           <Route index element={<Home user={user} />} />
           <Route path="practice" element={<Practice />} />
           <Route path="practice/aim" element={<AimTrainer />} />
-          <Route path="quiz" element={<Quiz />} />
+          <Route path="quiz" element={<Category />} />
+          <Route path="quiz/:gameId" element={<QuizCarousel />} />
         </Route>
       </Routes>
     </>
