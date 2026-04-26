@@ -18,7 +18,7 @@
   --qc-arrow-color: #ff6a00;
   --qc-submit-bg:   #ff6a00;
   --qc-submit-text: #000;
-  --qc-submit-done: #2a2a2a;
+  --qc-submit-done: #7a3300;   /* was #2a2a2a */ /* Dark mode — change submit-done from #2a2a2a to orange */
   --qc-badge-bg:    #ff6a00;
   --qc-badge-text:  #000;
   --qc-dot-active:  #ff6a00;
@@ -45,7 +45,7 @@
   --qc-arrow-color: #0066cc;
   --qc-submit-bg:   #0066cc;
   --qc-submit-text: #fff;
-  --qc-submit-done: #ccc;
+  --qc-submit-done: #004999;   /* was #ccc */ /* Light mode — change submit-done from #ccc to blue */
   --qc-badge-bg:    #0066cc;
   --qc-badge-text:  #fff;
   --qc-dot-active:  #0066cc;
@@ -378,40 +378,91 @@
   color: var(--qc-frame);
 }
 
-/* Submit section */
+/* ── Submit button — all states hardcoded to avoid browser UA overrides ── */
+
+/* BASE — shared layout only, no colours here */
 .submit-btn {
+  display: block;
+  width: calc(100% - 44px);
   margin: 16px 22px 20px;
   padding: 14px;
-  background: var(--qc-submit-bg);
-  color: var(--qc-submit-text);
-  border: none;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   letter-spacing: 0.04em;
-  transition: opacity 0.2s, transform 0.15s, background 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
 }
 
-.submit-btn:hover:not(:disabled) {
-  opacity: 0.88;
+/* DARK — no answer selected yet */
+.quiz-carousel.dark .submit-btn:disabled:not(.submitted) {
+  background: #181818 !important;
+  color: #999 !important;
+  -webkit-text-fill-color: #999 !important;
+  border: 2px solid #ff6a00 !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* DARK — answer selected, ready to submit */
+.quiz-carousel.dark .submit-btn:not(:disabled):not(.submitted) {
+  background: #ff6a00 !important;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  border: 2px solid #ff6a00 !important;
+  opacity: 1 !important;
+}
+
+/* DARK — after submitted */
+.quiz-carousel.dark .submit-btn.submitted {
+  background: #7a3300 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border: 2px solid #7a3300 !important;
+  cursor: default !important;
+  opacity: 1 !important;
+}
+
+/* LIGHT — no answer selected yet */
+.quiz-carousel.light .submit-btn:disabled:not(.submitted) {
+  background: #ffffff !important;
+  color: #666 !important;
+  -webkit-text-fill-color: #666 !important;
+  border: 2px solid #0066cc !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* LIGHT — answer selected, ready to submit */
+.quiz-carousel.light .submit-btn:not(:disabled):not(.submitted) {
+  background: #0066cc !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border: 2px solid #0066cc !important;
+  opacity: 1 !important;
+}
+
+/* LIGHT — after submitted */
+.quiz-carousel.light .submit-btn.submitted {
+  background: #004999 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border: 2px solid #004999 !important;
+  cursor: default !important;
+  opacity: 1 !important;
+}
+
+/* Hover/active only when enabled */
+.submit-btn:not(:disabled):not(.submitted):hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px var(--qc-frame-glow);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  opacity: 0.9 !important;
 }
 
-.submit-btn:active:not(:disabled) {
+.submit-btn:not(:disabled):not(.submitted):active {
   transform: translateY(0);
-}
-
-.submit-btn:disabled:not(.submitted) {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.submit-btn.submitted {
-  background: var(--qc-submit-done);
-  color: var(--qc-subtext);
-  cursor: default;
 }
 
 /* ── Animations ──────────────────────────────────────────────────────────── */
