@@ -1,27 +1,24 @@
 import AimGame from "./components/AimGame";
 import { useNavigate } from "react-router-dom";
+import "./AimTrainer.css";
 
-export default function AimTrainerPage() {
-  const navigate = useNavigate();
+export default function AimTrainerPage() { 
+  const navigate = useNavigate(); 
+  
+   return ( 
+    <div className="aimtrainer-page">
 
-  return (
-    <div style={{ width: "100%", height: "100vh" }}>
-      
-      {/* Back Button */}
-      <button
-        onClick={() => navigate("/practice")}
-        style={{
-          position: "absolute",
-          top: "20px",
-          left: "20px",
-          zIndex: 10,
-        }}
-      >
-        ← Back
-      </button>
+  <div className="aim-wrapper">
+    <button 
+      onClick={() => navigate("/practice")}
+      className="back-button"
+    >
+      ← Back
+    </button>
 
-      {/* Game */}
-      <AimGame />
-    </div>
-  );
+    <AimGame />
+  </div>
+
+</div>
+  ); 
 }

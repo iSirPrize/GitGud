@@ -76,32 +76,15 @@
   backdrop-filter: blur(8px);
 
   border-right: 1px solid var(--qc-input-border);
-  overflow: visible;
+  overflow: hidden;
 
   transition: width 0.3s ease;
 }
 
-.sidebar:hover {
+/* OPENED NAVBAR */
+.sidebar.open {
   width: 200px;
-}
-
-/* Arrow indicator */
-.sidebar::before {
-  content: "➤"; 
-  position: absolute;
-  top: 50%;
-  right: 4px;
-  transform: translate(-50%);
-
-  background: var(--qc-surface);
-  border: 1px solid var(--qc-input-border);
-  border-left: none;
-
-  padding: 6px 8px;
-  border-radius: 0 6px 6px 0;
-
-  font-size: 16px;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 /* Sidebar content */
@@ -113,11 +96,41 @@
   padding: 20px 10px 0;
 
   opacity: 0;
+  pointer-events: none; 
   transition: opacity 0.2s ease;
 }
 
-.sidebar:hover .sidebar-content {
+.sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+
+  background: var(--qc-surface);
+  color: var(--qc-frame);
+
+  border: 1px solid var(--qc-input-border);
+  border-left: none;
+
+  padding: 6px 10px;
+  border-radius: 0 8px 8px 0;
+
+  cursor: pointer;
+  z-index: 1100;
+
+  transition: all 0.25s ease, box-shadow 0.3s ease;
+  pointer-events: auto;
+}
+
+/* rotates the arrow when open */
+.sidebar.open .sidebar-toggle {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* show content when open */
+.sidebar.open .sidebar-content {
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* =========================
@@ -135,6 +148,12 @@
   padding: 40px;
   width: 100%;
   box-sizing: border-box;
+  transition: margin-left 0.3s ease;
+}
+
+/* shift content when sidebar opens */
+.sidebar.open ~ #center {
+  margin-left: 200px;
 }
 
 /* =========================
@@ -199,4 +218,45 @@
     0 0 20px var(--qc-frame-glow);
 
   color: var(--qc-text);
+}
+
+/* Force sidebar to stay closed on hover */
+.sidebar:not(.open):hover {
+  width: 40px;
+}
+
+/* Hide content when closed even on hover */
+.sidebar:not(.open):hover .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-logo {
+  display: flex;
+  justify-content: center;   
+  align-items: center;       
+
+  width: 100%;
+  height: 120px;            
+
+  margin: 10px 0;
+  padding: 0;
+
+  cursor: pointer;
+}
+
+.sidebar-logo img {
+  width: clamp(110px, 8vw, 170px); 
+  height: auto;
+  object-fit: contain;
+
+  transition: transform 0.2s ease;
+}
+
+.sidebar-logo:hover img {
+  transform: scale(1.1);
+}
+
+.sidebar-logo {
+  padding: 0 5px;
 }

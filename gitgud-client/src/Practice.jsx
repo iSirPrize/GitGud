@@ -1,34 +1,79 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useTheme } from "./context/ThemeContext";
+import { useState } from "react";
+import AimGame from "./components/AimGame";
+import "./AimTrainer.css";
 
-function Practice({ setPage }) {
+
+function Practice() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+
+  const [selectedMode, setSelectedMode] = useState(null);
+
   return (
-    <>
-    <center>
-      <h1>Practice</h1>
+    <div className={`aimtrainer-page quiz-carousel ${theme}`}>
 
-      <div style={{ display: "flex", gap: "16px" }}>
+      {/* Header */}
+      <div className="aimtrainer-header">
         <button
-          className="practice"
-          onClick={() => navigate("/practice/aim")}
+          onClick={() => navigate("/")}
+          className="back-button"
         >
-          Aim Trainer
+          ← Back To Home
         </button>
 
-        <button className="practice" disabled>
-          Reaction Trainer (Soon)
-        </button>
+        <h1>Select Your Practice Mode</h1>
+        <div className="header-underline"></div>
       </div>
 
-      <button
-        style={{ marginTop: "20px" }}
-        onClick={() => setPage("home")}
-      >
-        Back
-      </button>
-       </center>
-    </>
-  )
+      {/* Mode Selection */}
+      <div className="games-grid">
+
+  {/* Aim Trainer */}
+  <Link
+    to="/practice/aim"
+    className="game-card aim"
+  >
+    <div className="card-image-container">
+      <img src="/AimTrainerTN.png" alt="Aim Trainer" />
+    </div>
+
+    <div className="card-content">
+      <h2>Aim Trainer</h2>
+      <p>Bad Aim? Improve your flicks and accuracy our aim trainer, customise your own crosshair to your liking and aim for the highest score! Time to GitGud</p>
+    </div>
+  </Link>
+
+  {/* Reaction Trainer (disabled) */}
+  <div className="game-card disabled">
+    <div className="card-image-container">
+      <img src="/ReactionTrainerTN.png" alt="Reaction Trainer" />
+    </div>
+
+    <div className="card-content">
+      <h2>Reaction Trainer</h2>
+      <p>Slow reactions? Test your reaction speed and improve it, shoot the enemies but be careful not to shoot civilians :p</p>
+      <span className="coming-soon">Coming Soon</span>
+    </div>
+  </div>
+
+</div>
+
+      {/* Optional helper text */}
+      {!selectedMode && (
+        <p className="select-text">Select a mode to begin</p>
+      )}
+
+      {/* Game */}
+      {selectedMode === "aim" && (
+        <div className="aimtrainer-container">
+          <AimGame />
+        </div>
+      )}
+
+    </div>
+  );
 }
 
-export default Practice
+export default Practice;

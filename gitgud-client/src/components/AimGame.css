@@ -25,14 +25,20 @@
     --qc-header-line: rgba(0, 102, 204, 0.2);
 }
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
 .aim-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   background: var(--qc-bg);
   color: var(--qc-text);
-  min-height: 100vh;
-  padding: 20px 0;
+  height: 100vh; /* adjust to your navbar height */
+  padding: 10px 0;
   font-family: 'Segoe UI', sans-serif;
 }
 
@@ -81,7 +87,7 @@
 
 .option-btn:hover,
 .option-btn.active {
-  border: 2px, solid var(--qc-frame);
+  border: 2px solid var(--qc-frame);
   box-shadow: 0 0 10px var(--qc-header-line); 
 }
 
@@ -98,8 +104,12 @@
 .aim-gamebox {
   flex: 1;
   min-width: 0;
-  height: 80vh;
+
   width: 100%;
+  max-width: 90vw;
+  height: 100%;
+
+  aspect-ratio: 16 / 9;
 
   position: relative;
   overflow: hidden;
@@ -111,7 +121,7 @@
   background-position: center;
 
   box-shadow: 0 0 20px var(--qc-header-line);
-  aspect-ratio: 16 / 9;
+  transform: translateY(-60px);
 }
 
 .aim-hud {
@@ -134,20 +144,20 @@
 }
 
 .aim-layout {
+  flex: 1;
   display: flex;
-  gap: 20px;
   align-items: flex-start;
   justify-content: center;
+
   width: 100%;
   max-width: 2800px;
   margin: 0 auto;
-}
 
-/* Makes the game take most of the space */
-.aim-gamebox {
-  flex: 1;
-}
+  height: 100%;
 
+  padding-top: 20px;
+  box-sizing: border-box;
+}
 /* Menu on the right */
 .aim-menu {
   flex: 0 0 220px;
@@ -162,3 +172,136 @@
 
   box-shadow: 0 0 11px var(--qc-header-line);
 }
+
+.aim-start-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(0, 0, 0, 0.4); /* slight dim */
+  backdrop-filter: blur(2px);
+  z-index: 5;
+}
+
+/* CENTRE BOX */
+.start-box {
+  background: var(--qc-surface);
+  border: 2px solid var(--qc-frame);
+  border-radius: 12px;
+  padding: 30px 50px;
+  text-align: center;
+  color: var(--qc-text);
+
+  box-shadow:
+    0 0 15px var(--qc-frame),
+    0 0 40px var(--qc-frame-glow);
+
+  animation: fadeIn 0.3s ease;
+}
+
+/* TITLE */
+.start-box h2 {
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+
+/* BUTTON */
+.start-box button {
+  background: var(--qc-frame);
+  color: var(--qc-submit-text, #000);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* HOVER EFFECT */
+.start-box button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px var(--qc-frame);
+}
+
+/* CLICK */
+.start-box button:active {
+  transform: scale(0.95);
+}
+
+/* FADE IN */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* FULL OVERLAY */
+.aim-results-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 10;
+}
+
+/* RESULT BOX */
+.result-box {
+  background: var(--qc-surface);
+  border: 2px solid var(--qc-frame);
+  border-radius: 12px;
+  padding: 30px 50px;
+  text-align: center;
+  color: var(--qc-text);
+
+  box-shadow:
+    0 0 15px var(--qc-frame),
+    0 0 40px var(--qc-frame-glow);
+
+  animation: fadeIn 0.3s ease;
+}
+
+/* TEXT */
+.result-box h2 {
+  margin-bottom: 15px;
+}
+
+.result-box p {
+  margin: 6px 0;
+  color: var(--qc-subtext);
+}
+
+/* BUTTON */
+.result-box button {
+  margin-top: 20px;
+  background: var(--qc-frame);
+  color: var(--qc-submit-text, #000);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* HOVER */
+.result-box button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px var(--qc-frame);
+}
+
+/* CLICK */
+.result-box button:active {
+  transform: scale(0.95);
+}
+

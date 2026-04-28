@@ -229,8 +229,13 @@ return (
         <h3>Time: {timeLeft}</h3>
 
         {!gameActive && !result && (
-          <button onClick={startGame}>Start Game</button>
-        )}
+          <div className="aim-start-overlay">
+    <div className="start-box">
+      <h2>Aim Trainer</h2>
+      <button onClick={startGame}>Start Game</button>
+    </div>
+  </div>
+)}
       </div>
 
       {/* Targets */}
@@ -267,17 +272,22 @@ return (
 
       {/* Results */}
       {!gameActive && result && (
-        <div className="aim-results">
-          <h2>Results</h2>
-          <p>Targets Hit: {result.hits}</p>
-          <p>Targets Missed: {result.misses}</p>
-          <p>Accuracy: {result.accuracy}%</p>
+  <div className="aim-results-overlay">
+    <div className="result-box">
+      <h2>Results</h2>
+      <p>Hits: {result.hits}</p>
+      <p>Misses: {result.misses}</p>
+      <p>Accuracy: {result.accuracy}%</p>
 
-          <button onClick={startGame} style={{ marginTop: "10px" }}>
-            Play Again
-          </button>
-        </div>
-      )}
+      <button onClick={() => {
+        setResult(null);
+        startGame();
+      }}>
+        Play Again
+      </button>
+    </div>
+  </div>
+)}
         </div>
 
     <div className="aim-menu">
