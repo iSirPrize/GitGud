@@ -12,6 +12,7 @@ import { initUserDoc } from './usePoints'
 import Category from './Category'
 import QuizCarousel from './components/QuizCarousel'
 import Leaderboard from './Leaderboard'
+import ProfilePage from './ProfilePage'
 
 function App() {
   const [user, setUser] = useState(undefined)
@@ -31,6 +32,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout user={user} />}>
+        <Route path="profile/:profileId" element={<ProfilePage user={user} />} />
         <Route index element={<Home user={user} />} />
         <Route path="practice" element={<Practice />} />
         <Route path="practice/aim" element={<AimTrainer />} />

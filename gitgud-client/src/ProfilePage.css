@@ -196,3 +196,174 @@
 {
     background-color: rgba(255,106, 0, 0.1);
 }
+
+.add-friend-btn
+{
+    background-color: var(--qc-frame);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.add-friend-btn:hover
+{
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px var(--qc-header-line);
+}
+
+.remove-btn
+{
+    background-color: transparent;
+    color: #ff4444;
+    border: 1px solid #ff4444;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.remove-btn:hover
+{
+    background-color: rgba(255, 68, 68, 0.1);
+    border-color: #ff6666;
+}
+
+.pending-btn
+{
+    background-color: var(--qc-input-bg);
+    color: var(--qc-subtext);
+    border: 1px solid var(--qc-input-border);
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: not-allowed;
+}
+
+.requests-panel
+{
+    margin-top: 20px;
+    background: var(--qc-surface);
+    border: 1px solid var(--qc-header-line);
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.requests-panel h4
+{
+    margin-top: 0;
+    color: var(--qc-frame);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.request-card
+{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.request-actions
+{
+    display: flex;
+    gap: 8px;
+}
+
+.accept-btn
+{
+    background-color: var(--qc-frame);
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.decline-btn
+{
+    background-color: transparent;
+    color: var(--qc-subtext);
+    border: 1px solid var(--qc-input-border);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.friends-section
+{
+    margin-top: 20px;
+}
+
+.friends-grid
+{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.friend-item
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+
+.friend-item:hover
+{
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-3px);
+}
+
+.friend-thumb
+{
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--qc-input-border)
+}
+
+.friend-thumb img
+{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumb-placeholder
+{
+    width: 100%;
+    height: 100%;
+    background: var(--qc-input-bg);
+    color: var(--qc-frame);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.friend-name
+{
+    font-size: 0.85rem;
+    color: var(--qc-text);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
