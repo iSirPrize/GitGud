@@ -290,7 +290,7 @@ function CommentSection({ quizId }) {
       >
         {/*QM - wrapping this in clickable dev to goto profile page to help with my friend adding stuff */}
         <Link
-          to={`/profile/${c?.uid}`}
+          to={`/profile/${c?.userId}`}
           style={{ textDecoration: 'none', cursor: 'pointer' }}
         >
           {/* Always use the freshest photo/name from Firestore */}
