@@ -1,6 +1,3 @@
-// ProfilePage.jsx
-// Place at: gitgud-client/src/ProfilePage.jsx
-
 import { useState, useEffect } from 'react';
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, collectionGroup, query, where, getDocs, writeBatch } from 'firebase/firestore';
@@ -148,7 +145,7 @@ function ProfilePage({ user })
                         rows={10}
                     />
                 ) : (
-                    <p className="about-text">{aboutMe || "Empty, like your teammates brains."}</p>
+                    <p className="about-text">{aboutMe || "Empty, like your teammates brains. Click edit to update."}</p>
                 )}
             </div>
 
