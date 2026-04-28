@@ -290,7 +290,7 @@ function CommentSection({ quizId }) {
       >
         {/*QM - wrapping this in clickable dev to goto profile page to help with my friend adding stuff */}
         <Link
-          to={`/profile/${auth.currentUser?.uid}`}
+          to={`/profile/${c?.uid}`}
           style={{ textDecoration: 'none', cursor: 'pointer' }}
         >
           {/* Always use the freshest photo/name from Firestore */}
@@ -460,7 +460,7 @@ function CommentSection({ quizId }) {
         <div className="cs-input-area">
           {/*QM also making current user clickable to goto own profile as well*/}
           <Link
-          to={`/profile/${auth.currentUser?.uid}`}
+          to={`/profile/${userRef.current?.uid}`}
           style={{ textDecoration: 'none', cursor: 'pointer' }}
         >
             {/* FIX 1: Always read photoURL fresh from auth.currentUser */}
