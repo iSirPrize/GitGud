@@ -50,8 +50,8 @@ function CommentSection({ quizId }) {
         setUserProfiles(prev => ({
           ...prev,
           [userId]: {
-            userName:  data.username  || null,
-            userPhoto: data.photoURL  || null,
+            userName:  data.username  || "",
+            userPhoto: data.photoURL  || "",
           }
         }));
       }
@@ -284,9 +284,14 @@ function CommentSection({ quizId }) {
         key={c.id}
         className={`cs-comment ${isReply ? "cs-reply" : ""}`}
       >
-        {/* Always use the freshest photo/name from Firestore */}
-        <Avatar photo={displayPhoto} name={displayName} size={isReply ? 30 : 40} />
-
+        {/*QM - wrapping this in clickable dev to goto profile page to help with my friend adding stuff */}
+        <div
+          onClick={() => window.location.href = `/profile/${c.userId}`}
+          style={{ cursor: 'pointer' }}
+        >
+          {/* Always use the freshest photo/name from Firestore */}
+          <Avatar photo={displayPhoto} name={displayName} size={isReply ? 30 : 40} />
+        </div>
         <div className="cs-comment-body">
           {/* FIX 5: Username now uses cs-username class with accent colour + bold */}
           <div className="cs-comment-meta">
@@ -449,12 +454,18 @@ function CommentSection({ quizId }) {
 
       {userRef.current ? (
         <div className="cs-input-area">
-          {/* FIX 1: Always read photoURL fresh from auth.currentUser */}
-          <Avatar
-            photo={auth.currentUser?.photoURL}
-            name={userRef.current?.displayName || userRef.current?.email}
-            size={36}
-          />
+          {/*QM also making current user clickable to goto own profile as well*/}
+          <div
+            onClick={() => window.location.href = `/profile/${auth.currentUser.uid}`}
+            style={{ cursor: 'pointer'}}
+          >
+            {/* FIX 1: Always read photoURL fresh from auth.currentUser */}
+            <Avatar
+              photo={auth.currentUser?.photoURL}
+              name={userRef.current?.displayName || userRef.current?.email}
+              size={36}
+            />
+          </div>
           <div className="cs-input-wrap">
             {/* FIX 2: Input text color explicitly set via CSS class */}
             <input

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from './firebase';
-import { doc, getDoc, setDoc, collectionGroup, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collectionGroup, query, where, getDocs, writeBatch, addDoc, collection, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import PicUpload from './PicUpload';
 import './ProfilePage.css';
 import { updateProfile } from 'firebase/auth';
 import { useTheme } from './context/ThemeContext';
+import { useParams } from 'react-router-dom';
 
 function ProfilePage({ user })
 {
@@ -15,17 +16,29 @@ function ProfilePage({ user })
     const [saving, setSaving]         = useState(false);
     const [profilePic, setProfilePic] = useState(user?.photoURL || "");
     const { theme } = useTheme();
+    const { profileId } = useParams();
+    const targetId = profileId || user?.uid;
+    const isOwner = user?.uid === targetId;
+    const [friends, setFriends] = useState([]);
+    const [requests, setRequests] = useState([]);
+    const [friendStatus, setFriendStatus] = useState("none");
 
     useEffect(() => {
         async function loadProfileData() {
-            if (!user?.uid) return;
+            if (!targetId) return;
+            setLoading(true);
+
             try {
-                const docRef  = doc(db, "users", user.uid);
+                const docRef  = doc(db, "users", targetId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     setAboutMe(docSnap.data().aboutMe || "");
                     setUsername(docSnap.data().username || user.displayName || "");
                     setProfilePic(docSnap.data().photoURL || user.photoURL || "");
+                } else if (isOwner) 
+                {
+                    setUsername(user.displayName || "");
+                    setProfilePic(user.photoURL || "");
                 }
             } catch (err) {
                 console.error("Error loading profile", err);
@@ -34,7 +47,134 @@ function ProfilePage({ user })
             }
         }
         loadProfileData();
-    }, [user]);
+    }, [targetId, user, isOwner]);
+    
+    //friend request grabber so user can add people if we want
+    useEffect(() => {
+        if(!targetId || !user) return;
+
+        setFriends([]);
+        setRequests([]);
+        setFriendStatus("none");
+
+        const fetchFriends = async () => {
+            const q = query(collection(db, "users", targetId, "friends"));
+            const snap = await getDocs(q);
+            const friendsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data()}));
+            setFriends(friendsList);
+
+            if(friendsList.some(f => f.id === user.uid))
+            {
+                setFriendStatus("friend");
+            }
+        };
+
+        const fetchRequests = async () => {
+            if(isOwner)
+            {
+                const q = query(collection(db, "friendRequests"), where("to", "==", user.uid), where("status", "==", "pending"));
+                const snap = await getDocs(q);
+                setRequests(snap.docs.map(doc => ({ id : doc.id, ...doc.data() })));
+            } else {
+                const q = query(
+                    collection(db, "friendRequests"),
+                    where("from", "==", user.uid),
+                    where("to", "==", targetId),
+                    where("status", "==", "pending")
+                );
+
+                const snap = await getDocs(q);
+                if(!snap.empty)
+                {
+                    setFriendStatus("pending");
+                }
+            }
+        };
+
+        fetchFriends();
+        fetchRequests();
+    }, [targetId, user?.uid, isOwner]);
+
+    //adding add friend functionality with db updatess
+    const handleAddFriend = async () => {
+        try
+        {
+            await addDoc(collection(db, "friendRequests"), {
+                from: user.uid,
+                fromName: user.displayName || "",
+                fromPhoto: user.photoURL || "",
+                to: targetId,
+                status: "pending",
+                timestamp: serverTimestamp()
+            });
+            setFriendStatus("pending")
+            alert("Friend request sent");
+        } catch(err) {
+            console.error("Failed to send friend request", err);
+        }
+    }
+
+    const handleAcceptFriend = async(req) => {
+        try{
+            const batch = writeBatch(db);
+
+            const myFriendRef = dox(db, "users", user.uid, "friends", req.from);
+            batch.set(myFriendRef, {
+                id: req.from,
+                username: req.fromName,
+                photoURL: req.fromPhoto || "",
+            });
+
+            const thierFriendRef = doc(db, "users", req.from, "friends", user.uid);
+            batch.set(thierFriendRef, {
+                id: user.uid,
+                username:user.displayName,
+                photoURL: user.photoURL || "",
+            });
+
+            batch.delete(doc(db, "friendRequests", req.id));
+            await batch.commit();
+
+            setRequests(prev => prev.filter(r => r.id !== req.id));
+            setFriends(prev => [...prev, { id: req.from, username: req.fromName, photoURL: req.fromPhoto}]);
+        } catch(err) {
+            console.error("accept failed", err);
+        }
+    }
+
+    //forgot to add a decline :^)
+    const handleDeclineFriend = async (requestId) =>
+    {
+        try {
+            await deleteDoc(doc(db, "friendRequests", requestId));
+
+            setRequests((prev) => prev.filter((req) => req.id !== requestId));
+            console.log("Request declined");
+        } catch(err){
+            console.error("Error declineing friend request", err);
+            alert("Failed to decline request");
+        }
+    }
+
+    const handleRemoveFriend = async () => {
+        if(!window.confirm("are you sure you want to remove this friend?")) return;
+
+        try{
+            const friendRef = doc(db, "users", targetIdId, "friends", user.uid);
+            await deleteDoc(friendRef);
+
+            const myFriendRef = doc(db, "users", user.uid, "friends", targetIdId);
+            await deleteDoc(myFriendRef);
+
+            setFriendStatus("none");
+            setFriends((prev) => prev.filter((f) => f.id !== targetIdId));
+
+            alert("Friend removed");
+        } catch(err) {
+            console.error("error removing friend: ", err);
+            alert("Failed to remove friend. Please try again.")
+        }
+    }
 
     // ── Backfill all past comments with new username/photo ────────────────
     // This fixes the "old comments still show old name/avatar" problem.
@@ -82,7 +222,7 @@ function ProfilePage({ user })
                 username:  username,
                 aboutMe:   aboutMe,
                 photoURL:  profilePic,   // FIX: was missing, caused photo to get dropped on save
-                updatedAt: new Date(),
+                updatedAt: serverTimestamp(),
             }, { merge: true });
 
             // 3. Backfill all past comments with new name + photo
@@ -104,16 +244,16 @@ function ProfilePage({ user })
 
     return (
         <div className={`profile-container quiz-carousel dark ${theme}`}>
-            <div>
+            <div className="profile-header-container">
                 <div className="profile-header">
                     <div className="avatar">
                         {profilePic
                             ? <img src={profilePic} alt="Profile" />
-                            : <span>{username.charAt(0) || "G"}</span>
-                        }
+                            : ( <span>{username.charAt(0) || "G"}</span>
+                        )}
                     </div>
 
-                    {isEditing && (
+                    {isEditing && isOwner && (
                         <div className="avatar-edit">
                             <PicUpload onUploadSuccess={(url) => setProfilePic(url)} />
                         </div>
@@ -145,28 +285,84 @@ function ProfilePage({ user })
                         rows={10}
                     />
                 ) : (
-                    <p className="about-text">{aboutMe || "Empty, like your teammates brains. Click edit to update."}</p>
+                    <p className="about-text">{aboutMe || (isOwner ? "Empty, like your teammates brains. Click edit to update." : "This user doesn't know how to edit profile")}</p>
                 )}
             </div>
 
             <div className="profile-actions">
-                {isEditing ? (
-                    <>
-                        <button className="save-btn" onClick={handleSave} disabled={saving}>
-                            {saving ? "Saving…" : "Save Profile"}
-                        </button>
-                        <button className="cacnel-btn" onClick={() => setIsEditing(false)} disabled={saving}>
-                            Cancel Changes
-                        </button>
-                    </>
+                {isOwner ? (
+                    <div className="Owner-controls">
+                        <div className="main-btns">
+                            {isEditing ? (
+                                <>
+                                    <button className="save-btn" onClick={handleSave} disabled={saving}>
+                                        {saving ? "Saving" : "Save Profile"}
+                                    </button>
+                                    <button className="cancel-btn" onClick={() => setIsEditing(false)}>Cancel</button>
+                                </>
+                            ) : (
+                                <button className="edit-btn" onClick={() => setIsEditing(true)}>Edit Profile</button>
+                            )}                        
+                        </div>
+
+                        {requests.length > 0 && !isEditing && (
+                            <div className="request-panel">
+                                <h4>Pending Requests ({requests.length})</h4>
+                                {requests.map((req) => (
+                                    <div key={req.id} className="request-card">
+                                        <span>{req.fromName}</span>
+                                        <button className="accept-btn" onClick={() => handleAcceptFriend(req)}>Accept</button>
+                                        <button className="decline-btn" onClick={() => handleDeclineFriend(req.id)}>Decline</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 ) : (
-                    <button className="edit-btn" onClick={() => setIsEditing(true)}>
-                        Edit Profile
-                    </button>
+                    user && (
+                        <div className="visitor-controls">
+                            {friendStatus === "friend" ? (
+                                <button className="remove-btn" onClick={handleRemoveFriend}>Remove Friend</button>
+                            ) : friendStatus === "pending" ? (
+                                <button className="pending-btn" disabled>Request Sent</button>
+                            ) : (
+                                <button className="add-friend-btn" onClick={handleAddFriend}>Add Friend</button>
+                            )}
+                        </div>
+                    )
                 )}
             </div>
 
-            <hr className="divider" />
+            {!isEditing && (
+                <>
+                    <hr className="divider" />
+                    <div className="friends-section">
+                        <h3>Friends ({friends.length})</h3>
+                        <div className="friends-grid">
+                            {friends.length > 0 ? (
+                                friends.map((friend) => (
+                                    <div
+                                        key={friend.id}
+                                        className="friend-item"
+                                        onClick={() => window.location.href = `/profile/${friend.id}`}
+                                    >
+                                        <div className="friend-thumb">
+                                            {friend.photoURL ? (
+                                                <img src={friend.photoURL} alt={friend.username} />
+                                            ) : (
+                                                <div className="thumb-placeholder">{friend.username?.charAt(0)}</div>
+                                            )}
+                                        </div>
+                                        <span className="friend-name">{friend.username}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="no-friends-text">Friends List is Empty</p>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
