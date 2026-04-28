@@ -13,6 +13,7 @@ import { useTheme } from "../context/ThemeContext";
 import CommentSection from "./CommentSection";
 import CommunityVote from "./CommunityVote";
 import "./QuizCarousel.css";
+import { awardPoints } from "../usePoints";
 
 // ─── Standard question used across ALL games ──────────────────────────────────
 const STANDARD_QUESTION = "What is the play here?";
@@ -26,7 +27,7 @@ const SCENARIOS_BY_GAME = {
 
   valorant: [
     {
-      id: "valorant-1",
+      id: 1,
       youtubeId: "dUVqzWhV_rE", // placeholder — swap with real Valorant clip ID
       question: STANDARD_QUESTION,
       correctIndex: 0,
@@ -34,7 +35,7 @@ const SCENARIOS_BY_GAME = {
       reason: "Assume friendly unless you're in a PVP lobby",
     },
     {
-      id: "valorant-2",
+      id: 2,
       youtubeId: "r18j6FWlFb8", // placeholder — swap with real Valorant clip ID
       question: STANDARD_QUESTION,
       correctIndex: 0,
@@ -42,7 +43,7 @@ const SCENARIOS_BY_GAME = {
       reason: "She is speed",
     },
     {
-      id: "valorant-3",
+      id: 3,
       youtubeId: "PWT2b3nxLOU", // placeholder — swap with real Valorant clip ID
       question: STANDARD_QUESTION,
       correctIndex: 3,
@@ -50,7 +51,7 @@ const SCENARIOS_BY_GAME = {
       reason: "The Miyazaki way",
     },
     {
-      id: "valorant-4",
+      id: 4,
       youtubeId: "uOaSwqlOyxk", // placeholder — swap with real Valorant clip ID
       question: STANDARD_QUESTION,
       correctIndex: 1,
@@ -58,7 +59,7 @@ const SCENARIOS_BY_GAME = {
       reason: "Always aim",
     },
     {
-      id: "valorant-5",
+      id: 5,
       youtubeId: "dQw4w9WgXcQ", // placeholder — swap with real Valorant clip ID
       question: STANDARD_QUESTION,
       correctIndex: 2,
@@ -69,7 +70,7 @@ const SCENARIOS_BY_GAME = {
 
   cs2: [
     {
-      id: "cs2-1",
+      id: 1,
       youtubeId: "dUVqzWhV_rE", // placeholder — swap with real CS2 clip ID
       question: STANDARD_QUESTION,
       correctIndex: 0,
@@ -77,7 +78,7 @@ const SCENARIOS_BY_GAME = {
       reason: "Assume friendly unless you're in a PVP lobby",
     },
     {
-      id: "cs2-2",
+      id: 2,
       youtubeId: "r18j6FWlFb8", // placeholder — swap with real CS2 clip ID
       question: STANDARD_QUESTION,
       correctIndex: 0,
@@ -85,7 +86,7 @@ const SCENARIOS_BY_GAME = {
       reason: "She is speed",
     },
     {
-      id: "cs2-3",
+      id: 3,
       youtubeId: "PWT2b3nxLOU", // placeholder — swap with real CS2 clip ID
       question: STANDARD_QUESTION,
       correctIndex: 3,
@@ -93,7 +94,7 @@ const SCENARIOS_BY_GAME = {
       reason: "The Miyazaki way",
     },
     {
-      id: "cs2-4",
+      id: 4,
       youtubeId: "uOaSwqlOyxk", // placeholder — swap with real CS2 clip ID
       question: STANDARD_QUESTION,
       correctIndex: 1,
@@ -101,7 +102,7 @@ const SCENARIOS_BY_GAME = {
       reason: "Always aim",
     },
     {
-      id: "cs2-5",
+      id: 5,
       youtubeId: "dQw4w9WgXcQ", // placeholder — swap with real CS2 clip ID
       question: STANDARD_QUESTION,
       correctIndex: 2,
@@ -115,7 +116,7 @@ const SCENARIOS_BY_GAME = {
 // ─── Fallback if gameId doesn't match anything ────────────────────────────────
 const FALLBACK_SCENARIOS = [
   {
-    id: "fallback-1",
+    id: 1,
     youtubeId: "dQw4w9WgXcQ",
     question: STANDARD_QUESTION,
     correctIndex: 0,
@@ -125,7 +126,7 @@ const FALLBACK_SCENARIOS = [
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function QuizCarousel() {
+export default function QuizCarousel({ user }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -195,6 +196,10 @@ export default function QuizCarousel() {
 
     const correct = selected[current] === scenario.correctIndex;
     setFeedback(correct ? "correct" : "wrong");
+
+    if (correct && user?.uid) {
+      awardPoints(user.uid, 10).catch(err => console.error("awardPoints failed:", err));
+    }
 
     // ── Backend hook ─────────────────────────────────────────────────────────
     // When the backend is ready, uncomment and wire this up:
