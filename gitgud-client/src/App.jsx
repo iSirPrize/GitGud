@@ -22,22 +22,6 @@ function App() {
     return () => unsub()
   }, [])
 
-  async function testDB() {
-    if(!db)
-    {
-      return;
-    }
-    try {
-      const docRef = await addDoc(collection(db, "test"), {
-        message: "Firestore is working",
-        userId: user?.uid,
-        timestamp: new Date()
-      })
-      setDbStatus(`Write successful! Doc ID: ${docRef.id}`)
-    } catch (e) {
-      setDbStatus(`Error: ${e.message}`)
-    }
-  }
 
   // Auth handling
   if (user === undefined) return <div className="loading">Loading page...</div>
@@ -46,10 +30,6 @@ function App() {
   // Logged in
   return (
     <>
-      {/* Test button (temporary) */}
-      <button onClick={testDB}>Test Firestore</button>
-      {dbStatus && <p>{dbStatus}</p>}
-
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home user={user} />} />
