@@ -2,64 +2,43 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './Layout'
 import Home from './Home'
 import Practice from './Practice'
-import Quiz from './Quiz'
-import { db } from './firebase'
-import { collection, addDoc } from 'firebase/firestore'
 import AimTrainer from './AimTrainer'
 import { useState, useEffect } from 'react'
 import './App.css'
 import AuthPage from './AuthPage'
+import LandingPage from './LandingPage'
 import { onAuth } from './auth'
+import { initUserDoc } from './usePoints'
 import Category from './Category'
 import QuizCarousel from './components/QuizCarousel'
+import Leaderboard from './Leaderboard'
 
 function App() {
-  const [dbStatus, setDbStatus] = useState('')
   const [user, setUser] = useState(undefined)
+  const [showAuth, setShowAuth] = useState(false)
 
   useEffect(() => {
-    const unsub = onAuth((u) => setUser(u))
+    const unsub = onAuth(async (u) => {
+      setUser(u)
+      if (u) { setShowAuth(false); await initUserDoc(u.uid, u.displayName, u.photoURL) }
+    })
     return () => unsub()
   }, [])
 
-  async function testDB() {
-    if(!db)
-    {
-      return;
-    }
-    try {
-      const docRef = await addDoc(collection(db, "test"), {
-        message: "Firestore is working",
-        userId: user?.uid,
-        timestamp: new Date()
-      })
-      setDbStatus(`Write successful! Doc ID: ${docRef.id}`)
-    } catch (e) {
-      setDbStatus(`Error: ${e.message}`)
-    }
-  }
-
-  // Auth handling
   if (user === undefined) return <div className="loading">Loading page...</div>
-  if (!user) return <AuthPage />
+  if (!user) return showAuth ? <AuthPage /> : <LandingPage onLogin={() => setShowAuth(true)} />
 
-  // Logged in
   return (
-    <>
-      {/* Test button (temporary) */}
-      <button onClick={testDB}>Test Firestore</button>
-      {dbStatus && <p>{dbStatus}</p>}
-
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home user={user} />} />
-          <Route path="practice" element={<Practice />} />
-          <Route path="practice/aim" element={<AimTrainer />} />
-          <Route path="quiz" element={<Category />} />
-          <Route path="quiz/:gameId" element={<QuizCarousel />} />
-        </Route>
-      </Routes>
-    </>
+    <Routes>
+      <Route path="/" element={<Layout user={user} />}>
+        <Route index element={<Home user={user} />} />
+        <Route path="practice" element={<Practice />} />
+        <Route path="practice/aim" element={<AimTrainer />} />
+        <Route path="quiz" element={<Category />} />
+        <Route path="quiz/:gameId" element={<QuizCarousel user={user} />} />
+        <Route path="leaderboard" element={<Leaderboard currentUid={user.uid} />} />
+      </Route>
+    </Routes>
   )
 }
 
