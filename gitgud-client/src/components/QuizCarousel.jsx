@@ -1,57 +1,126 @@
 // QuizCarousel.jsx
 // Drop this file into: gitgud-client/src/components/QuizCarousel.jsx
-// Changes from original:
-//   1. Imported CommentSection
-//   2. Added <CommentSection quizId={scenario.id} /> below the quiz panel inside the slide
+//
+// Sprint 2 changes:
+//   1. Reads gameId from URL params (/quiz/:gameId) to load game-specific scenarios
+//   2. All questions standardised to "What is the play here?"
+//   3. Separate scenario lists for each game category (valorant, cs2)
+//   4. Placeholder YouTube links kept — swap in real clip IDs when videos are ready
 
 import { useState, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import CommentSection from "./CommentSection";
 import CommunityVote from "./CommunityVote";
 import "./QuizCarousel.css";
 
-// ─── Quiz data ───────────────────────────────────────────────────────────────
-// correctIndex: 0=A, 1=B, 2=C, 3=D
-const SCENARIOS = [
+// ─── Standard question used across ALL games ──────────────────────────────────
+const STANDARD_QUESTION = "What is the play here?";
+
+// ─── Scenario banks per game ──────────────────────────────────────────────────
+// To add a new game: add a new key matching the id in Category.jsx
+// To swap in real clips: replace the youtubeId value with the real YouTube video ID
+// YouTube ID is the part after "?v=" e.g. youtube.com/watch?v=dUVqzWhV_rE → "dUVqzWhV_rE"
+
+const SCENARIOS_BY_GAME = {
+
+  valorant: [
+    {
+      id: "valorant-1",
+      youtubeId: "dUVqzWhV_rE", // placeholder — swap with real Valorant clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 0,
+      choices: ["Say Hi", "Shoot the guy", "Run away", "Do nothing"],
+      reason: "Assume friendly unless you're in a PVP lobby",
+    },
+    {
+      id: "valorant-2",
+      youtubeId: "r18j6FWlFb8", // placeholder — swap with real Valorant clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 0,
+      choices: ["Tracer", "D.Va", "Moira", "Reinhard"],
+      reason: "She is speed",
+    },
+    {
+      id: "valorant-3",
+      youtubeId: "PWT2b3nxLOU", // placeholder — swap with real Valorant clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 3,
+      choices: ["Fight unarmed", "Run away", "Let the summon fight", "Use everything"],
+      reason: "The Miyazaki way",
+    },
+    {
+      id: "valorant-4",
+      youtubeId: "uOaSwqlOyxk", // placeholder — swap with real Valorant clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 1,
+      choices: ["Barbara's heals", "Ganyu's aim", "Noelle's shields", "Childe's ultimate"],
+      reason: "Always aim",
+    },
+    {
+      id: "valorant-5",
+      youtubeId: "dQw4w9WgXcQ", // placeholder — swap with real Valorant clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 2,
+      choices: ["Why this video", "This video is great", "You have made a grave error", "In before 6-7"],
+      reason: "You have been Rick rolled",
+    },
+  ],
+
+  cs2: [
+    {
+      id: "cs2-1",
+      youtubeId: "dUVqzWhV_rE", // placeholder — swap with real CS2 clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 0,
+      choices: ["Say Hi", "Shoot the guy", "Run away", "Do nothing"],
+      reason: "Assume friendly unless you're in a PVP lobby",
+    },
+    {
+      id: "cs2-2",
+      youtubeId: "r18j6FWlFb8", // placeholder — swap with real CS2 clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 0,
+      choices: ["Tracer", "D.Va", "Moira", "Reinhard"],
+      reason: "She is speed",
+    },
+    {
+      id: "cs2-3",
+      youtubeId: "PWT2b3nxLOU", // placeholder — swap with real CS2 clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 3,
+      choices: ["Fight unarmed", "Run away", "Let the summon fight", "Use everything"],
+      reason: "The Miyazaki way",
+    },
+    {
+      id: "cs2-4",
+      youtubeId: "uOaSwqlOyxk", // placeholder — swap with real CS2 clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 1,
+      choices: ["Barbara's heals", "Ganyu's aim", "Noelle's shields", "Childe's ultimate"],
+      reason: "Always aim",
+    },
+    {
+      id: "cs2-5",
+      youtubeId: "dQw4w9WgXcQ", // placeholder — swap with real CS2 clip ID
+      question: STANDARD_QUESTION,
+      correctIndex: 2,
+      choices: ["Why this video", "This video is great", "You have made a grave error", "In before 6-7"],
+      reason: "You have been Rick rolled",
+    },
+  ],
+
+};
+
+// ─── Fallback if gameId doesn't match anything ────────────────────────────────
+const FALLBACK_SCENARIOS = [
   {
-    id: 1,
-    youtubeId: "dUVqzWhV_rE",
-    question: "Question 1 What was the best play in this clip?",
-    correctIndex: 0, // A — Say Hi
-    choices: ["Say Hi", "Shoot the guy", "run away", "Do nothing"],
-    reason: "Assume friendly unless you're in a PVP lobby",
-  },
-  {
-    id: 2,
-    youtubeId: "r18j6FWlFb8",
-    question: "Question 2 Which decision was the turning point?",
-    correctIndex: 0, // A — Tracer
-    choices: ["Tracer", "D.Va", "moira", "Reinhard"],
-    reason: "She is speed",
-  },
-  {
-    id: 3,
-    youtubeId: "PWT2b3nxLOU",
-    question: "Question 3 What should the player have done differently?",
-    correctIndex: 3, // D — Use everything
-    choices: ["Fight unarmed", "Run away", "Let the summon fight", "Use everything"],
-    reason: "The Miyazaki way",
-  },
-  {
-    id: 4,
-    youtubeId: "uOaSwqlOyxk",
-    question: "Question 4 Rate the mechanical skill shown.",
-    correctIndex: 1, // B — Ganyu's aim
-    choices: ["Barbara's heals", "Ganyu's aim", "Noelle's shields", "Childe's ultimate"],
-    reason: "Always aim",
-  },
-  {
-    id: 5,
+    id: "fallback-1",
     youtubeId: "dQw4w9WgXcQ",
-    question: "Question 5 What was the biggest mistake made?",
-    correctIndex: 2, // C — You have made a grave error
-    choices: ["Why this video", "This video is great", "You have made a grave error", "In before 6-7"],
-    reason: "You have been Rick rolled",
+    question: STANDARD_QUESTION,
+    correctIndex: 0,
+    choices: ["Go back and pick a game", "Stay here", "Refresh", "Give up"],
+    reason: "No scenarios found for this game. Go back to Category and pick a valid game.",
   },
 ];
 
@@ -59,6 +128,12 @@ const SCENARIOS = [
 export default function QuizCarousel() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  // Read gameId from URL — e.g. /quiz/valorant gives gameId = "valorant"
+  const { gameId } = useParams();
+
+  // Pick the right scenario list based on the game, fall back if unknown
+  const SCENARIOS = SCENARIOS_BY_GAME[gameId] ?? FALLBACK_SCENARIOS;
 
   const [current, setCurrent]     = useState(0);
   const [selected, setSelected]   = useState(Array(SCENARIOS.length).fill(null));
@@ -68,12 +143,11 @@ export default function QuizCarousel() {
 
   const touchStartX = useRef(null);
 
-  const total      = SCENARIOS.length;
-  const scenario   = SCENARIOS[current];
+  const total       = SCENARIOS.length;
+  const scenario    = SCENARIOS[current];
   const isSubmitted = submitted[current];
   const selectedIdx = selected[current];
   const isCorrect   = isSubmitted && selectedIdx === scenario.correctIndex;
-  const isWrong     = isSubmitted && selectedIdx !== scenario.correctIndex;
 
   // ── Navigation with slide animation ─────────────────────────────────────────
   const goTo = (direction) => {
@@ -123,13 +197,14 @@ export default function QuizCarousel() {
     setFeedback(correct ? "correct" : "wrong");
 
     // ── Backend hook ─────────────────────────────────────────────────────────
-    // When the backend is ready, your teammate can uncomment and wire this up:
+    // When the backend is ready, uncomment and wire this up:
     //
     // try {
     //   await fetch("http://localhost:3001/api/votes", {
     //     method: "POST",
     //     headers: { "Content-Type": "application/json" },
     //     body: JSON.stringify({
+    //       gameId,
     //       scenarioId: scenario.id,
     //       choiceIndex: selected[current],
     //       correct,
@@ -280,7 +355,7 @@ export default function QuizCarousel() {
         </div>
 
         {/* ── Community Vote Bubble ─────────────────────────────────────────── */}
-        {/* Shown only after the user submits — real-time via Firestore          */}
+        {/* quizId uses scenario.id so votes are isolated per game + clip        */}
         <CommunityVote
           quizId={scenario.id}
           choices={scenario.choices}
@@ -290,8 +365,7 @@ export default function QuizCarousel() {
         />
 
         {/* ── Comment Section ───────────────────────────────────────────────── */}
-        {/* quizId uses scenario.id so each quiz has its own isolated comments   */}
-        {/* Comments are visible to everyone but posting requires login           */}
+        {/* quizId uses scenario.id so each game's clips have their own comments */}
         <CommentSection quizId={scenario.id} />
 
       </div>
