@@ -118,7 +118,7 @@ function ProfilePage({ user })
         try{
             const batch = writeBatch(db);
 
-            const myFriendRef = dox(db, "users", user.uid, "friends", req.from);
+            const myFriendRef = doc(db, "users", user.uid, "friends", req.from);
             batch.set(myFriendRef, {
                 id: req.from,
                 username: req.fromName,
@@ -160,14 +160,14 @@ function ProfilePage({ user })
         if(!window.confirm("are you sure you want to remove this friend?")) return;
 
         try{
-            const friendRef = doc(db, "users", targetIdId, "friends", user.uid);
-            await deleteDoc(friendRef);
+            const thierFriendRef = doc(db, "users", targetId, "friends", user.uid);
+            await deleteDoc(thierFriendRef);
 
-            const myFriendRef = doc(db, "users", user.uid, "friends", targetIdId);
+            const myFriendRef = doc(db, "users", user.uid, "friends", targetId);
             await deleteDoc(myFriendRef);
 
             setFriendStatus("none");
-            setFriends((prev) => prev.filter((f) => f.id !== targetIdId));
+            setFriends((prev) => prev.filter((f) => f.id !== targetId));
 
             alert("Friend removed");
         } catch(err) {
@@ -215,7 +215,10 @@ function ProfilePage({ user })
         setSaving(true);
         try {
             // 1. Update Firebase Auth display name
-            await updateProfile(auth.currentUser, { displayName: username });
+            await updateProfile(auth.currentUser, { 
+                displayName: username,
+                photoURL: profilePic 
+            });
 
             // 2. Save profile to Firestore (include photoURL so it persists)
             await setDoc(doc(db, "users", user.uid), {

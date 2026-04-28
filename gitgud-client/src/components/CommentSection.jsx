@@ -18,6 +18,9 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import "./CommentSection.css";
+//qm need links
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function CommentSection({ quizId }) {
   const [comments, setComments]     = useState([]);
@@ -38,6 +41,7 @@ function CommentSection({ quizId }) {
   // Cache of uid -> { userName, userPhoto } fetched fresh from Firestore
   const [userProfiles, setUserProfiles] = useState({});
   const fetchingProfiles = useRef(new Set());
+  const navigate = useNavigate();
 
   // Fetch fresh profile data for a userId we haven't loaded yet
   const fetchUserProfile = async (userId) => {
@@ -285,13 +289,13 @@ function CommentSection({ quizId }) {
         className={`cs-comment ${isReply ? "cs-reply" : ""}`}
       >
         {/*QM - wrapping this in clickable dev to goto profile page to help with my friend adding stuff */}
-        <div
-          onClick={() => window.location.href = `/profile/${c.userId}`}
-          style={{ cursor: 'pointer' }}
+        <Link
+          to={`/profile/${auth.currentUser?.uid}`}
+          style={{ textDecoration: 'none', cursor: 'pointer' }}
         >
           {/* Always use the freshest photo/name from Firestore */}
           <Avatar photo={displayPhoto} name={displayName} size={isReply ? 30 : 40} />
-        </div>
+        </Link>
         <div className="cs-comment-body">
           {/* FIX 5: Username now uses cs-username class with accent colour + bold */}
           <div className="cs-comment-meta">
@@ -455,17 +459,17 @@ function CommentSection({ quizId }) {
       {userRef.current ? (
         <div className="cs-input-area">
           {/*QM also making current user clickable to goto own profile as well*/}
-          <div
-            onClick={() => window.location.href = `/profile/${auth.currentUser.uid}`}
-            style={{ cursor: 'pointer'}}
-          >
+          <Link
+          to={`/profile/${auth.currentUser?.uid}`}
+          style={{ textDecoration: 'none', cursor: 'pointer' }}
+        >
             {/* FIX 1: Always read photoURL fresh from auth.currentUser */}
             <Avatar
               photo={auth.currentUser?.photoURL}
               name={userRef.current?.displayName || userRef.current?.email}
               size={36}
             />
-          </div>
+          </Link>
           <div className="cs-input-wrap">
             {/* FIX 2: Input text color explicitly set via CSS class */}
             <input
