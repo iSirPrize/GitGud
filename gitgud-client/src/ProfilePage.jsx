@@ -5,40 +5,59 @@ import PicUpload from './PicUpload';
 import './ProfilePage.css';
 import { updateProfile } from 'firebase/auth';
 import { useTheme } from './context/ThemeContext';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 function ProfilePage({ user })
 {
+    const { profileId } = useParams();
+    const { theme } = useTheme();    
+    const navigate = useNavigate();
+    const targetId = profileId || user?.uid;
+    const isOwner = user?.uid === targetId;
     const [isEditing, setIsEditing]   = useState(false);
-    const [username, setUsername]     = useState(user?.displayName || "");
+    const [username, setUsername]     = useState("");
     const [aboutMe, setAboutMe]       = useState("");
     const [loading, setLoading]       = useState(true);
     const [saving, setSaving]         = useState(false);
-    const [profilePic, setProfilePic] = useState(user?.photoURL || "");
-    const { theme } = useTheme();
-    const { profileId } = useParams();
-    const targetId = profileId || user?.uid;
-    const isOwner = user?.uid === targetId;
+    const [profilePic, setProfilePic] = useState("");    
     const [friends, setFriends] = useState([]);
     const [requests, setRequests] = useState([]);
     const [friendStatus, setFriendStatus] = useState("none");
 
     useEffect(() => {
         async function loadProfileData() {
-            if (!targetId) return;
+            if (!targetId)
+            {
+                console.log("no targetId")
+                return;
+            }
             setLoading(true);
+            setIsEditing(false);
+            setUsername("");
+            setAboutMe("")
+            setProfilePic("");
 
             try {
+                console.log("attempting fetch doc", targetId);
                 const docRef  = doc(db, "users", targetId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    setAboutMe(docSnap.data().aboutMe || "");
-                    setUsername(docSnap.data().username || user.displayName || "");
-                    setProfilePic(docSnap.data().photoURL || user.photoURL || "");
-                } else if (isOwner) 
-                {
-                    setUsername(user.displayName || "");
-                    setProfilePic(user.photoURL || "");
+                    console.log("doc found ", docSnap.data());
+                    const data = docSnap.data();
+                    setAboutMe(data.aboutMe || "");
+                    const fallbackName = isOwner ? (user?.displayName || "new user") : "unknown user";
+                    setUsername(data.username || user.displayName || "");
+                    const fallbackPic = isOwner ? user?.photoURL : "";
+                    setProfilePic(data.photoURL || user.photoURL || "");
+                } else
+                { 
+                    console.log("no doc exists")
+                    if(isOwner)
+                    {
+                        console.log("user is I");                
+                        setUsername(user.displayName || "");
+                        setProfilePic(user.photoURL || "");
+                    }                
                 }
             } catch (err) {
                 console.error("Error loading profile", err);
@@ -47,47 +66,56 @@ function ProfilePage({ user })
             }
         }
         loadProfileData();
-    }, [targetId, user, isOwner]);
+    }, [targetId, user?.uid, isOwner]);
     
     //friend request grabber so user can add people if we want
     useEffect(() => {
-        if(!targetId || !user) return;
+        if(!targetId || !user?.uid) return;
 
         setFriends([]);
         setRequests([]);
         setFriendStatus("none");
 
         const fetchFriends = async () => {
-            const q = query(collection(db, "users", targetId, "friends"));
-            const snap = await getDocs(q);
-            const friendsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data()}));
-            setFriends(friendsList);
+            try{
+                const q = query(collection(db, "users", targetId, "friends"));
+                const snap = await getDocs(q);
+                const friendsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data()}));
+                setFriends(friendsList);
 
-            if(friendsList.some(f => f.id === user.uid))
-            {
-                setFriendStatus("friend");
+                if(friendsList.some(f => f.id === user.uid))
+                {
+                    setFriendStatus("friend");
+                }
+            }catch(err) {
+                console.error("Fetch friends failed: ", err);
             }
         };
 
         const fetchRequests = async () => {
-            if(isOwner)
-            {
-                const q = query(collection(db, "friendRequests"), where("to", "==", user.uid), where("status", "==", "pending"));
-                const snap = await getDocs(q);
-                setRequests(snap.docs.map(doc => ({ id : doc.id, ...doc.data() })));
-            } else {
-                const q = query(
-                    collection(db, "friendRequests"),
-                    where("from", "==", user.uid),
-                    where("to", "==", targetId),
-                    where("status", "==", "pending")
-                );
-
-                const snap = await getDocs(q);
-                if(!snap.empty)
+            try{
+                if(isOwner)
                 {
-                    setFriendStatus("pending");
+                    const q = query(collection(db, "friendRequests"), where("to", "==", user.uid), where("status", "==", "pending"));
+                    const snap = await getDocs(q);
+                    setRequests(snap.docs.map(doc => ({ id : doc.id, ...doc.data() })));
+                } else {
+                    const q = query(
+                        collection(db, "friendRequests"),
+                        where("from", "==", user.uid),
+                        where("to", "==", targetId),
+                        where("status", "==", "pending")
+                    );
+
+                    const snap = await getDocs(q);
+                    if(!snap.empty)
+                    {
+                        setFriendStatus("pending");
+                    }
                 }
+            } catch(err)
+            {
+                console.error("Requests failed: ", err);
             }
         };
 
@@ -128,7 +156,7 @@ function ProfilePage({ user })
             const thierFriendRef = doc(db, "users", req.from, "friends", user.uid);
             batch.set(thierFriendRef, {
                 id: user.uid,
-                username:user.displayName,
+                username: user.displayName || "",
                 photoURL: user.photoURL || "",
             });
 
@@ -347,7 +375,7 @@ function ProfilePage({ user })
                                     <div
                                         key={friend.id}
                                         className="friend-item"
-                                        onClick={() => window.location.href = `/profile/${friend.id}`}
+                                        onClick={() => navigate(`/profile/${friend.id}`)}
                                     >
                                         <div className="friend-thumb">
                                             {friend.photoURL ? (
