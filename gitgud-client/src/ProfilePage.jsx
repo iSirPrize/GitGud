@@ -341,9 +341,20 @@ function ProfilePage({ user })
                                 <h4>Pending Requests ({requests.length})</h4>
                                 {requests.map((req) => (
                                     <div key={req.id} className="request-card">
-                                        <span>{req.fromName}</span>
-                                        <button className="accept-btn" onClick={() => handleAcceptFriend(req)}>Accept</button>
-                                        <button className="decline-btn" onClick={() => handleDeclineFriend(req.id)}>Decline</button>
+                                        <div className="request-info">
+                                            <div className="request-avatar">
+                                                {req.fromPhoto ? (
+                                                    <img src={req.fromPhoto} alt="avatar" />
+                                                ) : (
+                                                    <div className="thumb-placeholder">{req.fromName?.[0] || ""}</div>
+                                                )}
+                                            </div>
+                                            <span className="request-name">{req.fromName}</span>
+                                        </div>
+                                        <div className="request-actions">
+                                            <button className="accept-btn" onClick={() => handleAcceptFriend(req)}>Accept</button>
+                                            <button className="decline-btn" onClick={() => handleDeclineFriend(req)}>Decline</button>                                  
+                                        </div>
                                     </div>
                                 ))}
                             </div>

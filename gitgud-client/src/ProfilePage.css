@@ -183,6 +183,22 @@
     transform: scale(0.95);
 }
 
+.Ownder-controls
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.main-btns
+{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
 .edit-btn, .cancel-btn
 {
     background-color: transparent;
@@ -264,6 +280,8 @@
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin-top: 10px;
+    margin-bottom: 15px;
 }
 
 .requests-panel::-webkit-scrollbar
@@ -346,10 +364,19 @@
     background-color: var(--qc-frame);
     color: white;
     border: none;
-    padding: 5px 12px;
-    border-radius: 4px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
     font-size: 0.85rem;
     cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accept-btn:hover
+{
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px var(--qc-frame);
 }
 
 .decline-btn
@@ -357,10 +384,26 @@
     background-color: transparent;
     color: var(--qc-subtext);
     border: 1px solid var(--qc-input-border);
-    padding: 5px 12px;
-    border-radius: 4px;
+    padding: 8px 16px;
+    border-radius: 8px;
     font-size: 0.85rem;
     cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.decline-btn:hover
+{
+    background-color: rgba(255, 68, 68, 0.1);
+    border-color: #ff4444;
+    color: #ff4444;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+}
+
+.accept-btn:active, .decline-btn:active
+{
+    transform: scale(0.95);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .friends-section
