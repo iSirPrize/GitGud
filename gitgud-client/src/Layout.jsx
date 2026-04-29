@@ -8,7 +8,7 @@ import { useState } from "react"
 
 function Layout({ user }) {
   const { theme } = useTheme()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   return (
     <div className={`quiz-carousel ${theme?.toLowerCase?.()}`}>
@@ -19,7 +19,7 @@ function Layout({ user }) {
           className="sidebar-toggle"
           onClick={() => setOpen(!open)}
         >
-          ➤
+          <span className="arrow">{open ? "◀" : "☰"}</span>
         </button>
 
         <div className="sidebar-logo" onClick={() => navigate("/")}>
@@ -34,10 +34,25 @@ function Layout({ user }) {
 </div>
 
         <div className="sidebar-content">
-          <NavLink to="/" className={({ isActive }) => isActive ? "practice active" : "practice"}>Home</NavLink>
-          <NavLink to="/practice" className={({ isActive }) => isActive ? "practice active" : "practice"}>Practice</NavLink>
-          <NavLink to="/quiz" className={({ isActive }) => isActive ? "practice active" : "practice"}>Quiz</NavLink>
-          <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "practice active" : "practice"}>Leaderboard</NavLink>
+          <NavLink to="/" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">Home</div>
+  <div className="nav-desc">Back to Main Menu!</div>
+</NavLink>
+
+<NavLink to="/practice" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">Practice</div>
+  <div className="nav-desc">Improve Your Accuracy & Reaction!</div>
+</NavLink>
+
+<NavLink to="/quiz" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">Quiz</div>
+  <div className="nav-desc">Test Your Game Sense & Knowledge!</div>
+</NavLink>
+
+<NavLink to="/leaderboard" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">Leaderboard</div>
+  <div className="nav-desc">Check Your Rankings!</div>
+</NavLink>
         </div>
       </div>
       <section id="center" className={theme}>

@@ -140,7 +140,7 @@ const endGame = async (finalScore, finalClicks) => {
 
     // calculate accuracy
     const accuracy =
-        finalClicks === 0 ? 0 : Math.round((finalScore / finalClicks) * 100);
+    finalClicks === 0 ? 0 : Number(((finalScore / finalClicks) * 100).toFixed(2));
 
   const resultData = {
     hits: finalScore,
