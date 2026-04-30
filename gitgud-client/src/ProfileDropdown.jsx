@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { logout } from "./auth"
 import { usePoints } from "./usePoints"
 import { useTheme } from "./context/ThemeContext"
 
 export function PointsMeter({ uid, style }) {
-  const { points, level, loading } = usePoints(uid)
+  const { xp, level, pct, xpToNext, isMax, loading } = usePoints(uid)
   const { theme } = useTheme()
   const dark = theme === "dark"
   const accent = dark ? "#ff6a00" : "#0066cc"
   const accentGlow = dark ? "rgba(255,106,0,0.5)" : "rgba(0,102,204,0.4)"
   if (loading) return null
-  const pct = Math.min(points, 100)
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px',
       background: dark ? 'rgba(255,106,0,0.07)' : 'rgba(0,102,204,0.07)',
@@ -22,7 +22,7 @@ export function PointsMeter({ uid, style }) {
           boxShadow:`0 0 6px ${accentGlow}`, transition:'width 0.5s cubic-bezier(0.34,1.56,0.64,1)' }} />
       </div>
       <span style={{ color: dark ? '#f0f0f0' : '#111', fontSize:12, fontWeight:600, whiteSpace:'nowrap' }}>
-        {points}<span style={{ color: dark ? '#555' : '#aaa', fontWeight:400 }}>/100</span>
+        {isMax ? "MAX" : `${xpToNext} xp`}
       </span>
     </div>
   )
@@ -31,7 +31,8 @@ export function PointsMeter({ uid, style }) {
 export default function ProfileDropdown({ user }) {
   const [open, setOpen] = useState(false)
   const ref = useRef()
-  const { points, level } = usePoints(user?.uid)
+  const navigate = useNavigate()
+  const { xp, level, pct, xpToNext, isMax } = usePoints(user?.uid)
   const { theme } = useTheme()
   const dark = theme === "dark"
 
@@ -50,8 +51,6 @@ export default function ProfileDropdown({ user }) {
   }, [])
 
   const name = user?.displayName || user?.email?.split("@")[0] || "Player"
-  const pct  = Math.min(points, 100)
-
   const Avatar = ({ size, fontSize }) => user?.photoURL
     ? <img src={user.photoURL} alt={name} style={{ width:size, height:size, borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
     : <div style={{ width:size, height:size, borderRadius:'50%', background:avatarBg, color:'#fff', fontWeight:700,
@@ -93,17 +92,29 @@ export default function ProfileDropdown({ user }) {
           <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
             <div style={{ display:'flex', justifyContent:'space-between' }}>
               <span style={{ color:accent, fontWeight:700, fontSize:13 }}>Level {level}</span>
-              <span style={{ color:subtext, fontSize:12 }}>{points} / 100 pts</span>
+              <span style={{ color:subtext, fontSize:12 }}>{xp} xp</span>
             </div>
             <div style={{ height:8, background: dark ? 'rgba(255,106,0,0.12)' : 'rgba(0,102,204,0.12)', borderRadius:99, overflow:'hidden' }}>
               <div style={{ width:`${pct}%`, height:'100%', background:accent, borderRadius:99,
                 boxShadow:`0 0 8px ${accentGlow}`, transition:'width 0.5s cubic-bezier(0.34,1.56,0.64,1)' }} />
             </div>
-            <div style={{ color: dark ? '#444' : '#bbb', fontSize:11, textAlign:'right' }}>{100 - points} pts to Level {level + 1}</div>
+            <div style={{ color: dark ? '#444' : '#bbb', fontSize:11, textAlign:'right' }}>{isMax ? "MAX LEVEL" : `${xpToNext} xp to Level ${level + 1}`}</div>
           </div>
 
           <div style={{ height:1, background:border, margin:'0 0 12px' }} />
 
+          {/* View Profile */}
+          <button
+            onClick={() => { navigate(`/profile/${user.uid}`); setOpen(false) }}
+            style={{ width:'100%', background:'none', color:text,
+              border:`1px solid ${border}`, borderRadius:8, padding:10,
+              fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:8 }}
+            onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,106,0,0.08)' : 'rgba(0,102,204,0.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none' }}>
+            View Profile
+          </button>
+
+          {/* Sign Out */}
           <button onClick={() => logout()}
             style={{ width:'100%', background:'rgba(239,68,68,0.08)', color:'#ef4444',
               border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:10,

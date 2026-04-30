@@ -39,6 +39,11 @@ function Layout({ user }) {
   <div className="nav-desc">Back to Main Menu!</div>
 </NavLink>
 
+<NavLink to={`/profile/${user.uid}`} className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">Profile</div>
+  <div className="nav-desc">View Your Stats!</div>
+</NavLink>
+
 <NavLink to="/practice" className={({ isActive }) => isActive ? "practice active" : "practice"}>
   <div className="nav-main">Practice</div>
   <div className="nav-desc">Improve Your Accuracy & Reaction!</div>
