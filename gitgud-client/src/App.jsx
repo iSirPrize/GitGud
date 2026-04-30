@@ -13,22 +13,43 @@ import Category from './Category'
 import QuizCarousel from './components/QuizCarousel'
 import Leaderboard from './Leaderboard'
 import ProfilePage from './ProfilePage'
+import { useNavigate } from 'react-router-dom'
+import { useRef } from 'react'
 
 function App() {
   const [user, setUser] = useState(undefined)
   const [showAuth, setShowAuth] = useState(false)
+  const [hasSeenLanding, setHasSeenLanding] = useState(
+    () => sessionStorage.getItem('seenLanding') === 'true'
+  )
+  const authIntentRef = useRef(null)        // 'login' | 'register'
+  const navigate = useNavigate()
 
   useEffect(() => {
     const unsub = onAuth(async (u) => {
       setUser(u)
-      if (u) { setShowAuth(false); await initUserDoc(u.uid, u.displayName, u.photoURL) }
+      if (u) {
+        setShowAuth(false)
+        await initUserDoc(u.uid, u.displayName, u.photoURL)
+        if (authIntentRef.current === 'register') navigate(`/profile/${u.uid}`)
+        else if (authIntentRef.current === 'login') navigate('/')
+        authIntentRef.current = null
+      }
     })
     return () => unsub()
   }, [])
 
-  if (user === undefined) return <div className="loading">Loading page...</div>
-  if (!user) return showAuth ? <AuthPage /> : <LandingPage onLogin={() => setShowAuth(true)} />
+  const handleGetStarted = () => {
+    sessionStorage.setItem('seenLanding', 'true')
+    setHasSeenLanding(true)
+    setShowAuth(true)
+  }
 
+  if (user === undefined) return <div className="loading">Loading page...</div>
+  if (!hasSeenLanding) return <LandingPage onLogin={handleGetStarted} />
+  if (!user) return showAuth
+    ? <AuthPage onIntent={(intent) => { authIntentRef.current = intent }} />
+    : <LandingPage onLogin={handleGetStarted} />
   return (
     <Routes>
       <Route path="/" element={<Layout user={user} />}>

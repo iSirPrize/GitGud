@@ -9,7 +9,7 @@ function validatePassword(pw) {
   return null;
 }
 
-export default function AuthPage({ onAuthed }) {
+export default function AuthPage({ onIntent })  {
   const [view, setView]         = useState("landing"); // "landing" | "login" | "register"
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -22,10 +22,10 @@ export default function AuthPage({ onAuthed }) {
   async function handleLogin() {
     setError("");
     if (!email.trim()) return setError("Email is required.");
+    onIntent('login')
     setLoading(true);
     try {
       await loginWithEmail(email.trim(), password);
-      onAuthed();
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
@@ -40,10 +40,10 @@ export default function AuthPage({ onAuthed }) {
     const pwErr = validatePassword(password);
     if (pwErr) return setError(pwErr);
     if (password !== confirm) return setError("Passwords do not match.");
+    onIntent('register')
     setLoading(true);
     try {
       await registerWithEmail(email.trim(), password);
-      onAuthed();
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {

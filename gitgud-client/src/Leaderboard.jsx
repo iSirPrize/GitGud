@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore"
+import { collection, getDocs } from "firebase/firestore"
 import { db } from "./firebase"
 import { useTheme } from "./context/ThemeContext"
+import { getLevelProgress } from "./usePoints"
 
 export default function Leaderboard({ currentUid }) {
   const [entries, setEntries] = useState([])
@@ -9,21 +10,28 @@ export default function Leaderboard({ currentUid }) {
   const { theme } = useTheme()
   const dark = theme === "dark"
 
-  const accent  = dark ? "#ff6a00"              : "#0066cc"
-  const bg      = dark ? "#181818"              : "#ffffff"
-  const cardBg  = dark ? "#181818"              : "#f7f9fc"
-  const meBg    = dark ? "rgba(255,106,0,0.07)" : "rgba(0,102,204,0.06)"
-  const meBorder= dark ? "rgba(255,106,0,0.5)"  : "rgba(0,102,204,0.4)"
-  const border  = dark ? "rgba(255,255,255,0.06)": "rgba(0,0,0,0.08)"
-  const textPri = dark ? "#f0f0f0"              : "#111"
-  const textSub = dark ? "#555"                 : "#777"
-  const barBg   = dark ? "rgba(255,255,255,0.06)": "rgba(0,0,0,0.07)"
-  const barFill = dark ? "linear-gradient(90deg,#ff6a00,#ffaa00)" : "linear-gradient(90deg,#0066cc,#00aaff)"
+  const accent      = dark ? "#ff6a00"               : "#0066cc"
+  const cardBg      = dark ? "#181818"               : "#f7f9fc"
+  const meBg        = dark ? "rgba(255,106,0,0.07)"  : "rgba(0,102,204,0.06)"
+  const meBorder    = dark ? "rgba(255,106,0,0.5)"   : "rgba(0,102,204,0.4)"
+  const border      = dark ? "rgba(255,255,255,0.06)": "rgba(0,0,0,0.08)"
+  const textPri     = dark ? "#f0f0f0"               : "#111"
+  const textSub     = dark ? "#555"                  : "#777"
+  const barBg       = dark ? "rgba(255,255,255,0.06)": "rgba(0,0,0,0.07)"
+  const barFill     = dark ? "linear-gradient(90deg,#ff6a00,#ffaa00)" : "linear-gradient(90deg,#0066cc,#00aaff)"
   const avatarColor = dark ? "#000" : "#fff"
 
   useEffect(() => {
-    getDocs(query(collection(db, "users"), orderBy("level","desc"), orderBy("points","desc"), limit(20)))
-      .then(snap => { setEntries(snap.docs.map((d,i) => ({ uid:d.id, rank:i+1, ...d.data() }))); setLoading(false) })
+    getDocs(collection(db, "users"))
+      .then(snap => {
+        const sorted = snap.docs
+          .map(d => ({ uid: d.id, ...d.data() }))
+          .sort((a, b) => (b.xp ?? b.points ?? 0) - (a.xp ?? a.points ?? 0))
+          .slice(0, 20)
+          .map((e, i) => ({ ...e, rank: i + 1 }))
+        setEntries(sorted)
+        setLoading(false)
+      })
   }, [])
 
   const medal = r => r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : null
@@ -32,7 +40,7 @@ export default function Leaderboard({ currentUid }) {
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 16px", fontFamily: "'Segoe UI','Helvetica Neue',sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ color: accent, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.03em" }}>Leaderboard</h2>
-        <p style={{ color: textSub, fontSize: 13, margin: "4px 0 0" }}>Top 20 players by level &amp; points</p>
+        <p style={{ color: textSub, fontSize: 13, margin: "4px 0 0" }}>Top 20 players by XP</p>
       </div>
 
       {loading && <p style={{ color: textSub, fontSize: 14 }}>Loading…</p>}
@@ -43,8 +51,8 @@ export default function Leaderboard({ currentUid }) {
           {entries.map(e => {
             const name = e.username || e.displayName || "Anonymous"
             const isMe = e.uid === currentUid
-            const pts  = e.points ?? 0
-            const lvl  = e.level ?? 1
+            const xp   = e.xp ?? e.points ?? 0
+            const { level, pct, xpToNext, isMax } = getLevelProgress(xp)
             const m    = medal(e.rank)
 
             return (
@@ -69,12 +77,12 @@ export default function Leaderboard({ currentUid }) {
                     {isMe && <span style={{ background: accent, color: avatarColor, fontSize: 10, fontWeight: 800, padding: "1px 7px", borderRadius: 99, flexShrink: 0 }}>you</span>}
                   </div>
                   <div style={{ height: 4, background: barBg, borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.min(pts, 100)}%`, height: "100%", background: barFill, borderRadius: 99 }} />
+                    <div style={{ width: `${pct}%`, height: "100%", background: barFill, borderRadius: 99 }} />
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
-                  <span style={{ color: accent, fontSize: 12, fontWeight: 700 }}>Lvl {lvl}</span>
-                  <span style={{ color: textSub, fontSize: 11 }}>{pts} pts</span>
+                  <span style={{ color: accent, fontSize: 12, fontWeight: 700 }}>Lvl {level}</span>
+                  <span style={{ color: textSub, fontSize: 11 }}>{isMax ? "MAX" : `${xpToNext} xp to next`}</span>
                 </div>
               </div>
             )
