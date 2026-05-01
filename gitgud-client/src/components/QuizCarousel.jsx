@@ -1,13 +1,7 @@
 // QuizCarousel.jsx
 // Drop this file into: gitgud-client/src/components/QuizCarousel.jsx
-//
-// Sprint 2 changes:
-//   1. Reads gameId from URL params (/quiz/:gameId) to load game-specific scenarios
-//   2. All questions standardised to "What is the play here?"
-//   3. Separate scenario lists for each game category (valorant, cs2)
-//   4. Placeholder YouTube links kept — swap in real clip IDs when videos are ready
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import CommentSection from "./CommentSection";
@@ -19,95 +13,95 @@ import { awardPoints } from "../usePoints";
 const STANDARD_QUESTION = "What is the play here?";
 
 // ─── Scenario banks per game ──────────────────────────────────────────────────
-// To add a new game: add a new key matching the id in Category.jsx
-// To swap in real clips: replace the youtubeId value with the real YouTube video ID
-// YouTube ID is the part after "?v=" e.g. youtube.com/watch?v=dUVqzWhV_rE → "dUVqzWhV_rE"
+// pauseAt  = second at which video pauses and question appears
+// The video then resumes automatically once the user submits their answer
+// YouTube ID is the part after "?v=" e.g. youtube.com/watch?v=3F6Exc9m-cQ → "3F6Exc9m-cQ"
 
 const SCENARIOS_BY_GAME = {
 
   valorant: [
     {
       id: 1,
-      youtubeId: "dUVqzWhV_rE", // placeholder — swap with real Valorant clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 0,
-      choices: ["Say Hi", "Shoot the guy", "Run away", "Do nothing"],
-      reason: "Assume friendly unless you're in a PVP lobby",
+      youtubeId: "3F6Exc9m-cQ",
+      pauseAt: 9,           // video pauses at 9s, question appears
+      question: "You are the entry fragger for the team, what should you do here?",
+      correctIndex: 2,      // C is correct
+      choices: [
+        "Rotate to A site",
+        "Peek after another team member pushes out",
+        "Peek with blastpack",
+        "Wait for enemy to peek",
+      ],
+      reason: "Your enemy has started shooting at your boombot with a judge. Blastpacking past the angle disrupts their crosshair placement when they are already down shots in the judge.",
     },
     {
       id: 2,
-      youtubeId: "r18j6FWlFb8", // placeholder — swap with real Valorant clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 0,
-      choices: ["Tracer", "D.Va", "Moira", "Reinhard"],
-      reason: "She is speed",
+      youtubeId: "4x7Q6mkNY7w",
+      pauseAt: 5,           // video pauses at 5s
+      question: "Your team has gathered enough info to determine at least 3 agents are A if not 4 and have decided to rotate. During rotation you have caught the B anchor flanking. What is the best play here?",
+      correctIndex: 0,      // A is correct
+      choices: [
+        "Push enemy with blastpack to quickly rotate",
+        "Hold the left angle for peek",
+        "Hold the right angle for peek",
+        "Go back to A",
+      ],
+      reason: "With the intel gathered and knowing that this is the anchor player, the faster they are killed the more time you have to get to B while directly covering B.",
     },
     {
       id: 3,
-      youtubeId: "PWT2b3nxLOU", // placeholder — swap with real Valorant clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 3,
-      choices: ["Fight unarmed", "Run away", "Let the summon fight", "Use everything"],
-      reason: "The Miyazaki way",
+      youtubeId: "FwMZEQBZ8WA",
+      pauseAt: 9,           // video pauses at 9s
+      question: "After killing the B anchor during rotation, which path should you take to have the highest success in this round?",
+      correctIndex: 1,      // B is correct
+      choices: [
+        "Push through B main",
+        "Push B elbow",
+        "Go back to mid",
+        "Go back to A",
+      ],
+      reason: "Since you are the furthest ahead the team should be able to push safely. Going through elbow allows for multiple strong enemy cut offs including pinching any players getting to site or holding mid where your Jett has died.",
     },
     {
       id: 4,
-      youtubeId: "uOaSwqlOyxk", // placeholder — swap with real Valorant clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 1,
-      choices: ["Barbara's heals", "Ganyu's aim", "Noelle's shields", "Childe's ultimate"],
-      reason: "Always aim",
+      youtubeId: "76vYbf_1A8U",
+      pauseAt: 5,           // video pauses at 5s
+      question: "You're holding a one and done spot. What should you do while the enemy is taking site?",
+      correctIndex: 3,      // D is correct
+      choices: [
+        "It's a one and done spot — move to a retreat and get to a different spot",
+        "Hold tight and wait for the spike to get planted before taking action",
+        "Bait your Sage and hide",
+        "Peek with Sage",
+      ],
+      reason: "Peeking together allows for enemy attacks to be disjointed and panicked, causing whiffs. This allows for clean up or more kills than you may get from a one and done angle.",
     },
     {
       id: 5,
-      youtubeId: "dQw4w9WgXcQ", // placeholder — swap with real Valorant clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 2,
-      choices: ["Why this video", "This video is great", "You have made a grave error", "In before 6-7"],
-      reason: "You have been Rick rolled",
+      youtubeId: "86yfyE38rXE",
+      pauseAt: 5,           // adjust if needed once you know exact pause point
+      question: "BONUS: Your gamer instincts have taken over and you are confident they are hitting A without any hard proof. You are going to full commit ultimate. What do you do?",
+      correctIndex: 0,      // A is correct
+      choices: [
+        "Trust your gamer instincts",
+        "Get your gun back",
+        "Sell your gun to have better economy next round",
+        "Play round normally",
+      ],
+      reason: "Getting rid of self doubt and trusting in yourself can be the difference between a good and a great player. Without this trust you are likely to hesitate in key situations, so committing through the action can be enough to keep this attitude going.",
     },
   ],
 
   cs2: [
+    // cs2 scenarios — swap in real clip IDs when ready
     {
       id: 1,
-      youtubeId: "dUVqzWhV_rE", // placeholder — swap with real CS2 clip ID
+      youtubeId: "dQw4w9WgXcQ",
+      pauseAt: 8,
       question: STANDARD_QUESTION,
       correctIndex: 0,
       choices: ["Say Hi", "Shoot the guy", "Run away", "Do nothing"],
-      reason: "Assume friendly unless you're in a PVP lobby",
-    },
-    {
-      id: 2,
-      youtubeId: "r18j6FWlFb8", // placeholder — swap with real CS2 clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 0,
-      choices: ["Tracer", "D.Va", "Moira", "Reinhard"],
-      reason: "She is speed",
-    },
-    {
-      id: 3,
-      youtubeId: "PWT2b3nxLOU", // placeholder — swap with real CS2 clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 3,
-      choices: ["Fight unarmed", "Run away", "Let the summon fight", "Use everything"],
-      reason: "The Miyazaki way",
-    },
-    {
-      id: 4,
-      youtubeId: "uOaSwqlOyxk", // placeholder — swap with real CS2 clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 1,
-      choices: ["Barbara's heals", "Ganyu's aim", "Noelle's shields", "Childe's ultimate"],
-      reason: "Always aim",
-    },
-    {
-      id: 5,
-      youtubeId: "dQw4w9WgXcQ", // placeholder — swap with real CS2 clip ID
-      question: STANDARD_QUESTION,
-      correctIndex: 2,
-      choices: ["Why this video", "This video is great", "You have made a grave error", "In before 6-7"],
-      reason: "You have been Rick rolled",
+      reason: "Assume friendly unless you're in a PVP lobby.",
     },
   ],
 
@@ -118,6 +112,7 @@ const FALLBACK_SCENARIOS = [
   {
     id: 1,
     youtubeId: "dQw4w9WgXcQ",
+    pauseAt: 8,
     question: STANDARD_QUESTION,
     correctIndex: 0,
     choices: ["Go back and pick a game", "Stay here", "Refresh", "Give up"],
@@ -125,34 +120,232 @@ const FALLBACK_SCENARIOS = [
   },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Load YouTube IFrame API once globally ────────────────────────────────────
+let ytApiReady = false;
+let ytApiCallbacks = [];
+
+function loadYouTubeApi() {
+  if (ytApiReady) return Promise.resolve();
+  if (window.YT && window.YT.Player) {
+    ytApiReady = true;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    ytApiCallbacks.push(resolve);
+    if (!document.getElementById("yt-iframe-api")) {
+      const tag = document.createElement("script");
+      tag.id = "yt-iframe-api";
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+      window.onYouTubeIframeAPIReady = () => {
+        ytApiReady = true;
+        ytApiCallbacks.forEach((cb) => cb());
+        ytApiCallbacks = [];
+      };
+    }
+  });
+}
+
+// Grace period (ms) after video ends before auto-advancing to next question.
+// Gives users time to read the explanation after the clip finishes.
+const POST_VIDEO_GRACE_MS = 5000;
+
+// ─── Instructions Modal ───────────────────────────────────────────────────────
+function InstructionsModal({ onClose, isDark }) {
+  return (
+    <div className="instructions-overlay" onClick={onClose}>
+      <div
+        className={`instructions-modal ${isDark ? "dark" : "light"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="instructions-close" onClick={onClose} aria-label="Close instructions">
+          ✕
+        </button>
+        <h2 className="instructions-title">How to Play</h2>
+        <ol className="instructions-list">
+          <li>
+            <span className="step-num">1</span>
+            <span>Click <strong>▶ Play</strong> on the video — the clip will start playing automatically.</span>
+          </li>
+          <li>
+            <span className="step-num">2</span>
+            <span>The video <strong>pauses at a key moment</strong> and the question appears below.</span>
+          </li>
+          <li>
+            <span className="step-num">3</span>
+            <span><strong>Select</strong> one of the four options (A, B, C or D) that you think is the correct play.</span>
+          </li>
+          <li>
+            <span className="step-num">4</span>
+            <span>Click <strong>Check Answer</strong> to lock in your choice.</span>
+          </li>
+          <li>
+            <span className="step-num">5</span>
+            <span>The <strong>answer is revealed</strong> and the video resumes to show the outcome.</span>
+          </li>
+          <li>
+            <span className="step-num">6</span>
+            <span>After the clip finishes, the <strong>next question loads automatically</strong>. You can also use the arrows to navigate freely.</span>
+          </li>
+        </ol>
+        <p className="instructions-tip">
+          💡 <strong>Tip:</strong> Get the correct answer to earn points on the leaderboard!
+        </p>
+        <button className="instructions-start-btn" onClick={onClose}>
+          Got it — Let's Play!
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Video Player with IFrame API ─────────────────────────────────────────────
+function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted, scenarioId }) {
+  const containerRef = useRef(null);
+  const playerRef    = useRef(null);
+  const pollRef      = useRef(null);
+  const hasPausedRef = useRef(false);
+
+  const stopPoll = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  const startPoll = useCallback(() => {
+    stopPoll();
+    pollRef.current = setInterval(() => {
+      if (!playerRef.current) return;
+      try {
+        const t = playerRef.current.getCurrentTime();
+        if (!hasPausedRef.current && t >= pauseAt) {
+          playerRef.current.pauseVideo();
+          hasPausedRef.current = true;
+          onPaused();
+          stopPoll();
+        }
+      } catch (_) {}
+    }, 250);
+  }, [pauseAt, onPaused]);
+
+  useEffect(() => {
+    let destroyed = false;
+
+    loadYouTubeApi().then(() => {
+      if (destroyed || !containerRef.current) return;
+
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch (_) {}
+        playerRef.current = null;
+      }
+
+      hasPausedRef.current = false;
+      stopPoll();
+
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        videoId: youtubeId,
+        playerVars: {
+          autoplay: 0,
+          rel: 0,
+          modestbranding: 1,
+          start: 0,
+        },
+        events: {
+          onStateChange: (event) => {
+            // 1 = playing — start the pause-point poll
+            if (event.data === 1 && !hasPausedRef.current) {
+              startPoll();
+            }
+            // 0 = video ended — notify parent so it can schedule next question
+            if (event.data === 0) {
+              stopPoll();
+              if (onVideoEnded) onVideoEnded();
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      destroyed = true;
+      stopPoll();
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch (_) {}
+        playerRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeId, scenarioId]);
+
+  // Resume video when user submits answer
+  useEffect(() => {
+    if (isSubmitted && playerRef.current && hasPausedRef.current) {
+      try { playerRef.current.playVideo(); } catch (_) {}
+    }
+  }, [isSubmitted]);
+
+  return (
+    <div className="video-wrapper">
+      <div ref={containerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function QuizCarousel({ user }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Read gameId from URL — e.g. /quiz/valorant gives gameId = "valorant"
   const { gameId } = useParams();
-
-  // Pick the right scenario list based on the game, fall back if unknown
   const SCENARIOS = SCENARIOS_BY_GAME[gameId] ?? FALLBACK_SCENARIOS;
 
-  const [current, setCurrent]     = useState(0);
-  const [selected, setSelected]   = useState(Array(SCENARIOS.length).fill(null));
-  const [submitted, setSubmitted] = useState(Array(SCENARIOS.length).fill(false));
-  const [sliding, setSliding]     = useState(null); // "left" | "right" | null
-  const [feedback, setFeedback]   = useState(null); // "correct" | "wrong" | null
+  const [current, setCurrent]           = useState(0);
+  const [selected, setSelected]         = useState(Array(SCENARIOS.length).fill(null));
+  const [submitted, setSubmitted]       = useState(Array(SCENARIOS.length).fill(false));
+  const [videoPaused, setVideoPaused]   = useState(Array(SCENARIOS.length).fill(false));
+  const [sliding, setSliding]           = useState(null);
+  const [feedback, setFeedback]         = useState(null);
+  const [showInstructions, setShowInstructions] = useState(true);
 
-  const touchStartX = useRef(null);
+  const touchStartX  = useRef(null);
+  // Stores the auto-advance timer so we can cancel it if the user navigates manually
+  const advanceTimer = useRef(null);
 
   const total       = SCENARIOS.length;
   const scenario    = SCENARIOS[current];
   const isSubmitted = submitted[current];
   const selectedIdx = selected[current];
   const isCorrect   = isSubmitted && selectedIdx === scenario.correctIndex;
+  const isVideoPaused = videoPaused[current];
 
-  // ── Navigation with slide animation ─────────────────────────────────────────
+  // ── Mark video as paused for current question ──────────────────────────────
+  const handleVideoPaused = useCallback(() => {
+    setVideoPaused((prev) => {
+      const next = [...prev];
+      next[current] = true;
+      return next;
+    });
+  }, [current]);
+
+  // ── Called when the clip finishes playing after the user has answered ───────
+  // Waits POST_VIDEO_GRACE_MS then advances — gives time to read explanation.
+  const handleVideoEnded = useCallback(() => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(() => {
+      goTo("next");
+    }, POST_VIDEO_GRACE_MS);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
   const goTo = (direction) => {
     if (sliding) return;
+    // Cancel any pending auto-advance when user navigates manually
+    if (advanceTimer.current) {
+      clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
     const next = direction === "next"
       ? (current + 1) % total
       : (current - 1 + total) % total;
@@ -165,20 +358,16 @@ export default function QuizCarousel({ user }) {
     }, 280);
   };
 
-  // ── Touch / swipe support ────────────────────────────────────────────────────
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e) => {
+  // ── Touch / swipe ──────────────────────────────────────────────────────────
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd   = (e) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      goTo(diff > 0 ? "next" : "prev");
-    }
+    if (Math.abs(diff) > 50) goTo(diff > 0 ? "next" : "prev");
     touchStartX.current = null;
   };
 
-  // ── Answer selection ─────────────────────────────────────────────────────────
+  // ── Answer selection ───────────────────────────────────────────────────────
   const handleSelect = (idx) => {
     if (submitted[current]) return;
     const updated = [...selected];
@@ -186,7 +375,7 @@ export default function QuizCarousel({ user }) {
     setSelected(updated);
   };
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (selected[current] === null) return;
 
@@ -198,36 +387,15 @@ export default function QuizCarousel({ user }) {
     setFeedback(correct ? "correct" : "wrong");
 
     if (correct && user?.uid) {
-      awardPoints(user.uid, 10).catch(err => console.error("awardPoints failed:", err));
+      awardPoints(user.uid, 10).catch((err) => console.error("awardPoints failed:", err));
     }
-
-    // ── Backend hook ─────────────────────────────────────────────────────────
-    // When the backend is ready, uncomment and wire this up:
-    //
-    // try {
-    //   await fetch("http://localhost:3001/api/votes", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       gameId,
-    //       scenarioId: scenario.id,
-    //       choiceIndex: selected[current],
-    //       correct,
-    //     }),
-    //   });
-    // } catch (err) {
-    //   console.error("Vote submission failed:", err);
-    // }
-
-    // Auto-advance after showing explanation
-    setTimeout(() => {
-      goTo("next");
-    }, 3000);
+    // Auto-advance is now driven by the video ending (onVideoEnded → handleVideoEnded)
+    // with a POST_VIDEO_GRACE_MS buffer so users can read the explanation.
+    // No fixed timeout here — the clip length determines when we move on.
   };
 
   const choiceLabels = ["A", "B", "C", "D"];
 
-  // ── Choice button class helper ───────────────────────────────────────────────
   const getChoiceClass = (idx) => {
     let cls = "choice-btn";
     if (submitted[current]) {
@@ -243,7 +411,24 @@ export default function QuizCarousel({ user }) {
   return (
     <div className={`quiz-carousel ${isDark ? "dark" : "light"}`}>
 
-      {/* ── Progress dots ───────────────────────────────────────────────────── */}
+      {/* ── Instructions Modal ────────────────────────────────────────────────── */}
+      {showInstructions && (
+        <InstructionsModal
+          onClose={() => setShowInstructions(false)}
+          isDark={isDark}
+        />
+      )}
+
+      {/* ── Instructions trigger button ──────────────────────────────────────── */}
+      <button
+        className="how-to-play-btn"
+        onClick={() => setShowInstructions(true)}
+        title="How to play"
+      >
+        ? How to Play
+      </button>
+
+      {/* ── Progress dots ─────────────────────────────────────────────────────── */}
       <div className="quiz-progress">
         {SCENARIOS.map((_, i) => (
           <span
@@ -253,114 +438,124 @@ export default function QuizCarousel({ user }) {
         ))}
       </div>
 
-      {/* ── Main slide area ──────────────────────────────────────────────────── */}
+      {/* ── Main slide area ───────────────────────────────────────────────────── */}
       <div
         className={`quiz-slide ${sliding ? `slide-out-${sliding}` : "slide-in"}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
 
-        {/* ── Row: left arrow + video window + right arrow ──────────────────── */}
+        {/* ── Row: left arrow + video + right arrow ─────────────────────────── */}
         <div className="quiz-row">
-          <button
-            className="nav-arrow"
-            onClick={() => goTo("prev")}
-            aria-label="Previous question"
-          >
+          <button className="nav-arrow" onClick={() => goTo("prev")} aria-label="Previous question">
             &#9664;
           </button>
 
-          {/* Video window */}
           <div className="video-frame">
             <div className="video-label">
-              <span className="scenario-counter">
-                {current + 1} / {total}
-              </span>
+              <span className="scenario-counter">{current + 1} / {total}</span>
+              {!isVideoPaused && !isSubmitted && (
+                <span className="video-hint">▶ Play the clip — it will pause at the key moment</span>
+              )}
+              {isVideoPaused && !isSubmitted && (
+                <span className="video-hint paused">⏸ Paused — pick your answer below</span>
+              )}
+              {isSubmitted && (
+                <span className="video-hint resumed">▶ Resuming to show the outcome…</span>
+              )}
             </div>
-            <div className="video-wrapper">
-              <iframe
-                key={scenario.id}
-                src={`https://www.youtube.com/embed/${scenario.youtubeId}`}
-                title={`Scenario ${scenario.id}`}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+
+            <YoutubePlayer
+              key={`${scenario.id}-${current}`}
+              youtubeId={scenario.youtubeId}
+              pauseAt={scenario.pauseAt}
+              onPaused={handleVideoPaused}
+              onVideoEnded={handleVideoEnded}
+              isSubmitted={isSubmitted}
+              scenarioId={scenario.id}
+            />
           </div>
 
-          <button
-            className="nav-arrow"
-            onClick={() => goTo("next")}
-            aria-label="Next question"
-          >
+          <button className="nav-arrow" onClick={() => goTo("next")} aria-label="Next question">
             &#9654;
           </button>
         </div>
 
         {/* ── Multi-choice panel ────────────────────────────────────────────── */}
-        <div className="quiz-panel">
+        <div className={`quiz-panel ${isVideoPaused || isSubmitted ? "panel-active" : "panel-waiting"}`}>
 
-          {/* Question */}
-          <div className="panel-question">
-            <span className="q-badge">Q{current + 1}</span>
-            <p>{scenario.question}</p>
-          </div>
-
-          {/* Choices */}
-          <div className="panel-choices">
-            {scenario.choices.map((choice, idx) => (
-              <button
-                key={idx}
-                className={getChoiceClass(idx)}
-                onClick={() => handleSelect(idx)}
-                disabled={isSubmitted}
-              >
-                <span className="choice-label">{choiceLabels[idx]}</span>
-                <span className="choice-text">{choice}</span>
-                {isSubmitted && idx === scenario.correctIndex && (
-                  <span className="choice-icon">✓</span>
-                )}
-                {isSubmitted && idx === selectedIdx && idx !== scenario.correctIndex && (
-                  <span className="choice-icon">✗</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* ── Explanation (shown after submit) ────────────────────────────── */}
-          {isSubmitted && (
-            <div className={`explanation-box ${isCorrect ? "correct" : "wrong"}`}>
-              {isCorrect ? (
-                <p className="explanation-verdict correct">✓ Correct!</p>
-              ) : (
-                <>
-                  <p className="explanation-verdict wrong">✗ Wrong answer!</p>
-                  <p className="explanation-chosen">
-                    You chose &ldquo;<strong>{scenario.choices[selectedIdx]}</strong>&rdquo;.{" "}
-                    The answer is &ldquo;<strong>{scenario.choices[scenario.correctIndex]}</strong>&rdquo;.
-                  </p>
-                </>
-              )}
-              <p className="explanation-reason">
-                <span className="reason-label">Reason why:</span> {scenario.reason}
-              </p>
+          {/* Waiting state — before video pauses */}
+          {!isVideoPaused && !isSubmitted && (
+            <div className="panel-waiting-msg">
+              <span className="waiting-icon">⏳</span>
+              <p>Watch the clip — your question will appear here when the video pauses.</p>
             </div>
           )}
 
-          {/* Submit */}
-          <button
-            className={`submit-btn ${isSubmitted ? "submitted" : ""}`}
-            onClick={handleSubmit}
-            disabled={selectedIdx === null || isSubmitted}
-          >
-            {isSubmitted ? "✓  Answer Submitted" : "Check Answer — Submit"}
-          </button>
+          {/* Question + choices — shown after video pauses */}
+          {(isVideoPaused || isSubmitted) && (
+            <>
+              <div className="panel-question">
+                <span className="q-badge">Q{current + 1}</span>
+                <p>{scenario.question}</p>
+              </div>
 
+              <div className="panel-choices">
+                {scenario.choices.map((choice, idx) => (
+                  <button
+                    key={idx}
+                    className={getChoiceClass(idx)}
+                    onClick={() => handleSelect(idx)}
+                    disabled={isSubmitted}
+                  >
+                    <span className="choice-label">{choiceLabels[idx]}</span>
+                    <span className="choice-text">{choice}</span>
+                    {isSubmitted && idx === scenario.correctIndex && (
+                      <span className="choice-icon">✓</span>
+                    )}
+                    {isSubmitted && idx === selectedIdx && idx !== scenario.correctIndex && (
+                      <span className="choice-icon">✗</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Explanation */}
+              {isSubmitted && (
+                <div className={`explanation-box ${isCorrect ? "correct" : "wrong"}`}>
+                  {isCorrect ? (
+                    <p className="explanation-verdict correct">✓ Correct! +10 points</p>
+                  ) : (
+                    <>
+                      <p className="explanation-verdict wrong">✗ Wrong answer!</p>
+                      <p className="explanation-chosen">
+                        You chose &ldquo;<strong>{scenario.choices[selectedIdx]}</strong>&rdquo;.{" "}
+                        The correct play was &ldquo;<strong>{scenario.choices[scenario.correctIndex]}</strong>&rdquo;.
+                      </p>
+                    </>
+                  )}
+                  <p className="explanation-reason">
+                    <span className="reason-label">Why:</span> {scenario.reason}
+                  </p>
+                  <p className="explanation-next">
+                    ▶ Watch the clip to see the outcome — next question loads in a moment…
+                  </p>
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                className={`submit-btn ${isSubmitted ? "submitted" : ""}`}
+                onClick={handleSubmit}
+                disabled={selectedIdx === null || isSubmitted}
+              >
+                {isSubmitted ? "✓  Answer Submitted" : "Check Answer — Submit"}
+              </button>
+            </>
+          )}
         </div>
 
-        {/* ── Community Vote Bubble ─────────────────────────────────────────── */}
-        {/* quizId uses scenario.id so votes are isolated per game + clip        */}
+        {/* ── Community Vote ─────────────────────────────────────────────────── */}
         <CommunityVote
           quizId={scenario.id}
           choices={scenario.choices}
@@ -369,8 +564,7 @@ export default function QuizCarousel({ user }) {
           isSubmitted={isSubmitted}
         />
 
-        {/* ── Comment Section ───────────────────────────────────────────────── */}
-        {/* quizId uses scenario.id so each game's clips have their own comments */}
+        {/* ── Comment Section ────────────────────────────────────────────────── */}
         <CommentSection quizId={scenario.id} />
 
       </div>

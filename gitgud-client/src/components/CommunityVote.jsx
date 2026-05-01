@@ -11,15 +11,13 @@
 //   correctIndex  {number}  — index of the correct answer
 //   isSubmitted   {boolean} — only show after the user has answered
 
-import { useState, useEffect } from "react";
-import { db, auth } from "../firebase";
+import { useState, useEffect, useRef } from "react";
+import { db } from "../firebase";
 import {
   doc,
-  getDoc,
   setDoc,
   onSnapshot,
   increment,
-  updateDoc,
 } from "firebase/firestore";
 import { useTheme } from "../context/ThemeContext";
 import "./CommunityVote.css";
@@ -36,19 +34,24 @@ export default function CommunityVote({
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [voteCounts, setVoteCounts] = useState(null); // { 0: n, 1: n, 2: n, 3: n }
-  // Persist vote-recorded flag in localStorage so refreshing doesn't double-count
+  const [voteCounts, setVoteCounts] = useState(null);
+
+  // Use a ref to track whether we've recorded for THIS quizId in this session.
+  // A ref avoids the stale-closure problem that caused Q2–5 to skip recording —
+  // unlike useState, changing a ref does NOT trigger a re-render, and its value
+  // is always current inside async callbacks.
+  const recordedForRef = useRef(new Set());
+
   const storageKey = `cv_voted_quiz_${quizId}`;
-  const [hasRecorded, setHasRecorded] = useState(
-    () => localStorage.getItem(storageKey) === "1"
-  );
 
   // Path: communityVotes / quiz_{id}
   const docRef = doc(db, "communityVotes", `quiz_${quizId}`);
 
   // ── Real-time listener ────────────────────────────────────────────────────
+  // Re-subscribes whenever quizId changes so each question gets its own stream.
   useEffect(() => {
-    if (!isSubmitted) return; // don't subscribe until user has answered
+    if (!isSubmitted) return;
+
     const unsub = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
         setVoteCounts(snap.data());
@@ -56,33 +59,38 @@ export default function CommunityVote({
         setVoteCounts({ 0: 0, 1: 0, 2: 0, 3: 0 });
       }
     });
+
     return () => unsub();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSubmitted, quizId]);
 
-  // ── Record this user's vote (once per quiz per session) ───────────────────
+  // ── Record this user's vote (once per quizId per browser session) ─────────
   useEffect(() => {
-    if (!isSubmitted || userChoice === null || hasRecorded) return;
+    if (!isSubmitted || userChoice === null) return;
+
+    // Already recorded for this quizId this session or this page load
+    if (recordedForRef.current.has(quizId)) return;
+    if (localStorage.getItem(storageKey) === "1") return;
 
     const recordVote = async () => {
       try {
-        // Check if doc exists; if not, create it with zeroes first
-        const snap = await getDoc(docRef);
-        if (!snap.exists()) {
-          await setDoc(docRef, { 0: 0, 1: 0, 2: 0, 3: 0 });
-        }
-        // Atomically increment the chosen option
-        await updateDoc(docRef, {
-          [String(userChoice)]: increment(1),
-        });
+        // setDoc with merge:true safely creates the doc if missing OR merges
+        // into an existing one — no race condition between getDoc + updateDoc.
+        await setDoc(
+          docRef,
+          { [String(userChoice)]: increment(1) },
+          { merge: true }
+        );
         localStorage.setItem(storageKey, "1");
-        setHasRecorded(true);
+        recordedForRef.current.add(quizId);
       } catch (err) {
         console.error("CommunityVote: failed to record vote", err);
       }
     };
 
     recordVote();
-  }, [isSubmitted, userChoice, hasRecorded, quizId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSubmitted, userChoice, quizId]);
 
   // ── Don't render until the user has submitted ─────────────────────────────
   if (!isSubmitted) return null;
@@ -108,8 +116,8 @@ export default function CommunityVote({
 
       <div className="cv-bars">
         {choices.map((choice, idx) => {
-          const pct   = getPct(idx);
-          const count = Number(counts[idx]) || 0;
+          const pct       = getPct(idx);
+          const count     = Number(counts[idx]) || 0;
           const isUser    = idx === userChoice;
           const isCorrect = idx === correctIndex;
 
@@ -130,12 +138,9 @@ export default function CommunityVote({
                 {isUser && <span className="cv-you-badge"> (you)</span>}
               </span>
 
-              {/* Bar + count */}
+              {/* Bar track + fill */}
               <div className="cv-bar-track">
-                <div
-                  className={barClass}
-                  style={{ width: `${pct}%` }}
-                />
+                <div className={barClass} style={{ width: `${pct}%` }} />
               </div>
 
               {/* Count + percentage */}
