@@ -322,7 +322,7 @@ function ProfilePage({ user })
 
             <div className="profile-actions">
                 {isOwner ? (
-                    <div className="Owner-controls">
+                    <div className="owner-controls">
                         <div className="main-btns">
                             {isEditing ? (
                                 <>

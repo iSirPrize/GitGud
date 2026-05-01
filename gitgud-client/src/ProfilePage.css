@@ -9,6 +9,10 @@
     --qc-input-border: #333;
     --qc-submit-bg:  #000;
     --qc-header-line: rgba(255, 105, 0, 0.35);
+    --qc-submit-bg:     #ff6a00;
+    --qc-submit-text:   #000; 
+    --qc-header-line:   rgba(255, 106, 0, 0.35);
+    --qc-frame-glow:    rgba(255, 106, 0, 0.3);
 }
 
 .quiz-carousel.light
@@ -20,8 +24,10 @@
     --qc-subtext:   #666;
     --qc-input-bg:  #f0f4f8;
     --qc-input-border: #d0dcea;
-    --qc-submit-bg:  #fff;
+    --qc-submit-bg:  #0066cc;;
+    --qc-submit-text: #ffffff;
     --qc-header-line: rgba(0, 102, 204, 0.2);
+    --qc-frame-glow: rgba(0, 102, 204, 0.2);
 }
 
 .profile-container
@@ -148,9 +154,9 @@
     padding: 15px;
     border-radius: 12px;
     line-height: 1.6;
-    border-left: 3px solid var(--qc-frame);
     border: 1px solid var(--qc-frame);
-    white-space: pre-Wrap;
+    border-left: 3px solid var(--qc-frame);    
+    white-space: pre-wrap;
 }
 
 .divider
@@ -163,6 +169,7 @@
 .profile-actions
 {
     margin-top: 25px;
+    justify-content: center;
     display: flex;
     gap: 12px;
 }
@@ -184,7 +191,7 @@
     transform: scale(0.95);
 }
 
-.Ownder-controls
+.owner-controls
 {
     display: flex;
     flex-direction: column;
