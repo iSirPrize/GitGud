@@ -18,7 +18,7 @@
   --qc-arrow-color: #ff6a00;
   --qc-submit-bg:   #ff6a00;
   --qc-submit-text: #000;
-  --qc-submit-done: #7a3300;   /* was #2a2a2a */ /* Dark mode — change submit-done from #2a2a2a to orange */
+  --qc-submit-done: #7a3300;
   --qc-badge-bg:    #ff6a00;
   --qc-badge-text:  #000;
   --qc-dot-active:  #ff6a00;
@@ -28,6 +28,12 @@
   --qc-explain-correct-border: #22c55e;
   --qc-explain-wrong-bg:    rgba(239, 68, 68, 0.08);
   --qc-explain-wrong-border: #ef4444;
+  --qc-modal-bg:    #1a1a1a;
+  --qc-modal-border:#ff6a00;
+  --qc-step-bg:     #ff6a00;
+  --qc-step-text:   #000;
+  --qc-waiting-bg:  #111;
+  --qc-waiting-border: #333;
 }
 
 .quiz-carousel.light {
@@ -45,7 +51,7 @@
   --qc-arrow-color: #0066cc;
   --qc-submit-bg:   #0066cc;
   --qc-submit-text: #fff;
-  --qc-submit-done: #004999;   /* was #ccc */ /* Light mode — change submit-done from #ccc to blue */
+  --qc-submit-done: #004999;
   --qc-badge-bg:    #0066cc;
   --qc-badge-text:  #fff;
   --qc-dot-active:  #0066cc;
@@ -55,6 +61,12 @@
   --qc-explain-correct-border: #22c55e;
   --qc-explain-wrong-bg:    rgba(239, 68, 68, 0.08);
   --qc-explain-wrong-border: #ef4444;
+  --qc-modal-bg:    #ffffff;
+  --qc-modal-border:#0066cc;
+  --qc-step-bg:     #0066cc;
+  --qc-step-text:   #fff;
+  --qc-waiting-bg:  #f8f9fa;
+  --qc-waiting-border: #ddd;
 }
 
 /* ── Container ───────────────────────────────────────────────────────────── */
@@ -69,6 +81,151 @@
   box-sizing: border-box;
   font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
   transition: background 0.3s, color 0.3s;
+  position: relative;
+}
+
+/* ── How to Play button ──────────────────────────────────────────────────── */
+.how-to-play-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: 2px solid var(--qc-frame);
+  color: var(--qc-frame);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+  z-index: 10;
+}
+
+.how-to-play-btn:hover {
+  background: var(--qc-frame);
+  color: #000;
+  transform: scale(1.05);
+}
+
+/* ── Instructions overlay ────────────────────────────────────────────────── */
+.instructions-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.instructions-modal {
+  background: var(--qc-modal-bg);
+  border: 2px solid var(--qc-modal-border);
+  border-radius: 16px;
+  padding: 32px 28px 28px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.instructions-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--qc-subtext);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.instructions-close:hover {
+  color: var(--qc-text);
+}
+
+.instructions-title {
+  margin: 0 0 20px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--qc-frame);
+  letter-spacing: 0.02em;
+}
+
+.instructions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.instructions-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: var(--qc-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--qc-step-bg);
+  color: var(--qc-step-text);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.instructions-tip {
+  background: var(--qc-waiting-bg);
+  border: 1px solid var(--qc-waiting-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--qc-subtext);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.instructions-start-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: var(--qc-frame);
+  color: var(--qc-badge-text);
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.instructions-start-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
 }
 
 /* ── Progress dots ───────────────────────────────────────────────────────── */
@@ -76,6 +233,7 @@
   display: flex;
   gap: 10px;
   margin-bottom: 28px;
+  margin-top: 8px;
 }
 
 .dot {
@@ -177,10 +335,13 @@
 
 .video-label {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 6px 12px;
   background: var(--qc-surface);
   border-bottom: 1px solid var(--qc-frame);
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .scenario-counter {
@@ -189,18 +350,30 @@
   color: var(--qc-frame);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.video-hint {
+  font-size: 11px;
+  color: var(--qc-subtext);
+  font-style: italic;
+}
+
+.video-hint.paused {
+  color: #f59e0b;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.video-hint.resumed {
+  color: #22c55e;
+  font-style: normal;
+  font-weight: 600;
 }
 
 .video-wrapper {
   position: relative;
   padding-top: 56.25%;
-}
-
-.video-wrapper iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
 }
 
 /* ── Quiz panel ──────────────────────────────────────────────────────────── */
@@ -216,6 +389,28 @@
   gap: 0;
   overflow: hidden;
   transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+/* Waiting state — before video pauses */
+.panel-waiting-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 24px;
+  text-align: center;
+  color: var(--qc-subtext);
+}
+
+.waiting-icon {
+  font-size: 28px;
+}
+
+.panel-waiting-msg p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 340px;
 }
 
 /* Question section */
@@ -378,9 +573,14 @@
   color: var(--qc-frame);
 }
 
-/* ── Submit button — all states hardcoded to avoid browser UA overrides ── */
+.explanation-next {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--qc-subtext);
+  font-style: italic;
+}
 
-/* BASE — shared layout only, no colours here */
+/* ── Submit button ───────────────────────────────────────────────────────── */
 .submit-btn {
   display: block;
   width: calc(100% - 44px);
@@ -473,6 +673,13 @@
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
+  .how-to-play-btn {
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
   .nav-arrow {
     width: 40px;
     height: 40px;
@@ -498,5 +705,13 @@
 
   .choice-text {
     font-size: 13px;
+  }
+
+  .instructions-modal {
+    padding: 24px 18px 20px;
+  }
+
+  .instructions-title {
+    font-size: 18px;
   }
 }
