@@ -38,6 +38,13 @@ cd gitgud-client
 npm install
 ```
 
+**Multer & react:**
+```bash
+cd gitgud-client
+npm install multer
+npm install react-router-dom
+```
+
 **Backend:**
 ```bash
 cd ../gitgud-server
