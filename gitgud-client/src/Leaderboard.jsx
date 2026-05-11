@@ -37,7 +37,7 @@ export default function Leaderboard({ currentUid }) {
   const medal = r => r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : null
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 16px", fontFamily: "'Segoe UI','Helvetica Neue',sans-serif" }}>
+    <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px", fontFamily: "'Segoe UI','Helvetica Neue',sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ color: accent, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.03em" }}>Leaderboard</h2>
         <p style={{ color: textSub, fontSize: 13, margin: "4px 0 0" }}>Top 20 players by XP</p>

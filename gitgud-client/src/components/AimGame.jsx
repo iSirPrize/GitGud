@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./AimGame.css";
 import { useTheme } from '../context/ThemeContext';
 import { db, auth } from "../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 
 export default function AimGame() {
     const GAME_TIME = 15
@@ -20,6 +20,20 @@ const { theme } = useTheme();
 const scoreRef = useRef(score);
 const clicksRef = useRef(clicks);
 const gameEndedRef = useRef(false);
+
+//map pool
+const mapPool = [
+  "/mirage.png",
+  "/dust2.png",
+  "/ancient.png",
+  "/ascent.png",
+  "/haven.png",
+  "/bind.png",
+];
+
+const [currentMap, setCurrentMap] = useState(
+  () => mapPool[Math.floor(Math.random() * mapPool.length)]
+);
 
 //Below will spawn the targets randomly, adjusted later 
 const spawnTarget = () => { 
@@ -84,16 +98,32 @@ useEffect(() => {
   return () => clearInterval(timer);
 }, [gameActive]);
 
+
+// Random map on each game start
+const getRandomMap = () => {
+  let nextMap = currentMap;
+
+  while (mapPool.length > 1 && nextMap === currentMap) {
+    nextMap = mapPool[Math.floor(Math.random() * mapPool.length)];
+  }
+
+  return nextMap;
+};
+
+
 //When game has started
 const startGame = () => {
-    gameEndedRef.current = false; //reset
+  gameEndedRef.current = false; // reset
 
-    setScore(0);
-    setClicks(0);
-    setTimeLeft(GAME_TIME);
-    setGameActive(true);
-    spawnTarget();
-}
+  // Pick a different random map each game
+  setCurrentMap(getRandomMap());
+
+  setScore(0);
+  setClicks(0);
+  setTimeLeft(GAME_TIME);
+  setGameActive(true);
+  spawnTarget();
+};
 
 //gun shot sound pool
 const gunSounds = [
@@ -157,18 +187,40 @@ const endGame = async (finalScore, finalClicks) => {
   //save to firebase
 
   try {
-    const user = auth.currentUser;
+  const user = auth.currentUser;
 
-    await addDoc(collection(db, "aimResults"), {
-        userId: user ? user.uid : "guest",
-        username: user?.displayName || "Anonymous",
-        ...resultData,
-    });
+  let username = user?.displayName || "Anonymous";
+  let photoURL = user?.photoURL || "";
 
-    console.log("Saved to Firebase");
-  } catch (error) {
-    console.error("Error saving result:", error);
+  // Prefer the data stored in the users collection
+  if (user) {
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+
+      username =
+        userData.username ||
+        userData.displayName ||
+        username;
+
+      photoURL =
+        userData.photoURL ||
+        photoURL;
+    }
   }
+
+  await addDoc(collection(db, "aimResults"), {
+    userId: user ? user.uid : "guest",
+    username,
+    photoURL,
+    ...resultData,
+  });
+
+  console.log("Saved to Firebase");
+} catch (error) {
+  console.error("Error saving result:", error);
+}
 };
 
 const getCursor = () => {
@@ -216,7 +268,7 @@ return (
             overflow: "hidden",
             border: "3px solid var(--qc-frame)",
             borderRadius: "12px",
-            backgroundImage: "url('/mirage.png')",
+            backgroundImage: `url('${currentMap}')`,
             cursor: getCursor(),
             backgroundSize: "cover",
             backgroundPosition: "center",

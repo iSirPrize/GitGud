@@ -15,6 +15,7 @@ import Leaderboard from './Leaderboard'
 import ProfilePage from './ProfilePage'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
+import LeaderboardPage from "./LeaderboardPage";
 
 function App() {
   const [user, setUser] = useState(undefined)
@@ -59,7 +60,7 @@ function App() {
         <Route path="practice/aim" element={<AimTrainer />} />
         <Route path="quiz" element={<Category />} />
         <Route path="quiz/:gameId" element={<QuizCarousel user={user} />} />
-        <Route path="leaderboard" element={<Leaderboard currentUid={user.uid} />} />
+        <Route path="leaderboard" element={<LeaderboardPage currentUid={user.uid} />} />
       </Route>
     </Routes>
   )
