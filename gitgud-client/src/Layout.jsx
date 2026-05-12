@@ -74,6 +74,11 @@ function Layout({ user }) {
   <div className="nav-desc">Community Clips &amp; Plays!</div>
 </NavLink>
 
+<NavLink to="/critique" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">User Critique</div>
+  <div className="nav-desc">Post Your Clips for Feedback!</div>
+</NavLink>
+
 {isAdmin && (
   <NavLink to="/admin" className={({ isActive }) => isActive ? "practice active" : "practice"}>
     <div className="nav-main">Admin</div>

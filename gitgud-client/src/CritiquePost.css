@@ -1,0 +1,119 @@
+/* CritiquePost.css
+   Drop into: gitgud-client/src/CritiquePost.css */
+
+.cpost-card {
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  max-width: 760px;
+  box-sizing: border-box;
+}
+.cpost-card:hover { border-color: var(--qc-frame); box-shadow: 0 8px 28px -10px rgba(0,0,0,0.3); }
+
+/* Meta row */
+.cpost-meta { display: flex; align-items: center; gap: 10px; }
+
+.cpost-category {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cpost-category.wrong     { background: rgba(239,68,68,0.12);   color: #ef4444; }
+.cpost-category.highlight { background: rgba(34,197,94,0.12);   color: #22c55e; }
+
+.cpost-time { color: var(--qc-subtext); font-size: 0.78rem; }
+
+/* Title */
+.cpost-title {
+  color: var(--qc-text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Creator */
+.cpost-creator { color: var(--qc-subtext); font-size: 0.82rem; margin: 0; }
+.cpost-creator-name { color: var(--qc-frame); font-weight: 600; }
+
+/* Video */
+.cp-video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+
+.cpost-video-label {
+  color: var(--qc-subtext);
+  font-size: 0.78rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Reactions row */
+.cpost-reactions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(128,128,128,0.06);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 8px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.cpost-react-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 9px 18px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--qc-subtext);
+  transition: background 0.15s, color 0.15s;
+}
+.cpost-react-btn:hover:not(:disabled) { background: rgba(128,128,128,0.1); color: var(--qc-text); }
+.cpost-react-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.cpost-react-btn.like.active  { color: var(--qc-frame); }
+.cpost-react-btn.dislike.active { color: #ef4444; }
+
+.cpost-react-icon  { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+.cpost-react-count { font-size: 0.85rem; min-width: 16px; }
+
+.cpost-react-divider { width: 1px; height: 28px; background: var(--qc-input-border, #444); flex-shrink: 0; }
+
+.cpost-comment-toggle {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--qc-input-border, #444);
+  color: var(--qc-subtext);
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.cpost-comment-toggle:hover { color: var(--qc-frame); background: rgba(128,128,128,0.08); }
+
+/* Comments */
+.cpost-comments {
+  border-top: 1px solid var(--qc-input-border, #333);
+  padding-top: 16px;
+  margin-top: 4px;
+}

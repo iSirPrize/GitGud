@@ -4,27 +4,25 @@
 // Access: only users with isAdmin: true in their Firestore users/{uid} doc can see this page.
 // Route: /admin
 //
-// To make someone an admin:
-//   Firebase Console → Firestore → users → {their uid} → add field isAdmin = true (boolean)
-//
 // Gherkin:
 //   Given a user with isAdmin: true navigates to /admin
 //   When the page loads
-//   Then all pending (approved: false, flagged: false) userQuizzes are shown
-//   And each card shows the video title, game, question, creator name, and an embedded preview
+//   Then a tab bar shows "Quiz Submissions" and "Critique Posts"
+//   And pending items in each collection are shown for review
 //
-//   Given an admin clicks Approve
+//   Given an admin views a pending submission
+//   When the oEmbed title contains non-gameplay keywords
+//   Then a mismatch warning is shown in the card
+//
+//   Given an admin clicks Approve: Go Live
 //   When the action completes
-//   Then approved is set to true on that document
-//   And the card is removed from the pending queue
+//   Then approved is set to true and the card is removed from the queue
 //
 //   Given an admin clicks Reject
-//   When the action completes
-//   Then flagged is set to true and approved stays false
-//   And the card is removed from the pending queue
+//   When confirmed
+//   Then flagged is set to true and the card is removed from the queue
 //
-//   Given a non-admin user navigates to /admin
-//   When the page loads
+//   Given a non-admin navigates to /admin
 //   Then an access denied message is shown
 
 import { useState, useEffect, useRef } from "react";
@@ -54,7 +52,6 @@ function loadYouTubeApi() {
   });
 }
 
-// Small inline preview
 function MiniPlayer({ videoId }) {
   const divRef = useRef(null);
   const playerRef = useRef(null);
@@ -81,19 +78,139 @@ function MiniPlayer({ videoId }) {
   );
 }
 
-const GAME_LABELS = { valorant: "Valorant", cs2: "Counter-Strike 2", other: "Other" };
+// ── Free Layer 1 content check: oEmbed title keyword scan ────────────────────
+// No API key required — uses the video title stored at submission time.
+// Catches obvious mismatches (cartoons, cat videos, music, etc.)
+const MISMATCH_KEYWORDS = [
+  "simpsons","cartoon","anime","movie","film","trailer","music video",
+  "vlog","podcast","funny","compilation","cats","dogs","pets","cooking",
+  "food","tutorial","review","unboxing","reaction","challenge","prank",
+  "kids","baby","family","news","weather","nfl","nba","fifa","recipe",
+];
 
+function checkTitleMismatch(videoTitle) {
+  if (!videoTitle) return null;
+  const lower = videoTitle.toLowerCase();
+  const hit = MISMATCH_KEYWORDS.find((kw) => lower.includes(kw));
+  if (hit) return `Title contains "${hit}" — check this is actually gameplay.`;
+  return null;
+}
+
+const GAME_LABELS     = { valorant: "Valorant", cs2: "Counter-Strike 2", other: "Other" };
+const CATEGORY_LABELS = { wrong: "What am I doing wrong?", highlight: "Check this play out" };
+
+// ── Moderation card ───────────────────────────────────────────────────────────
+function ModerationCard({ item, type, acting, expanded, onToggleExpand, onApprove, onReject }) {
+  const mismatch = checkTitleMismatch(item.videoTitle);
+
+  return (
+    <div className="ap-card">
+      <div className="ap-card-top">
+        <div className="ap-card-meta">
+          {type === "quiz" ? (
+            <span className="ap-game-tag">{GAME_LABELS[item.game] ?? item.game}</span>
+          ) : (
+            <span className="ap-game-tag ap-cat-tag">
+              {CATEGORY_LABELS[item.category] ?? item.category}
+            </span>
+          )}
+          <span className="ap-creator">
+            by {item.creatorName || item.createdByName || "Unknown"}
+          </span>
+        </div>
+        <button className="ap-preview-toggle" onClick={onToggleExpand}>
+          {expanded ? "Hide Preview" : "Watch Clip"}
+        </button>
+      </div>
+
+      {item.videoTitle && (
+        <p className="ap-video-title">Video: {item.videoTitle}</p>
+      )}
+
+      {mismatch && (
+        <div className="ap-mismatch-warning">
+          Content check: {mismatch}
+        </div>
+      )}
+
+      {type === "critique" && item.title && (
+        <p className="ap-post-title">Post title: "{item.title}"</p>
+      )}
+
+      {expanded && <MiniPlayer videoId={item.videoId} />}
+
+      <div className="ap-card-content">
+        {type === "quiz" && (
+          <>
+            <div className="ap-field">
+              <span className="ap-field-label">Question</span>
+              <span className="ap-field-value">{item.question}</span>
+            </div>
+            <div className="ap-field">
+              <span className="ap-field-label">Pause at</span>
+              <span className="ap-field-value">{item.pauseAt}s</span>
+            </div>
+            <div className="ap-field">
+              <span className="ap-field-label">Correct</span>
+              <span className="ap-field-value ap-correct">
+                {item.choices?.[item.correctIndex]}
+              </span>
+            </div>
+            <div className="ap-field">
+              <span className="ap-field-label">Other options</span>
+              <span className="ap-field-value">
+                {item.choices?.filter((_, i) => i !== item.correctIndex).join(" / ")}
+              </span>
+            </div>
+            <div className="ap-field">
+              <span className="ap-field-label">Explanation</span>
+              <span className="ap-field-value">{item.reason}</span>
+            </div>
+          </>
+        )}
+        {type === "critique" && (
+          <div className="ap-field">
+            <span className="ap-field-label">Category</span>
+            <span className="ap-field-value">
+              {CATEGORY_LABELS[item.category] ?? item.category}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="ap-actions">
+        <button
+          className="ap-approve-btn"
+          onClick={() => onApprove(item.id)}
+          disabled={acting === item.id}
+        >
+          {acting === item.id ? "..." : "Approve: Go Live"}
+        </button>
+        <button
+          className="ap-reject-btn"
+          onClick={() => onReject(item.id)}
+          disabled={acting === item.id}
+        >
+          {acting === item.id ? "..." : "Reject"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function AdminPanel({ user }) {
   const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark    = theme === "dark";
 
-  const [isAdmin,  setIsAdmin]  = useState(null); // null = checking
-  const [pending,  setPending]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [acting,   setActing]   = useState(null); // docId being acted on
-  const [expanded, setExpanded] = useState(null); // docId with open preview
+  const [isAdmin,   setIsAdmin]   = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [activeTab, setActiveTab] = useState("quiz");
+  const [quizzes,   setQuizzes]   = useState([]);
+  const [critiques, setCritiques] = useState([]);
+  const [acting,    setActing]    = useState(null);
+  const [expanded,  setExpanded]  = useState(null);
 
-  // ── Check admin role ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid) { setIsAdmin(false); setLoading(false); return; }
     async function check() {
@@ -101,76 +218,70 @@ export default function AdminPanel({ user }) {
         const snap = await getDocs(
           query(collection(db, "users"), where("__name__", "==", user.uid))
         );
-        if (!snap.empty && snap.docs[0].data().isAdmin === true) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Admin check failed:", err);
+        setIsAdmin(!snap.empty && snap.docs[0].data().isAdmin === true);
+      } catch {
         setIsAdmin(false);
+      } finally {
         setLoading(false);
       }
     }
     check();
   }, [user?.uid]);
 
-  // ── Fetch pending quizzes ───────────────────────────────────────────────────
   useEffect(() => {
     if (!isAdmin) return;
     async function fetchPending() {
       try {
-        const snap = await getDocs(
-          query(
+        const [quizSnap, critiqueSnap] = await Promise.all([
+          getDocs(query(
             collection(db, "userQuizzes"),
             where("approved", "==", false),
             where("flagged",  "==", false)
-          )
-        );
-        setPending(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          )),
+          getDocs(query(
+            collection(db, "critiquePosts"),
+            where("approved", "==", false),
+            where("flagged",  "==", false)
+          )),
+        ]);
+        setQuizzes(quizSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setCritiques(critiqueSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {
-        console.error("Failed to load pending quizzes:", err);
-      } finally {
-        setLoading(false);
+        console.error("Failed to load pending items:", err);
       }
     }
     fetchPending();
   }, [isAdmin]);
 
-  const handleApprove = async (quizId) => {
-    setActing(quizId);
+  const handleApprove = async (id, collectionName, setter) => {
+    setActing(id);
     try {
-      await updateDoc(doc(db, "userQuizzes", quizId), { approved: true });
-      setPending((prev) => prev.filter((q) => q.id !== quizId));
+      await updateDoc(doc(db, collectionName, id), { approved: true });
+      setter((prev) => prev.filter((q) => q.id !== id));
     } catch (err) {
-      console.error("Approve failed:", err);
       alert("Failed to approve. Try again.");
     } finally {
       setActing(null);
     }
   };
 
-  const handleReject = async (quizId) => {
-    if (!window.confirm("Reject this quiz? The creator will see it as Rejected.")) return;
-    setActing(quizId);
+  const handleReject = async (id, collectionName, setter) => {
+    if (!window.confirm("Reject this submission? The creator will see it as Rejected.")) return;
+    setActing(id);
     try {
-      await updateDoc(doc(db, "userQuizzes", quizId), { flagged: true });
-      setPending((prev) => prev.filter((q) => q.id !== quizId));
+      await updateDoc(doc(db, collectionName, id), { flagged: true });
+      setter((prev) => prev.filter((q) => q.id !== id));
     } catch (err) {
-      console.error("Reject failed:", err);
       alert("Failed to reject. Try again.");
     } finally {
       setActing(null);
     }
   };
 
-  // ── Access denied ───────────────────────────────────────────────────────────
   if (isAdmin === false) {
     return (
       <div className={`ap-page quiz-carousel ${isDark ? "dark" : "light"}`}>
         <div className="ap-denied">
-          <span className="ap-denied-icon">🚫</span>
           <h2>Access Denied</h2>
           <p>You don't have admin privileges to view this page.</p>
         </div>
@@ -178,106 +289,69 @@ export default function AdminPanel({ user }) {
     );
   }
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
   if (isAdmin === null || loading) {
     return (
       <div className={`ap-page quiz-carousel ${isDark ? "dark" : "light"}`}>
-        <p style={{ color: "var(--qc-subtext)" }}>Loading…</p>
+        <p style={{ color: "var(--qc-subtext)" }}>Loading...</p>
       </div>
     );
   }
 
-  // ── Admin UI ────────────────────────────────────────────────────────────────
+  const activeItems    = activeTab === "quiz" ? quizzes : critiques;
+  const collectionName = activeTab === "quiz" ? "userQuizzes" : "critiquePosts";
+  const setter         = activeTab === "quiz" ? setQuizzes  : setCritiques;
+
   return (
     <div className={`ap-page quiz-carousel ${isDark ? "dark" : "light"}`}>
       <div className="ap-header">
-        <h1 className="ap-title">Admin: Quiz Moderation</h1>
+        <h1 className="ap-title">Admin: Moderation</h1>
         <p className="ap-sub">
-          Review user-submitted quizzes before they go live. Watch the clip, check it matches the selected game, and approve or reject.
+          Review user submissions before they go live. Watch the clip, check the video title
+          matches the selected game or category, then approve or reject. Titles flagged by
+          the content check are highlighted automatically.
         </p>
         <div className="ap-underline" />
       </div>
 
-      {pending.length === 0 ? (
+      <div className="ap-tabs">
+        <button
+          className={`ap-tab ${activeTab === "quiz" ? "active" : ""}`}
+          onClick={() => { setActiveTab("quiz"); setExpanded(null); }}
+        >
+          Quiz Submissions
+          {quizzes.length > 0 && <span className="ap-badge">{quizzes.length}</span>}
+        </button>
+        <button
+          className={`ap-tab ${activeTab === "critique" ? "active" : ""}`}
+          onClick={() => { setActiveTab("critique"); setExpanded(null); }}
+        >
+          Critique Posts
+          {critiques.length > 0 && <span className="ap-badge">{critiques.length}</span>}
+        </button>
+      </div>
+
+      {activeItems.length === 0 ? (
         <div className="ap-empty">
-          <span className="ap-empty-icon">✓</span>
           <h2>All caught up!</h2>
-          <p>No quizzes are waiting for review right now.</p>
+          <p>No {activeTab === "quiz" ? "quiz submissions" : "critique posts"} awaiting review.</p>
         </div>
       ) : (
         <>
-          <p className="ap-count">{pending.length} quiz{pending.length !== 1 ? "zes" : ""} awaiting review</p>
+          <p className="ap-count">
+            {activeItems.length} item{activeItems.length !== 1 ? "s" : ""} awaiting review
+          </p>
           <div className="ap-list">
-            {pending.map((quiz) => (
-              <div key={quiz.id} className="ap-card">
-                {/* Card header */}
-                <div className="ap-card-top">
-                  <div className="ap-card-meta">
-                    <span className="ap-game-tag">{GAME_LABELS[quiz.game] ?? quiz.game}</span>
-                    <span className="ap-creator">by {quiz.createdByName || "Unknown"}</span>
-                  </div>
-                  <button
-                    className="ap-preview-toggle"
-                    onClick={() => setExpanded(expanded === quiz.id ? null : quiz.id)}
-                  >
-                    {expanded === quiz.id ? "▲ Hide Preview" : "▶ Watch Clip"}
-                  </button>
-                </div>
-
-                {/* Video title from oEmbed */}
-                {quiz.videoTitle && (
-                  <p className="ap-video-title">📹 {quiz.videoTitle}</p>
-                )}
-
-                {/* Expandable player */}
-                {expanded === quiz.id && (
-                  <MiniPlayer videoId={quiz.videoId} />
-                )}
-
-                {/* Quiz content */}
-                <div className="ap-card-content">
-                  <div className="ap-field">
-                    <span className="ap-field-label">Question</span>
-                    <span className="ap-field-value">{quiz.question}</span>
-                  </div>
-                  <div className="ap-field">
-                    <span className="ap-field-label">Pause at</span>
-                    <span className="ap-field-value">{quiz.pauseAt}s</span>
-                  </div>
-                  <div className="ap-field">
-                    <span className="ap-field-label">Correct Answer</span>
-                    <span className="ap-field-value ap-correct">{quiz.choices?.[quiz.correctIndex]}</span>
-                  </div>
-                  <div className="ap-field">
-                    <span className="ap-field-label">Other Options</span>
-                    <span className="ap-field-value">
-                      {quiz.choices?.filter((_, i) => i !== quiz.correctIndex).join(" · ")}
-                    </span>
-                  </div>
-                  <div className="ap-field">
-                    <span className="ap-field-label">Explanation</span>
-                    <span className="ap-field-value">{quiz.reason}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="ap-actions">
-                  <button
-                    className="ap-approve-btn"
-                    onClick={() => handleApprove(quiz.id)}
-                    disabled={acting === quiz.id}
-                  >
-                    {acting === quiz.id ? "…" : "✓ Approve: Go Live"}
-                  </button>
-                  <button
-                    className="ap-reject-btn"
-                    onClick={() => handleReject(quiz.id)}
-                    disabled={acting === quiz.id}
-                  >
-                    {acting === quiz.id ? "…" : "✗ Reject"}
-                  </button>
-                </div>
-              </div>
+            {activeItems.map((item) => (
+              <ModerationCard
+                key={item.id}
+                item={item}
+                type={activeTab}
+                acting={acting}
+                expanded={expanded === item.id}
+                onToggleExpand={() => setExpanded(expanded === item.id ? null : item.id)}
+                onApprove={(id) => handleApprove(id, collectionName, setter)}
+                onReject={(id)  => handleReject(id, collectionName, setter)}
+              />
             ))}
           </div>
         </>

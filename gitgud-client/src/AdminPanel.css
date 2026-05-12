@@ -175,3 +175,59 @@
 .ap-empty-icon, .ap-denied-icon { font-size: 3rem; }
 .ap-empty h2, .ap-denied h2 { color: var(--qc-text); margin: 0; font-size: 1.4rem; }
 .ap-empty p,  .ap-denied p  { color: var(--qc-subtext); font-size: 0.9rem; margin: 0; }
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.ap-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.ap-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--qc-input-border, #444);
+  color: var(--qc-subtext);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.ap-tab:hover  { border-color: var(--qc-frame); color: var(--qc-text); }
+.ap-tab.active { background: var(--qc-frame); border-color: var(--qc-frame); color: #fff; }
+
+.ap-badge {
+  background: #ef4444;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Mismatch warning ─────────────────────────────────────────────────── */
+.ap-mismatch-warning {
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.4);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fbbf24;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* ── Post title (critique) ────────────────────────────────────────────── */
+.ap-post-title {
+  color: var(--qc-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Category tag variant ─────────────────────────────────────────────── */
+.ap-cat-tag { background: rgba(168,85,247,0.15); color: #a855f7; }
