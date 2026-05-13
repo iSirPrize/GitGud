@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { registerWithEmail, loginWithEmail, verifyEmail } from "./auth";
 
-
 function validatePassword(pw) {
   if (pw.length < 8)             return "Password must be at least 8 characters.";
   if (!/[A-Z]/.test(pw))         return "Must include an uppercase letter.";
@@ -10,8 +9,8 @@ function validatePassword(pw) {
   return null;
 }
 
-export default function AuthPage({ onIntent })  {
-  const [view, setView]         = useState("landing"); // "landing" | "login" | "register"
+export default function AuthPage({ onIntent, unverifiedEmail }) {
+  const [view, setView]         = useState("landing"); // "landing" | "login" | "register" | "verify"
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm]   = useState("");
@@ -46,9 +45,11 @@ export default function AuthPage({ onIntent })  {
     try {
       const cred = await registerWithEmail(email.trim(), password);
       await verifyEmail(cred.user);
-      setView("verify"); // new view
+      setView("verify");
     } catch (e) {
       setError(friendlyError(e.code));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -83,6 +84,9 @@ export default function AuthPage({ onIntent })  {
               value={password} onChange={e => setPassword(e.target.value)}
               autoComplete="current-password"
               onKeyDown={e => e.key === "Enter" && handleLogin()} />
+            {unverifiedEmail && (
+              <p style={styles.error}>Please verify your email before logging in. Check your inbox.</p>
+            )}
             {error && <p style={styles.error}>{error}</p>}
             <button style={styles.primary} onClick={handleLogin} disabled={loading}>
               {loading ? "Logging in…" : "Log In"}
@@ -121,14 +125,15 @@ export default function AuthPage({ onIntent })  {
           </div>
         )}
 
+        {/* VERIFY */}
         {view === "verify" && (
-        <div style={styles.section}>
-          <p style={styles.heading}>Check your email</p>
-          <p style={styles.tagline}>A verification link was sent to <strong>{email}</strong>. Click it before logging in.</p>
-          <button style={styles.primary} onClick={() => { reset(); setView("login"); }}>
-            Go to Login
-          </button>
-        </div>
+          <div style={styles.section}>
+            <p style={styles.heading}>Check your email</p>
+            <p style={styles.tagline}>A verification link was sent to <strong>{email}</strong>. Click it before logging in.</p>
+            <button style={styles.primary} onClick={() => { reset(); setView("login"); }}>
+              Go to Login
+            </button>
+          </div>
         )}
 
       </div>

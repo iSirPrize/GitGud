@@ -25,6 +25,7 @@ import LeaderboardPage from "./LeaderboardPage"
 function App() {
   const [user, setUser] = useState(undefined)
   const [showAuth, setShowAuth] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState(false)
   const [hasSeenLanding, setHasSeenLanding] = useState(
     () => sessionStorage.getItem('seenLanding') === 'true'
   )
@@ -33,11 +34,13 @@ function App() {
 
   useEffect(() => {
     const unsub = onAuth(async (u) => {
-      if (u && !u.emailVerified) { 
+      if (u && !u.emailVerified) {
         setUser(null)
         setShowAuth(true)
+        setUnverifiedEmail(true)
         return
       }
+      setUnverifiedEmail(false)
       setUser(u)
       if (u) {
         setShowAuth(false)
@@ -59,7 +62,10 @@ function App() {
   if (user === undefined) return <div className="loading">Loading page...</div>
   if (!hasSeenLanding) return <LandingPage onLogin={handleGetStarted} />
   if (!user) return showAuth
-    ? <AuthPage onIntent={(intent) => { authIntentRef.current = intent }} />
+    ? <AuthPage
+        onIntent={(intent) => { authIntentRef.current = intent }}
+        unverifiedEmail={unverifiedEmail}
+      />
     : <LandingPage onLogin={handleGetStarted} />
 
   return (
