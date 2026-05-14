@@ -5,7 +5,7 @@ import { db, auth } from "../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function AimGame() {
-    const GAME_TIME = 15
+    const GAME_TIME = 5
 
 const [score, setScore] = useState(0);
 const [timeLeft, setTimeLeft] = useState(GAME_TIME);
