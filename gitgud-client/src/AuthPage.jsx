@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { registerWithEmail, loginWithEmail } from "./auth";
+import { registerWithEmail, loginWithEmail, verifyEmail } from "./auth";
+
 
 function validatePassword(pw) {
   if (pw.length < 8)             return "Password must be at least 8 characters.";
@@ -43,11 +44,11 @@ export default function AuthPage({ onIntent })  {
     onIntent('register')
     setLoading(true);
     try {
-      await registerWithEmail(email.trim(), password);
+      const cred = await registerWithEmail(email.trim(), password);
+      await verifyEmail(cred.user);
+      setView("verify"); // new view
     } catch (e) {
       setError(friendlyError(e.code));
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -118,6 +119,16 @@ export default function AuthPage({ onIntent })  {
               ← Back
             </button>
           </div>
+        )}
+
+        {view === "verify" && (
+        <div style={styles.section}>
+          <p style={styles.heading}>Check your email</p>
+          <p style={styles.tagline}>A verification link was sent to <strong>{email}</strong>. Click it before logging in.</p>
+          <button style={styles.primary} onClick={() => { reset(); setView("login"); }}>
+            Go to Login
+          </button>
+        </div>
         )}
 
       </div>

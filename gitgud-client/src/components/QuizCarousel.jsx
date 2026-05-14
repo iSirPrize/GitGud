@@ -189,7 +189,7 @@ function InstructionsModal({ onClose, isDark }) {
           </li>
         </ol>
         <p className="instructions-tip">
-          💡 <strong>Tip:</strong> Get the correct answer to earn points on the leaderboard!
+          <strong>Tip:</strong> Get the correct answer to earn points on the leaderboard!
         </p>
         <button className="instructions-start-btn" onClick={onClose}>
           Got it — Let's Play!
@@ -307,17 +307,24 @@ export default function QuizCarousel({ user }) {
   const [sliding, setSliding]           = useState(null);
   const [feedback, setFeedback]         = useState(null);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [showComplete, setShowComplete] = useState(false);
 
   const touchStartX  = useRef(null);
-  // Stores the auto-advance timer so we can cancel it if the user navigates manually
   const advanceTimer = useRef(null);
 
-  const total       = SCENARIOS.length;
-  const scenario    = SCENARIOS[current];
-  const isSubmitted = submitted[current];
-  const selectedIdx = selected[current];
-  const isCorrect   = isSubmitted && selectedIdx === scenario.correctIndex;
+  const total         = SCENARIOS.length;
+  const scenario      = SCENARIOS[current];
+  const isSubmitted   = submitted[current];
+  const selectedIdx   = selected[current];
+  const isCorrect     = isSubmitted && selectedIdx === scenario.correctIndex;
   const isVideoPaused = videoPaused[current];
+
+  // How many correct across all questions
+  const correctCount = submitted.filter(
+    (done, i) => done && selected[i] === SCENARIOS[i].correctIndex
+  ).length;
+  // True once every question has been answered
+  const allAnswered = submitted.every(Boolean);
 
   // ── Mark video as paused for current question ──────────────────────────────
   const handleVideoPaused = useCallback(() => {
@@ -329,14 +336,21 @@ export default function QuizCarousel({ user }) {
   }, [current]);
 
   // ── Called when the clip finishes playing after the user has answered ───────
-  // Waits POST_VIDEO_GRACE_MS then advances — gives time to read explanation.
+  // This is the primary trigger for advancing/completing. The submit fallback
+  // timer is cancelled here so only one path fires.
   const handleVideoEnded = useCallback(() => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(() => {
-      goTo("next");
-    }, POST_VIDEO_GRACE_MS);
+      const updatedSubmitted = submitted.map((s, i) => (i === current ? true : s));
+      const allDone = updatedSubmitted.every(Boolean);
+      if (allDone && current === total - 1) {
+        setShowComplete(true);
+      } else {
+        goTo("next");
+      }
+    }, 3000); // 3s after video ends — enough to read explanation without feeling slow
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
+  }, [current, submitted, total]);
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   const goTo = (direction) => {
@@ -389,12 +403,103 @@ export default function QuizCarousel({ user }) {
     if (correct && user?.uid) {
       awardPoints(user.uid, 10).catch((err) => console.error("awardPoints failed:", err));
     }
-    // Auto-advance is now driven by the video ending (onVideoEnded → handleVideoEnded)
-    // with a POST_VIDEO_GRACE_MS buffer so users can read the explanation.
-    // No fixed timeout here — the clip length determines when we move on.
+
+    // Fallback only — if the video end event never fires (e.g. user skips or
+    // YouTube fails to report it), show complete after 60s on the last question.
+    // handleVideoEnded is the real trigger and will cancel this if it fires first.
+    const willBeAllDone = updatedSubmitted.every(Boolean);
+    if (willBeAllDone && current === total - 1) {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+      advanceTimer.current = setTimeout(() => {
+        setShowComplete(true);
+      }, 60000); // 60s fallback — video end event should fire long before this
+    }
   };
 
   const choiceLabels = ["A", "B", "C", "D"];
+
+  // ── Quiz Complete screen ──────────────────────────────────────────────────
+  if (showComplete) {
+    const pct     = Math.round((correctCount / total) * 100);
+    const perfect = correctCount === total;
+    const passing = pct >= 60;
+
+    const getRank = () => {
+      if (pct === 100) return { label: "Perfect Score!", color: "#f59e0b" };
+      if (pct >= 80)   return { label: "Great Work!",    color: "#22c55e" };
+      if (pct >= 60)   return { label: "Not Bad!",       color: "#3b82f6" };
+      return               { label: "Keep Practising",   color: "#ef4444" };
+    };
+    const rank = getRank();
+
+    return (
+      <div className={`quiz-carousel ${isDark ? "dark" : "light"}`}>
+        <div className="complete-screen">
+          <div className="complete-card">
+
+            <div className="complete-icon">{perfect ? "★" : passing ? "✓" : "○"}</div>
+            <h1 className="complete-title">Quiz Complete!</h1>
+            <p className="complete-rank" style={{ color: rank.color }}>{rank.label}</p>
+
+            {/* Score bar */}
+            <div className="complete-score-wrap">
+              <div className="complete-score-label">
+                <span>Your Score</span>
+                <span className="complete-fraction">{correctCount} / {total}</span>
+              </div>
+              <div className="complete-bar-track">
+                <div
+                  className="complete-bar-fill"
+                  style={{ width: `${pct}%`, background: rank.color }}
+                />
+              </div>
+              <div className="complete-pct">{pct}%</div>
+            </div>
+
+            {/* Per-question breakdown */}
+            <div className="complete-breakdown">
+              {SCENARIOS.map((s, i) => {
+                const wasCorrect = selected[i] === s.correctIndex;
+                return (
+                  <div key={i} className={`breakdown-row ${wasCorrect ? "bk-correct" : "bk-wrong"}`}>
+                    <span className="bk-num">Q{i + 1}</span>
+                    <span className="bk-icon">{wasCorrect ? "✓" : "✗"}</span>
+                    <span className="bk-text">
+                      {s.question.length > 55 ? s.question.slice(0, 55) + "…" : s.question}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="complete-points">+{correctCount * 10} points earned this quiz</p>
+
+            <div className="complete-actions">
+              <button
+                className="complete-retry-btn"
+                onClick={() => {
+                  setShowComplete(false);
+                  setCurrent(0);
+                  setSelected(Array(SCENARIOS.length).fill(null));
+                  setSubmitted(Array(SCENARIOS.length).fill(false));
+                  setVideoPaused(Array(SCENARIOS.length).fill(false));
+                  setFeedback(null);
+                }}
+              >
+                Try Again
+              </button>
+              <button
+                className="complete-review-btn"
+                onClick={() => setShowComplete(false)}
+              >
+                Review Answers
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getChoiceClass = (idx) => {
     let cls = "choice-btn";
@@ -487,7 +592,7 @@ export default function QuizCarousel({ user }) {
           {/* Waiting state — before video pauses */}
           {!isVideoPaused && !isSubmitted && (
             <div className="panel-waiting-msg">
-              <span className="waiting-icon">⏳</span>
+              <span className="waiting-icon">[ ]</span>
               <p>Watch the clip — your question will appear here when the video pauses.</p>
             </div>
           )}

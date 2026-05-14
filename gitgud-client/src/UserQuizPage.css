@@ -1,0 +1,353 @@
+/* UserQuizPage.css
+   Drop into: gitgud-client/src/UserQuizPage.css
+   Matches the dark/light token system already used in Category.css + QuizCarousel.css */
+
+/* ── Tokens (inherit from quiz-carousel.dark / .light already declared) ───── */
+.uq-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--qc-bg);
+  padding: 40px 24px 60px;
+  box-sizing: border-box;
+  transition: background 0.3s;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.uq-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.uq-title {
+  color: var(--qc-text);
+  font-size: 2.4rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin: 0 0 8px;
+}
+
+.uq-subtitle {
+  color: var(--qc-subtext);
+  font-size: 0.95rem;
+  margin: 0 0 16px;
+}
+
+.uq-underline {
+  height: 4px;
+  width: 60px;
+  background: var(--qc-frame);
+  margin: 0 auto 28px;
+  border-radius: 2px;
+}
+
+.uq-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--qc-frame);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.uq-create-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+.uq-create-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* ── Panels grid ─────────────────────────────────────────────────────────── */
+.uq-panels {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  width: 100%;
+  max-width: 1100px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.uq-panel {
+  flex: 1 1 280px;
+  max-width: 360px;
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.175, 0.855, 0.44, 1),
+              box-shadow 0.35s ease,
+              border-color 0.25s;
+}
+.uq-panel:hover {
+  transform: translateY(-8px);
+  border-color: var(--game-accent);
+  box-shadow: 0 16px 36px -12px var(--game-accent);
+}
+
+/* Panel image area */
+.uq-panel-img-wrap {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+.uq-panel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(40%);
+  transition: filter 0.4s, transform 0.4s;
+}
+.uq-panel:hover .uq-panel-img {
+  filter: grayscale(0%) brightness(1.1);
+  transform: scale(1.05);
+}
+.uq-panel-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 60%);
+}
+.uq-panel-game-name {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  letter-spacing: 0.04em;
+}
+
+/* Panel body */
+.uq-panel-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+.uq-panel-desc {
+  color: var(--qc-subtext);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.uq-panel-loading {
+  color: var(--qc-subtext);
+  font-size: 0.85rem;
+  animation: uqPulse 1.2s infinite;
+}
+@keyframes uqPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Empty state */
+.uq-panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  text-align: center;
+}
+.uq-empty-icon { font-size: 2rem; }
+.uq-panel-empty p {
+  color: var(--qc-subtext);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.uq-panel-create-btn {
+  background: transparent;
+  border: 1px solid var(--game-accent);
+  color: var(--game-accent);
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.uq-panel-create-btn:hover {
+  background: var(--game-accent);
+  color: #fff;
+}
+
+/* Play link */
+.uq-panel-play-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(128,128,128,0.07);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+.uq-panel-play-link:hover {
+  background: rgba(128,128,128,0.14);
+  border-color: var(--game-accent);
+}
+.uq-play-count {
+  color: var(--qc-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.uq-play-arrow {
+  color: var(--game-accent);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+  .uq-panels { flex-direction: column; align-items: center; }
+  .uq-panel  { max-width: 100%; }
+}
+
+/* ── My Quizzes section ──────────────────────────────────────────────────── */
+.uq-my-section {
+  width: 100%;
+  max-width: 860px;
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 14px;
+  padding: 24px;
+  box-sizing: border-box;
+  margin-bottom: 36px;
+}
+
+.uq-my-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.uq-my-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--qc-frame);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.uq-my-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.uq-my-title {
+  color: var(--qc-text);
+  font-size: 1.1rem;
+  margin: 0 0 2px;
+  font-weight: 700;
+}
+.uq-my-sub {
+  color: var(--qc-subtext);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.uq-my-loading { color: var(--qc-subtext); font-size: 0.85rem; }
+
+.uq-my-empty {
+  text-align: center;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.uq-my-empty p { color: var(--qc-subtext); font-size: 0.88rem; margin: 0; }
+
+.uq-my-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.uq-my-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(128,128,128,0.05);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 10px;
+  padding: 12px 16px;
+  transition: border-color 0.2s;
+}
+.uq-my-card:hover { border-color: var(--qc-frame); }
+
+.uq-my-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.uq-status-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  width: fit-content;
+  letter-spacing: 0.04em;
+}
+.uq-status-badge.approved { background: rgba(34,197,94,0.15); color: #22c55e; }
+.uq-status-badge.pending  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.uq-status-badge.flagged  { background: rgba(239,68,68,0.15);  color: #ef4444; }
+
+.uq-my-question {
+  color: var(--qc-text);
+  font-size: 0.88rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uq-my-meta {
+  color: var(--qc-subtext);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.uq-my-delete {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--qc-subtext);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: border-color 0.2s, color 0.2s;
+}
+.uq-my-delete:hover { border-color: #ef4444; color: #ef4444; }
+.uq-my-delete:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Browse heading */
+.uq-browse-title {
+  color: var(--qc-text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 20px;
+  align-self: flex-start;
+  max-width: 860px;
+  width: 100%;
+}

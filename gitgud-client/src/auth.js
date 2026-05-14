@@ -10,6 +10,8 @@ import {
 } from "firebase/auth";
 import { app } from "./firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { sendEmailVerification } from "firebase/auth";
+export const verifyEmail = (user) => sendEmailVerification(user);
 
 export const sendPasswordReset = (email) =>
   sendPasswordResetEmail(auth, email);

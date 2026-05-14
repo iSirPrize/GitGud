@@ -3,12 +3,22 @@ import DarkModeToggle from "./components/DarkModeToggle"
 import ProfileDropdown from "./ProfileDropdown"
 import "./NavBar.css"
 import { useTheme } from './context/ThemeContext'
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { doc, getDoc } from "firebase/firestore"
+import { db } from "./firebase"
 
 
 function Layout({ user }) {
   const { theme } = useTheme()
   const [open, setOpen] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (!user?.uid) return
+    getDoc(doc(db, "users", user.uid)).then((snap) => {
+      if (snap.exists() && snap.data().isAdmin === true) setIsAdmin(true)
+    }).catch(() => {})
+  }, [user?.uid])
 
   return (
     <div className={`quiz-carousel ${theme?.toLowerCase?.()}`}>
@@ -58,6 +68,23 @@ function Layout({ user }) {
   <div className="nav-main">Leaderboard</div>
   <div className="nav-desc">Check Your Rankings!</div>
 </NavLink>
+
+<NavLink to="/user-quiz" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">User Quizzes</div>
+  <div className="nav-desc">Community Clips &amp; Plays!</div>
+</NavLink>
+
+<NavLink to="/critique" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+  <div className="nav-main">User Critique</div>
+  <div className="nav-desc">Post Your Clips for Feedback!</div>
+</NavLink>
+
+{isAdmin && (
+  <NavLink to="/admin" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+    <div className="nav-main">Admin</div>
+    <div className="nav-desc">Moderate Quiz Submissions</div>
+  </NavLink>
+)}
         </div>
       </div>
       <section id="center" className={theme}>

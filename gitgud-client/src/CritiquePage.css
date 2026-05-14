@@ -1,0 +1,70 @@
+/* CritiquePage.css
+   Drop into: gitgud-client/src/CritiquePage.css */
+
+.cp-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--qc-bg);
+  padding: 40px 16px 60px;
+  box-sizing: border-box;
+  transition: background 0.3s;
+}
+
+/* Header */
+.cp-header { text-align: center; margin-bottom: 28px; }
+.cp-title  { color: var(--qc-text); font-size: 2.2rem; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 8px; }
+.cp-subtitle { color: var(--qc-subtext); font-size: 0.92rem; margin: 0 0 16px; }
+.cp-underline { height: 4px; width: 60px; background: var(--qc-frame); margin: 0 auto 24px; border-radius: 2px; }
+
+.cp-post-btn {
+  display: inline-block;
+  background: var(--qc-frame);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.cp-post-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+/* Category filter tabs */
+.cp-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.cp-tab {
+  background: transparent;
+  border: 1px solid var(--qc-input-border, #444);
+  color: var(--qc-subtext);
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.cp-tab:hover  { border-color: var(--qc-frame); color: var(--qc-text); }
+.cp-tab.active { background: var(--qc-frame); border-color: var(--qc-frame); color: #fff; }
+
+/* Feed */
+.cp-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* States */
+.cp-loading { color: var(--qc-subtext); font-size: 0.9rem; margin-top: 40px; }
+.cp-empty   { text-align: center; margin-top: 60px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.cp-empty p { color: var(--qc-subtext); margin: 0; }

@@ -1,0 +1,354 @@
+/* UserQuizCreate.css
+   Drop into: gitgud-client/src/UserQuizCreate.css */
+
+.uqc-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--qc-bg);
+  padding: 40px 16px 60px;
+  box-sizing: border-box;
+  transition: background 0.3s;
+}
+
+/* ── Step bar ─────────────────────────────────────────────────────────────── */
+.uqc-stepbar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.uqc-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.uqc-step-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--qc-input-bg, #222);
+  border: 2px solid var(--qc-input-border, #444);
+  color: var(--qc-subtext);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s, border-color 0.25s, color 0.25s;
+  flex-shrink: 0;
+}
+
+.uqc-step.active .uqc-step-circle {
+  background: var(--qc-frame);
+  border-color: var(--qc-frame);
+  color: #fff;
+}
+
+.uqc-step.done .uqc-step-circle {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+}
+
+.uqc-step-label {
+  font-size: 0.75rem;
+  color: var(--qc-subtext);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.uqc-step.active .uqc-step-label { color: var(--qc-frame); }
+.uqc-step.done  .uqc-step-label  { color: #22c55e; }
+
+.uqc-step-line {
+  width: 32px;
+  height: 2px;
+  background: var(--qc-input-border, #444);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.uqc-card {
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 620px;
+  padding: 32px 28px 24px;
+  box-sizing: border-box;
+}
+
+.uqc-step-title {
+  color: var(--qc-text);
+  font-size: 1.3rem;
+  margin: 0 0 24px;
+  font-weight: 700;
+}
+
+/* ── Form elements ────────────────────────────────────────────────────────── */
+.uqc-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qc-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 7px;
+  letter-spacing: 0.03em;
+}
+
+.uqc-input,
+.uqc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--qc-input-bg, #1a1a1a);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 8px;
+  color: var(--qc-text);
+  font-size: 0.92rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  font-family: inherit;
+}
+.uqc-input:focus,
+.uqc-textarea:focus { border-color: var(--qc-frame); }
+.uqc-input.error,
+.uqc-textarea.error { border-color: #ef4444; }
+.uqc-input-sm { max-width: 140px; }
+
+.uqc-fake-input { margin-bottom: 8px; }
+
+.uqc-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin: 4px 0 0;
+}
+
+.uqc-hint {
+  color: var(--qc-subtext);
+  font-size: 0.8rem;
+  margin: 5px 0 0;
+}
+.uqc-hint.success { color: #22c55e; }
+
+/* ── Video preview ────────────────────────────────────────────────────────── */
+.uqc-preview-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 14px;
+  background: #000;
+}
+
+/* ── Tooltip ──────────────────────────────────────────────────────────────── */
+.uqc-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.uqc-tooltip-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--qc-frame);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.uqc-tooltip-box {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1a1a1a;
+  color: #f0f0f0;
+  border: 1px solid var(--qc-frame);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.5;
+  width: 240px;
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+/* ── Game buttons ─────────────────────────────────────────────────────────── */
+.uqc-game-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.uqc-game-btn {
+  flex: 1 1 120px;
+  padding: 14px 10px;
+  border: 2px solid var(--qc-input-border, #444);
+  border-radius: 10px;
+  background: var(--qc-input-bg, #1a1a1a);
+  color: var(--qc-subtext);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.uqc-game-btn:hover { border-color: var(--qc-frame); color: var(--qc-text); }
+.uqc-game-btn.selected {
+  border-color: var(--qc-frame);
+  background: var(--qc-frame);
+  color: #fff;
+}
+
+/* ── Moderation notice ────────────────────────────────────────────────────── */
+.uqc-moderation-notice {
+  display: flex;
+  gap: 12px;
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 24px;
+}
+.uqc-mod-icon { font-size: 1.5rem; flex-shrink: 0; }
+.uqc-moderation-notice strong { color: var(--qc-text); display: block; margin-bottom: 4px; font-size: 0.9rem; }
+.uqc-moderation-notice p { color: var(--qc-subtext); font-size: 0.82rem; margin: 0; line-height: 1.5; }
+
+/* ── Review grid ──────────────────────────────────────────────────────────── */
+.uqc-review-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.uqc-review-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--qc-input-border, #333);
+}
+.uqc-review-row:last-child { border-bottom: none; }
+.uqc-review-row:nth-child(even) { background: rgba(128,128,128,0.04); }
+
+.uqc-review-label {
+  color: var(--qc-subtext);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+}
+
+.uqc-review-value {
+  color: var(--qc-text);
+  font-size: 0.88rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.uqc-review-correct { color: #22c55e; font-weight: 600; }
+.uqc-review-fake    { color: #ef4444; font-size: 0.83rem; }
+
+/* ── Nav buttons ──────────────────────────────────────────────────────────── */
+.uqc-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.uqc-btn-primary {
+  background: var(--qc-frame);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 24px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.uqc-btn-primary:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.uqc-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.uqc-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--qc-input-border, #444);
+  color: var(--qc-subtext);
+  border-radius: 8px;
+  padding: 11px 20px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.uqc-btn-secondary:hover { border-color: var(--qc-frame); color: var(--qc-text); }
+
+.uqc-btn-finish { font-size: 1rem; padding: 13px 30px; }
+
+/* ── Done screen ──────────────────────────────────────────────────────────── */
+.uqc-done {
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 16px;
+  padding: 48px 36px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.uqc-done-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #fff;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.uqc-done h2 { color: var(--qc-text); margin: 0 0 12px; font-size: 1.6rem; }
+.uqc-done p  { color: var(--qc-subtext); font-size: 0.92rem; line-height: 1.6; }
+
+.uqc-done-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+/* ── Step content spacing ─────────────────────────────────────────────────── */
+.uqc-step-content {
+  display: flex;
+  flex-direction: column;
+}

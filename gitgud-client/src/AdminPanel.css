@@ -1,0 +1,233 @@
+/* AdminPanel.css
+   Drop into: gitgud-client/src/AdminPanel.css */
+
+.ap-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--qc-bg);
+  padding: 40px 16px 60px;
+  box-sizing: border-box;
+  transition: background 0.3s;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.ap-header { text-align: center; margin-bottom: 32px; }
+.ap-title  { color: var(--qc-text); font-size: 1.8rem; margin: 0 0 8px; font-weight: 700; }
+.ap-sub    { color: var(--qc-subtext); font-size: 0.9rem; max-width: 560px; margin: 0 auto 16px; line-height: 1.6; }
+.ap-underline { height: 4px; width: 60px; background: var(--qc-frame); margin: 0 auto; border-radius: 2px; }
+
+.ap-count { color: var(--qc-subtext); font-size: 0.85rem; margin-bottom: 20px; }
+
+/* ── List ────────────────────────────────────────────────────────────────── */
+.ap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.ap-card {
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.2s;
+}
+.ap-card:hover { border-color: var(--qc-frame); }
+
+.ap-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ap-card-meta { display: flex; align-items: center; gap: 10px; }
+
+.ap-game-tag {
+  background: var(--qc-frame);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ap-creator { color: var(--qc-subtext); font-size: 0.82rem; }
+
+.ap-preview-toggle {
+  background: transparent;
+  border: 1px solid var(--qc-frame);
+  color: var(--qc-frame);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.ap-preview-toggle:hover { background: var(--qc-frame); color: #fff; }
+
+.ap-video-title {
+  color: var(--qc-subtext);
+  font-size: 0.82rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Mini video player ───────────────────────────────────────────────────── */
+.ap-player-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+/* ── Content fields ──────────────────────────────────────────────────────── */
+.ap-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--qc-input-border, #333);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ap-field {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--qc-input-border, #333);
+}
+.ap-field:last-child { border-bottom: none; }
+.ap-field:nth-child(even) { background: rgba(128,128,128,0.04); }
+
+.ap-field-label {
+  color: var(--qc-subtext);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+}
+.ap-field-value { color: var(--qc-text); font-size: 0.87rem; line-height: 1.5; }
+.ap-field-value.ap-correct { color: #22c55e; font-weight: 600; }
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+.ap-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ap-approve-btn {
+  flex: 1;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.ap-approve-btn:hover:not(:disabled) { opacity: 0.85; }
+.ap-approve-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ap-reject-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.ap-reject-btn:hover:not(:disabled) { background: #ef4444; color: #fff; }
+.ap-reject-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Empty / denied states ───────────────────────────────────────────────── */
+.ap-empty, .ap-denied {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+}
+.ap-empty-icon, .ap-denied-icon { font-size: 3rem; }
+.ap-empty h2, .ap-denied h2 { color: var(--qc-text); margin: 0; font-size: 1.4rem; }
+.ap-empty p,  .ap-denied p  { color: var(--qc-subtext); font-size: 0.9rem; margin: 0; }
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.ap-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.ap-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--qc-input-border, #444);
+  color: var(--qc-subtext);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.ap-tab:hover  { border-color: var(--qc-frame); color: var(--qc-text); }
+.ap-tab.active { background: var(--qc-frame); border-color: var(--qc-frame); color: #fff; }
+
+.ap-badge {
+  background: #ef4444;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Mismatch warning ─────────────────────────────────────────────────── */
+.ap-mismatch-warning {
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.4);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fbbf24;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* ── Post title (critique) ────────────────────────────────────────────── */
+.ap-post-title {
+  color: var(--qc-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Category tag variant ─────────────────────────────────────────────── */
+.ap-cat-tag { background: rgba(168,85,247,0.15); color: #a855f7; }
