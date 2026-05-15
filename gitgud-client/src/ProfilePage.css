@@ -483,3 +483,42 @@
     text-overflow: ellipsis;
     width: 100%;
 }
+
+.visitor-controls
+{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.friend-actions-wrapper
+{
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.message-btn
+{
+    background-color: var(--qc-submit-bg);
+    color: var(--qc-submit-text);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.message-btn:hover
+{
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px var(--qc-header-line);
+}
+
+.message-btn:active
+{
+    transform: scale(0.95);
+}
