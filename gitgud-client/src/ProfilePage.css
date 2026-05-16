@@ -8,7 +8,6 @@
     --qc-input-bg:  #222222;
     --qc-input-border: #333;
     --qc-submit-bg:  #000;
-    --qc-header-line: rgba(255, 105, 0, 0.35);
     --qc-submit-bg:     #ff6a00;
     --qc-submit-text:   #000; 
     --qc-header-line:   rgba(255, 106, 0, 0.35);
@@ -24,7 +23,7 @@
     --qc-subtext:   #666;
     --qc-input-bg:  #f0f4f8;
     --qc-input-border: #d0dcea;
-    --qc-submit-bg:  #0066cc;;
+    --qc-submit-bg:  #0066cc;
     --qc-submit-text: #ffffff;
     --qc-header-line: rgba(0, 102, 204, 0.2);
     --qc-frame-glow: rgba(0, 102, 204, 0.2);

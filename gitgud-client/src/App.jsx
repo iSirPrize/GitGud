@@ -21,6 +21,8 @@ import CritiqueCreate from './CritiqueCreate'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
 import LeaderboardPage from "./LeaderboardPage"
+import ChatPage from './ChatPage'
+import ChatDashboard from './ChatDashboard'
 
 function App() {
   const [user, setUser] = useState(undefined)
@@ -79,6 +81,8 @@ function App() {
         <Route path="admin" element={<AdminPanel user={user} />} />
         <Route path="critique" element={<CritiquePage user={user} />} />
         <Route path="critique/create" element={<CritiqueCreate user={user} />} />
+        <Route path="messages" element={<ChatDashboard user={user} />} />
+        <Route path="messages/:chatId" element={<ChatPage user={user} />} />
       </Route>
     </Routes>
   )

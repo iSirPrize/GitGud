@@ -22,7 +22,11 @@ function Layout({ user }) {
   const SIDEBAR_CLOSED_WIDTH = 40
 
   useEffect(() => {
-    if (!user?.uid) return
+    if (!user?.uid)
+    {
+      setIsAdmin(false);
+      return;
+    }
     getDoc(doc(db, "users", user.uid)).then((snap) => {
       if (snap.exists() && snap.data().isAdmin === true) setIsAdmin(true)
     }).catch(() => {})
@@ -69,9 +73,17 @@ function Layout({ user }) {
             <div className="nav-desc">Back to Main Menu!</div>
           </NavLink>
 
-          <NavLink to={`/profile/${user.uid}`} className={({ isActive }) => isActive ? "practice active" : "practice"}>
+          <NavLink 
+            to={user?.uid ? `/profile/${user.uid}` : "/"} 
+            className={({ isActive }) => isActive ? "practice active" : "practice"}
+          >
             <div className="nav-main">Profile</div>
             <div className="nav-desc">View Your Stats!</div>
+          </NavLink>
+
+          <NavLink to="/messages" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+            <div className="nav-main">Messages</div>
+            <div className="nav-desc">Your Direct Chats & Inbox!</div>
           </NavLink>
 
           <NavLink to="/practice" className={({ isActive }) => isActive ? "practice active" : "practice"}>

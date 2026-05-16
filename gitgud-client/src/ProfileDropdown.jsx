@@ -10,7 +10,9 @@ export function PointsMeter({ uid, style }) {
   const dark = theme === "dark"
   const accent = dark ? "#ff6a00" : "#0066cc"
   const accentGlow = dark ? "rgba(255,106,0,0.5)" : "rgba(0,102,204,0.4)"
+  
   if (loading) return null
+  
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px',
       background: dark ? 'rgba(255,106,0,0.07)' : 'rgba(0,102,204,0.07)',
@@ -32,7 +34,8 @@ export default function ProfileDropdown({ user }) {
   const [open, setOpen] = useState(false)
   const ref = useRef()
   const navigate = useNavigate()
-  const { xp, level, pct, xpToNext, isMax } = usePoints(user?.uid)
+  
+  const { xp, level, pct, xpToNext, isMax } = usePoints(user?.uid || "")
   const { theme } = useTheme()
   const dark = theme === "dark"
 
@@ -50,12 +53,21 @@ export default function ProfileDropdown({ user }) {
     return () => document.removeEventListener("mousedown", h)
   }, [])
 
-  const name = user?.displayName || user?.email?.split("@")[0] || "Player"
+  if (!user) {
+    return (
+      <div style={{ width: 38, height: 38, borderRadius: '50%', background: dark ? '#222' : '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 12, color: subtext }}>...</span>
+      </div>
+    );
+  }
+
+  const name = user?.displayName || user?.email?.split("@")?.[0] || "Player"
+  
   const Avatar = ({ size, fontSize }) => user?.photoURL
     ? <img src={user.photoURL} alt={name} style={{ width:size, height:size, borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
     : <div style={{ width:size, height:size, borderRadius:'50%', background:avatarBg, color:'#fff', fontWeight:700,
         fontSize, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-        {name[0]?.toUpperCase()}
+        {name ? name[0]?.toUpperCase() : "?"}
       </div>
 
   return (
@@ -98,24 +110,34 @@ export default function ProfileDropdown({ user }) {
               <div style={{ width:`${pct}%`, height:'100%', background:accent, borderRadius:99,
                 boxShadow:`0 0 8px ${accentGlow}`, transition:'width 0.5s cubic-bezier(0.34,1.56,0.64,1)' }} />
             </div>
-            <div style={{ color: dark ? '#444' : '#bbb', fontSize:11, textAlign:'right' }}>{isMax ? "MAX LEVEL" : `${xpToNext} xp to Level ${level + 1}`}</div>
+            <div style={{ color: dark ? '#bbb' : '#666', fontSize:11, textAlign:'right' }}>
+              {isMax ? "MAX LEVEL" : `${xpToNext} xp to Level ${level + 1}`}
+            </div>
           </div>
 
           <div style={{ height:1, background:border, margin:'0 0 12px' }} />
 
           {/* View Profile */}
           <button
-            onClick={() => { navigate(`/profile/${user.uid}`); setOpen(false) }}
-            style={{ width:'100%', background:'none', color:text,
-              border:`1px solid ${border}`, borderRadius:8, padding:10,
-              fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:8 }}
+            onClick={() => { 
+              if (user?.uid) {
+                navigate(`/profile/${user.uid}`); 
+                setOpen(false);
+              }
+            }}
+            style={{
+              width: '100%', background: 'none', color: text,
+              border: `1px solid ${border}`, borderRadius: 8, padding: 10,
+              fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 8
+            }}
             onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,106,0,0.08)' : 'rgba(0,102,204,0.08)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none' }}>
+            onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+          >
             View Profile
           </button>
 
           {/* Sign Out */}
-          <button onClick={() => logout()}
+          <button onClick={() => { logout(); setOpen(false); }}
             style={{ width:'100%', background:'rgba(239,68,68,0.08)', color:'#ef4444',
               border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:10,
               fontSize:13, fontWeight:600, cursor:'pointer' }}

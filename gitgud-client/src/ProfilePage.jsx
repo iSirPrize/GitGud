@@ -7,7 +7,7 @@ import { updateProfile } from 'firebase/auth';
 import { useTheme } from './context/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 
-function ProfilePage({ user })
+function ProfilePage({ user, targetUser })
 {
     const { profileId } = useParams();
     const { theme } = useTheme();    
@@ -66,7 +66,7 @@ function ProfilePage({ user })
             }
         }
         loadProfileData();
-    }, [targetId, user?.uid, isOwner]);
+    }, [targetId, user, isOwner]);
     
     //friend request grabber so user can add people if we want
     useEffect(() => {
@@ -171,12 +171,12 @@ function ProfilePage({ user })
     }
 
     //forgot to add a decline :^)
-    const handleDeclineFriend = async (requestId) =>
+    const handleDeclineFriend = async (req) =>
     {
         try {
-            await deleteDoc(doc(db, "friendRequests", requestId));
+            await deleteDoc(doc(db, "friendRequests", req.id));
 
-            setRequests((prev) => prev.filter((req) => req.id !== requestId));
+            setRequests((prev) => prev.filter((item) => item.id !== req.id));
             console.log("Request declined");
         } catch(err){
             console.error("Error declineing friend request", err);
@@ -252,7 +252,7 @@ function ProfilePage({ user })
             await setDoc(doc(db, "users", user.uid), {
                 username:  username,
                 aboutMe:   aboutMe,
-                photoURL:  profilePic,   // FIX: was missing, caused photo to get dropped on save
+                photoURL:  profilePic,
                 updatedAt: serverTimestamp(),
             }, { merge: true });
 
@@ -270,29 +270,62 @@ function ProfilePage({ user })
     };
 
     const handleStartChat = async () => {
-        if(!user || !targetId) return;
+        if(!user?.uid || !targetId) {
+            console.error("Navigation IDs missing: ", { myId: user?.uid, targetId });
+            return;
+        }
+        
+        const customChatId = user.uid < targetId 
+            ? `${user.uid}_${targetId}` 
+            : `${targetId}_${user.uid}`;
 
-        const chatId = user.uid < targetId ? `${user.uid}_${targetId}` : `${targetId}_${user.uid}`;
-
-        try{
-            const chatRef = doc(db, "chats", chatId);
+        try {
+            const chatRef = doc(db, "chats", customChatId);
             const chatSnap = await getDoc(chatRef);
 
-            //if chat room doesnt exist, make it
-            if(!chatSnap.exists())
-            {
+            if(!chatSnap.exists()) {
+                let targetName = username || "Friend";
+                let targetPhoto = profilePic || "";
+                
+                try {
+                    const targetUserRef = doc(db, "users", targetId);
+                    const targetUserSnap = await getDoc(targetUserRef);
+
+                    if(targetUserSnap.exists()) {
+                        const data = targetUserSnap.data();
+                        targetName = data.username || data.displayName || "Friend";
+                        targetPhoto = data.photoURL || "";
+                    }
+                } catch(profileErr) {
+                    console.warn("Realtime DB failed: ", profileErr);
+                }
+
+                const myName = auth.currentUser?.displayName || user.displayName || "User";
+                const myPhoto = auth.currentUser?.photoURL || user.photoURL || "";
+
                 await setDoc(chatRef, {
-                    chatId: chatId,
+                    id: customChatId,
+                    chatId: customChatId,
                     participants: [user.uid, targetId],
                     isGroup: false,
                     updatedAt: serverTimestamp(),
-                    lastMessage: ""
+                    lastMessage: "",
+                    titles: {
+                        [user.uid]: myName,
+                        [targetId]: targetName
+                    },
+                    avatarURLs: {
+                        [user.uid]: myPhoto,
+                        [targetId]: targetPhoto
+                    }
                 });
             }
-            navigate(`/messages/${chatId}`);
-        } catch(err){
-            console.error("Error starting chat:", err);
-            alert("Could not start chat thread.");
+            
+            console.log("Navigating to room ID:", customChatId);
+            navigate(`/messages/${customChatId}`);
+        } catch(err) {
+            console.error("start chat failed: ", err);
+            alert(`Could not start chat thread: ${err.message}`);
         }
     };
 
@@ -392,8 +425,8 @@ function ProfilePage({ user })
                         <div className="visitor-controls">
                             {friendStatus === "friend" ? (
                                 <div className="friend-actions-wrapper">
-                                    <button className="remove-btn" onClick={handleRemoveFriend}>Remove Friend</button>
                                     <button className="message-btn" onClick={handleStartChat}>Message</button>
+                                    <button className="remove-btn" onClick={handleRemoveFriend}>Remove Friend</button>                                    
                                 </div>    
                             ) : friendStatus === "pending" ? (
                                 <button className="pending-btn" disabled>Request Sent</button>
