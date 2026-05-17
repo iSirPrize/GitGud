@@ -288,7 +288,7 @@ saveReactionResult(finalAvg, finalBest, updatedTimes.length);
 </div>
 
 
-    {/* Reaction Game – CORRECT POSITION */}
+    {/* Reaction Game */}
     <div className="reaction-game" onClick={handleShot}>
       <img src={background} alt="Dust II Doors" className="background-image" />
 
@@ -301,7 +301,7 @@ saveReactionResult(finalAvg, finalBest, updatedTimes.length);
       <div className="game-message">{message}</div>
 
       {gameState === "complete" && finalRank && (
-        <div className="aim-results-overlay">
+        <div className="reaction-results-overlay">
           <div className="result-box">
             <h2>Session Complete!</h2>
 

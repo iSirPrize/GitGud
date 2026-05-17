@@ -333,6 +333,18 @@
   }
 }
 
+.reaction-results-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Make sure it sits above scope + message */
+}
+
+
 .back-button {
   background: var(--qc-frame);
   color: var(--qc-submit-text, #000);

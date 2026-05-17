@@ -1,224 +1,174 @@
 import { useState, useEffect, useRef } from "react";
 import "./AimGame.css";
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from "../context/ThemeContext";
 import { db, auth } from "../firebase";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 
 export default function AimGame() {
-    const GAME_TIME = 30; //seconds
+  const GAME_TIME = 30;
+  const { theme } = useTheme();
 
-const [score, setScore] = useState(0);
-const [timeLeft, setTimeLeft] = useState(GAME_TIME);
-const [target, setTarget] = useState({ x: 50, y: 50});
-const [gameActive, setGameActive] = useState(false);
-const [clicks, setClicks] = useState(0);
-const [result, setResult] = useState(null);
-const [crosshairType, setCrosshairType] = useState("plus");
-const [crosshairColor, setCrosshairColor] = useState("#ffffff");
-const [inGame, setInGame] = useState(false);
-const { theme } = useTheme();
-const scoreRef = useRef(score);
-const clicksRef = useRef(clicks);
-const gameEndedRef = useRef(false);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(GAME_TIME);
+  const [target, setTarget] = useState({ x: 50, y: 50 });
+  const [gameActive, setGameActive] = useState(false);
+  const [clicks, setClicks] = useState(0);
+  const [result, setResult] = useState(null);
+  const [crosshairType, setCrosshairType] = useState("plus");
+  const [crosshairColor, setCrosshairColor] = useState("#ffffff");
+  const [inGame, setInGame] = useState(false);
 
-//map pool
-const mapPool = [
-  "/mirage.png",
-  "/dust2.png",
-  "/ancient.png",
-  "/ascent.png",
-  "/haven.png",
-  "/bind.png",
-];
+  const scoreRef = useRef(score);
+  const clicksRef = useRef(clicks);
+  const gameEndedRef = useRef(false);
 
-const [currentMap, setCurrentMap] = useState(
-  () => mapPool[Math.floor(Math.random() * mapPool.length)]
-);
-
-//Below will spawn the targets randomly, adjusted later 
-const spawnTarget = () => { 
-const x = 10 + Math.random() * 80;
-const y = 20 + Math.random() * 60;
-  setTarget({ x, y });
+  const crosshairSymbols = {
+  dotCross: "✚",
+  plus: "＋",
+  x: "✖",
+  dot: "●",
 };
 
-//For when the target is clicked
-const handleTargetClick = () => {
-    if (!gameActive) return;
+  const maps = [
+    "/mirage.png",
+    "/dust2.png",
+    "/ancient.png",
+    "/ascent.png",
+    "/haven.png",
+    "/bind.png",
+  ];
 
-    playShootSound();
+  const [currentMap, setCurrentMap] = useState(() =>
+    maps[Math.floor(Math.random() * maps.length)]
+  );
 
-    // delay hit sound slightly
-    const delay = 50 + Math.random() * 30;
-
-    setTimeout(() => {
-        playHitSound();
-    }, delay);
-
-    setScore((prev) => prev + 1);
-    setClicks((prev) => prev + 1);
-    spawnTarget();
-};
-
-//Track misses, for calculating average accuracy
-const handleMisses = () => {
-    if (!gameActive) return;
-    setClicks((prev) => prev + 1);
-};
-
-//score and clicks logic keeps the refs updated
-useEffect(() => {
-  scoreRef.current = score;
-  clicksRef.current = clicks;
-}, [score, clicks]);
-
-//Timer logic
-useEffect(() => {
-
-    if (!gameActive) { 
-        return;
-    }
-
-      const timer = setInterval(() => {
-    setTimeLeft((prev) => {
-      if (prev <= 1) {
-        clearInterval(timer);
-        endGame(scoreRef.current, clicksRef.current);
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
-
-  return () => clearInterval(timer);
-}, [gameActive]);
-
-
-// Random map on each game start
-const getRandomMap = () => {
-  let nextMap = currentMap;
-
-  while (mapPool.length > 1 && nextMap === currentMap) {
-    nextMap = mapPool[Math.floor(Math.random() * mapPool.length)];
+  function spawnTarget() {
+    const x = 10 + Math.random() * 80;
+    const y = 20 + Math.random() * 60;
+    setTarget({ x, y });
   }
 
-  return nextMap;
-};
+  const handleTargetClick = () => {
+    if (!gameActive) return;
+    playShootSound();
+    setTimeout(() => playHitSound(), 50 + Math.random() * 30);
+    setScore((s) => s + 1);
+    setClicks((c) => c + 1);
+    spawnTarget();
+  };
 
+  const handleMisses = () => {
+    if (gameActive) setClicks((c) => c + 1);
+  };
 
-//When game has started
-const startGame = () => {
-  gameEndedRef.current = false; // reset
+  useEffect(() => {
+    scoreRef.current = score;
+    clicksRef.current = clicks;
+  }, [score, clicks]);
 
-  // Pick a different random map each game
-  setCurrentMap(getRandomMap());
+  useEffect(() => {
+    if (!gameActive) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          endGame(scoreRef.current, clicksRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [gameActive]);
 
-  setScore(0);
-  setClicks(0);
-  setTimeLeft(GAME_TIME);
-  setGameActive(true);
-  spawnTarget();
-};
+  const startGame = () => {
+    gameEndedRef.current = false;
+    let next = currentMap;
+    while (maps.length > 1 && next === currentMap) {
+      next = maps[Math.floor(Math.random() * maps.length)];
+    }
+    setCurrentMap(next);
+    setScore(0);
+    setClicks(0);
+    setTimeLeft(GAME_TIME);
+    setResult(null);
+    setGameActive(true);
+    spawnTarget();
+  };
 
-//gun shot sound pool
-const gunSounds = [
+  const gunSounds = [
     "/sounds/Gun sound 1.m4a",
     "/sounds/Gun sound 2.m4a",
     "/sounds/Gun sound 3.m4a",
     "/sounds/Gun sound 4.m4a",
-]
+  ];
 
-const playShootSound = () => {
+  const playShootSound = () => {
     const src = gunSounds[Math.floor(Math.random() * gunSounds.length)];
-    const sound = new Audio(src);
+    const a = new Audio(src);
+    a.volume = 0.1 + Math.random() * 0.2;
+    a.play();
+  };
 
-    sound.volume = 0.1 + Math.random() * 0.2;
-    sound.play();
-};
-
-//Target hit sound effects sounds pool
-const hitSounds = [
+  const hitSounds = [
     "/sounds/hit EFX 1.m4a",
     "/sounds/hit EFX 2.m4a",
     "/sounds/hit EFX 3.m4a",
     "/sounds/hit EFX 4.m4a",
-];
+  ];
 
-const playHitSound = () => {
+  const playHitSound = () => {
     const src = hitSounds[Math.floor(Math.random() * hitSounds.length)];
-    const sound = new Audio(src);
+    const a = new Audio(src);
+    a.volume = 0.1 + Math.random() * 0.2;
+    a.play();
+  };
 
-    sound.volume = 0.1 + Math.random() * 0.2;
-    sound.play();
-};
-
-//When game has ended (will adjust once firebase has been set up)
-const endGame = async (finalScore, finalClicks) => {
-    if (gameEndedRef.current) {
-        return; //was running into issue where it was creating duplicate scores for the same game
-    }
+  async function endGame(finalScore, finalClicks) {
+    if (gameEndedRef.current) return;
     gameEndedRef.current = true;
     setGameActive(false);
 
-    //calculates the misses
     const misses = finalClicks - finalScore;
-
-    // calculate accuracy
     const accuracy =
-    finalClicks === 0 ? 0 : Number(((finalScore / finalClicks) * 100).toFixed(2));
+      finalClicks === 0 ? 0 : Number(((finalScore / finalClicks) * 100).toFixed(2));
 
-  const resultData = {
-    hits: finalScore,
-    misses,
-    accuracy,
-    duration: GAME_TIME,
-    createdAt: serverTimestamp(),
-  };
+    const resultData = {
+      hits: finalScore,
+      misses,
+      accuracy,
+      duration: GAME_TIME,
+      createdAt: serverTimestamp(),
+    };
 
-  setResult(resultData); 
+    setResult(resultData);
 
-  console.log("Aim Trainer Results:", resultData);
+    try {
+      const user = auth.currentUser;
+      let username = user?.displayName || "Anonymous";
+      let photoURL = user?.photoURL || "";
 
-  //save to firebase
+      if (user) {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          const d = snap.data();
+          username = d.username || d.displayName || username;
+          photoURL = d.photoURL || photoURL;
+        }
+      }
 
-  try {
-  const user = auth.currentUser;
-
-  let username = user?.displayName || "Anonymous";
-  let photoURL = user?.photoURL || "";
-
-  // Prefer the data stored in the users collection
-  if (user) {
-    const userSnap = await getDoc(doc(db, "users", user.uid));
-
-    if (userSnap.exists()) {
-      const userData = userSnap.data();
-
-      username =
-        userData.username ||
-        userData.displayName ||
-        username;
-
-      photoURL =
-        userData.photoURL ||
-        photoURL;
+      await addDoc(collection(db, "aimResults"), {
+        userId: user ? user.uid : "guest",
+        username,
+        photoURL,
+        ...resultData,
+      });
+    } catch (e) {
+      console.error("Error saving aim result:", e);
     }
   }
 
-  await addDoc(collection(db, "aimResults"), {
-    userId: user ? user.uid : "guest",
-    username,
-    photoURL,
-    ...resultData,
-  });
-
-  console.log("Saved to Firebase");
-} catch (error) {
-  console.error("Error saving result:", error);
-}
-};
-
-const getCursor = () => {
+ const getCursor = () => {
     if (!inGame) {
         return "default";
     }
@@ -242,50 +192,115 @@ const getCursor = () => {
       return "crosshair";
     }
 }
-console.log("theme =", theme);
-return (
-    <div className={`quiz-carousel ${theme?.toLowerCase?.()}`}>
-    <div className="aim-container">
-        <div className="aim-layout">
 
-        {/* Game */}
-    <div className="aim-gamebox"
-        onMouseEnter={() => setInGame(true)}
-        onMouseLeave={() => setInGame(false)}
-        onClick={() => {
-            if (!gameActive) return;
+  return (
+    <div className={`aim-page ${theme}`}>
 
-                playShootSound();
-                handleMisses();   
-            }}
-        style={{
-            position: "relative",
-            overflow: "hidden",
-            border: "3px solid var(--qc-frame)",
-            borderRadius: "12px",
-            backgroundImage: `url('${currentMap}')`,
-            cursor: getCursor(),
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-        }}
-        >
+  <div className="aim-header">
+    <h1>Aim Trainer</h1>
+    <p>Click targets quickly to improve your aim.</p>
+  </div>
 
-            {/* HUD */}
+  <div className="aim-wrapper">
+
+    {/* SETTINGS PANEL */}
+    <div className="aim-settings">
+
+      <div className="aim-setting-card">
+        <span className="aim-setting-label">Type</span>
+        <span className="aim-setting-value">{crosshairSymbols[crosshairType]}</span>
+
+      </div>
+
+      <div className="aim-setting-card">
+        <span className="aim-setting-label">Color</span>
+        <span className="aim-setting-value">
+          <div style={{
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            backgroundColor: crosshairColor,
+            border: "1px solid var(--qc-frame)"
+          }} />
+        </span>
+      </div>
+
+      <div className="aim-controls">
+
+        <button
+  className={`aim-option-btn ${crosshairType === "dotCross" ? "active" : ""}`}
+  onClick={() => setCrosshairType("dotCross")}
+>
+  ✚
+</button>
+
+<button
+  className={`aim-option-btn ${crosshairType === "plus" ? "active" : ""}`}
+  onClick={() => setCrosshairType("plus")}
+>
+  ＋
+</button>
+
+<button
+  className={`aim-option-btn ${crosshairType === "x" ? "active" : ""}`}
+  onClick={() => setCrosshairType("x")}
+>
+  ✖
+</button>
+
+<button
+  className={`aim-option-btn ${crosshairType === "dot" ? "active" : ""}`}
+  onClick={() => setCrosshairType("dot")}
+>
+  ●
+</button>
+
+
+        <button className={`aim-option-btn ${crosshairColor === "#000000" ? "active" : ""}`}
+          onClick={() => setCrosshairColor("#000000")}>Black</button>
+
+        <button className={`aim-option-btn ${crosshairColor === "#ffffff" ? "active" : ""}`}
+          onClick={() => setCrosshairColor("#ffffff")}>White</button>
+
+        <button className={`aim-option-btn ${crosshairColor === "#00ff00" ? "active" : ""}`}
+          onClick={() => setCrosshairColor("#00ff00")}>Green</button>
+
+        <button className={`aim-option-btn ${crosshairColor === "#0000ff" ? "active" : ""}`}
+          onClick={() => setCrosshairColor("#0000ff")}>Blue</button>
+
+      </div>
+    </div>
+
+    {/* GAME AREA */}
+    <div
+      className="aim-game"
+      onMouseEnter={() => setInGame(true)}
+      onMouseLeave={() => setInGame(false)}
+      onClick={() => {
+        if (!gameActive) return;
+        playShootSound();
+        handleMisses();
+      }}
+      style={{
+        backgroundImage: `url('${currentMap}')`,
+        cursor: getCursor(),
+      }}
+    >
+
       <div className="aim-hud">
         <h2>Score: {score}</h2>
         <h3>Time: {timeLeft}</h3>
 
         {!gameActive && !result && (
           <div className="aim-start-overlay">
-    <div className="start-box">
-      <h2>Aim Trainer</h2>
-      <button onClick={startGame}>Start Game</button>
-    </div>
-  </div>
-)}
+            <div className="start-box">
+              <h2>Aim Trainer</h2>
+              <button onClick={startGame}>Start Game</button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Targets */}
       {gameActive && (
         <div
           onClick={(e) => {
@@ -299,81 +314,36 @@ return (
             width: "75px",
             height: "75px",
             borderRadius: "50%",
-            zIndex: 5,
-            background: `radial-gradient(circle,
-                        var(--qc-frame) 0%,
-                        var(--qc-frame) 20%,
-                        white 20%,
-                        white 35%,
-                        var(--qc-frame) 35%,
-                        var(--qc-frame) 55%,
-                        white 55%,
-                        white 70%,
-                        var(--qc-text) 70%,
-                        var(--qc-text) 100%
-                        )`,
+            background: "radial-gradient(circle, var(--qc-frame) 0%, var(--qc-frame) 20%, white 20%, white 35%, var(--qc-frame) 35%, var(--qc-frame) 55%, white 55%, white 70%, var(--qc-text) 70%, var(--qc-text) 100%)",
             boxShadow: "0 0 15px var(--qc-frame)",
+            zIndex: 5,
           }}
         />
       )}
 
-      {/* Results */}
       {!gameActive && result && (
-  <div className="aim-results-overlay">
-    <div className="result-box">
-      <h2>Results</h2>
-      <p>Hits: {result.hits}</p>
-      <p>Misses: {result.misses}</p>
-      <p>Accuracy: {result.accuracy}%</p>
+        <div className="aim-results-overlay">
+          <div className="result-box">
+            <h2>Results</h2>
+            <p>Hits: {result.hits}</p>
+            <p>Misses: {result.misses}</p>
+            <p>Accuracy: {result.accuracy}%</p>
+            <button
+                  className="start-button"
+                  onClick={() => {
+                  setResult(null);
+                  startGame();
+                }}
+              >
+                Play Again
+            </button>
+          </div>  
+        </div>
+      )}
 
-      <button onClick={() => {
-        setResult(null);
-        startGame();
-      }}>
-        Play Again
-      </button>
     </div>
   </div>
-)}
-        </div>
+</div>
 
-    <div className="aim-menu">
-        <h3>Crosshair Settings</h3>
-        {/*Crosshair Type*/}
-        <div className="crosshair-options">
-            <button  className={`option-btn ${crosshairType === "dotCross" ? "active" : ""}`} 
-                     onClick={() => setCrosshairType("dotCross")}
-                     >
-                        Default
-                        </button>
-            <button  className={`option-btn ${crosshairType === "plus" ? "active" : ""}`} 
-            onClick={() => setCrosshairType("plus")}
-            >
-                +
-                </button>
-            <button  className={`option-btn ${crosshairType === "x" ? "active" : ""}`}
-            onClick={() => setCrosshairType("x")}
-            >
-                X
-            </button>
-            <button  className={`option-btn ${crosshairType === "dot" ? "active" : ""}`} 
-            onClick={() => setCrosshairType("dot")}
-            >
-                •
-            </button>
-        </div>
-            {/*Colour Buttons*/}
-            <button className={`option-btn ${crosshairColor === "#000000" ? "active" : ""}`}
-                    onClick={() => setCrosshairColor("#000000")}>Black</button>
-            <button className={`option-btn ${crosshairColor === "#ffffff" ? "active" : ""}`}
-                    onClick={() => setCrosshairColor("#ffffff")}>White</button>
-            <button className={`option-btn ${crosshairColor === "#00ff00" ? "active" : ""}`}
-                    onClick={() => setCrosshairColor("#00ff00")}>Green</button>
-            <button className={`option-btn ${crosshairColor === "#0000ff" ? "active" : ""}`}
-                    onClick={() => setCrosshairColor("#0000ff")}>Blue</button>
-        </div>
-    </div>
-        </div>
-        </div>
   );
 }

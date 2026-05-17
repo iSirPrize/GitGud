@@ -63,18 +63,18 @@ export default function LeaderboardPage({ currentUid }) {
         }}
       >
 
-        {/* Reaction Leaderboard Card */}
-<div
-  style={{
-    background: cardBg,
-    border: `1.5px solid ${border}`,
-    borderRadius: 20,
-    overflow: "hidden",
-    minWidth: 0,
-  }}
->
-  <ReactionLeaderboard currentUid={currentUid} />
-</div>
+        {/* Aim Leaderboard Card */}
+        <div
+          style={{
+            background: cardBg,
+            border: `1.5px solid ${border}`,
+            borderRadius: 20,
+            overflow: "hidden",
+            minWidth: 0,
+          }}
+        >
+          <AimLeaderboard currentUid={currentUid} />
+        </div>
 
         {/* XP Leaderboard Card */}
         <div
@@ -89,18 +89,18 @@ export default function LeaderboardPage({ currentUid }) {
           <Leaderboard currentUid={currentUid} />
         </div>
 
-        {/* Aim Leaderboard Card */}
-        <div
-          style={{
-            background: cardBg,
-            border: `1.5px solid ${border}`,
-            borderRadius: 20,
-            overflow: "hidden",
-            minWidth: 0,
-          }}
-        >
-          <AimLeaderboard currentUid={currentUid} />
-        </div>
+        {/* Reaction Leaderboard Card */}
+<div
+  style={{
+    background: cardBg,
+    border: `1.5px solid ${border}`,
+    borderRadius: 20,
+    overflow: "hidden",
+    minWidth: 0,
+  }}
+>
+  <ReactionLeaderboard currentUid={currentUid} />
+</div>
       </div>
     </div>
   );
