@@ -29,7 +29,7 @@ export default function ReactionGame() {
   const enemyShootTimeoutRef = useRef(null);
   const nextRoundTimeoutRef = useRef(null);
   const gameEndedRef = useRef(false);
-
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
   return () => {
@@ -232,6 +232,31 @@ saveReactionResult(finalAvg, finalBest, updatedTimes.length);
       ? getReactionRank(averageReaction)
       : null;
 
+useEffect(() => {
+  function handleClickOutside(e) {
+    const gameEl = document.querySelector(".reaction-game");
+
+    if (!gameEl.contains(e.target)) {
+  // Ignore pause behavior before the first round starts
+  if (round === 1 && gameState === "idle") {
+    return;
+  }
+
+  setIsFocused(false);
+  setTargetVisible(false);
+  clearAllTimeouts();
+
+  if (gameState !== "idle" && gameState !== "complete") {
+    setMessage("Paused — click to resume");
+  }
+}
+
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [gameState]);
+
   return (
     <div className={`reaction-page ${theme}`}>
 
@@ -289,12 +314,33 @@ saveReactionResult(finalAvg, finalBest, updatedTimes.length);
 
 
     {/* Reaction Game */}
-    <div className="reaction-game" onClick={handleShot}>
+    <div
+  className="reaction-game"
+  onClick={(e) => {
+    e.stopPropagation();
+
+    if (!isFocused) {
+      setIsFocused(true);
+      setMessage("Get Ready...");
+      // If gameState was mid-round, we must restart the round
+      if (gameState !== "idle" && gameState !== "complete") {
+        startRound();
+      }
+      return;
+    }
+    handleShot();
+    }}>
       <img src={background} alt="Dust II Doors" className="background-image" />
 
       {targetVisible && (
         <img src={target} alt="Enemy Target" className="enemy-target" />
       )}
+
+      {!isFocused && round > 1 && gameState !== "complete" && (
+  <div className="reaction-pause-overlay">
+    <span>Click on Screen to Resume</span>
+  </div>
+)}
 
       <img src={scopeOverlay} alt="Sniper Scope" className="scope-image" />
 
@@ -325,6 +371,7 @@ saveReactionResult(finalAvg, finalBest, updatedTimes.length);
             >
               Play Again
             </button>
+            
           </div>
         </div>
       )}

@@ -145,7 +145,7 @@
   box-shadow: none;               /* no glow when idle */
   transition: 0.25s ease;
 
-  cursor: none;
+  cursor: auto;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -168,6 +168,22 @@
   user-select: none;
   pointer-events: none;
 }
+
+.reaction-pause-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  color: var(--qc-text);
+  font-size: 1.4rem;
+  pointer-events: none;
+}
+
+
 /* Background Image */
 .background-image {
   position: absolute;
