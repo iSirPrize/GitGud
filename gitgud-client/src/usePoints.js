@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore"
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, runTransaction } from "firebase/firestore"
 import { db } from "./firebase"
 
 const LEVEL_THRESHOLDS = [0, 100, 500, 1500, 4000, 10000]
@@ -40,11 +40,15 @@ export async function initUserDoc(uid, displayName, photoURL) {
 
 export async function awardPoints(uid, amount = 10) {
   const ref = doc(db, "users", uid)
-  const data = (await getDoc(ref)).data() ?? {}
-  const currentXp = data.xp ?? data.points ?? 0
-  const newXp = currentXp + amount
-  const newLevel = getLevel(newXp)
-  await updateDoc(ref, { xp: newXp, level: newLevel })
+  // BUGFIX: use a transaction so concurrent calls (e.g. quiz XP + daily XP firing
+  // at the same time) don't read a stale value and overwrite each other's update
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    const data = snap.data() ?? {}
+    const currentXp = data.xp ?? data.points ?? 0
+    const newXp = currentXp + amount
+    tx.update(ref, { xp: newXp, level: getLevel(newXp) })
+  })
 }
 
 export function usePoints(uid) {

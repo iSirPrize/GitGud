@@ -7,13 +7,17 @@ import scopeOverlay from "../assets/reaction/scope-overlay.png";
 import target from "../assets/reaction/terrorist-target.png";
 import { db, auth } from "../firebase";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { useDailies } from "../useDailies";
 
 
 const TOTAL_ROUNDS = 8;
 
-export default function ReactionGame({ onSessionComplete }) {  // DAILIES: accept callback
+export default function ReactionGame() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+
+  // DAILIES: hook called directly using firebase auth uid
+  const { recordProgress } = useDailies(auth.currentUser?.uid);
 
   const [gameState, setGameState] = useState("idle");
   // idle | waiting | visible | result | complete | too-early
@@ -155,8 +159,8 @@ async function saveReactionResult(avg, best, rounds) {
 );
 const finalBest = Math.min(...updatedTimes);
 saveReactionResult(finalAvg, finalBest, updatedTimes.length);
-// DAILIES: notify parent that a full session completed
-if (onSessionComplete) onSessionComplete();
+        // DAILIES: full session completed — report to daily quests
+        recordProgress("reaction", { session: true });
       } else {
         // Show result briefly before next round
         setGameState("result");

@@ -3,9 +3,14 @@ import "./AimGame.css";
 import { useTheme } from '../context/ThemeContext';
 import { db, auth } from "../firebase";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { useDailies } from "../useDailies";
 
-export default function AimGame({ onGameEnd }) {   // DAILIES: accept callback from parent
+export default function AimGame() {
     const GAME_TIME = 30; //seconds
+
+  // DAILIES: hook called directly using firebase auth uid — no prop threading needed
+  const uid = auth.currentUser?.uid;
+  const { recordProgress } = useDailies(uid);
 
 const [score, setScore] = useState(0);
 const [timeLeft, setTimeLeft] = useState(GAME_TIME);
@@ -175,9 +180,10 @@ const endGame = async (finalScore, finalClicks) => {
     createdAt: serverTimestamp(),
   };
 
-  setResult(resultData); 
-  // DAILIES: notify parent that a session ended with its stats
-if (onGameEnd) onGameEnd({ accuracy: resultData.accuracy, session: true })
+  setResult(resultData);
+
+  // DAILIES: session ended — report accuracy and session count to daily quests
+  recordProgress("aim", { accuracy: resultData.accuracy, session: true });
 
   console.log("Aim Trainer Results:", resultData);
 
