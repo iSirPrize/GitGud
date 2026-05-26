@@ -15,13 +15,6 @@ function Practice() {
     <div className={`aimtrainer-page quiz-carousel ${theme}`}>
       {/* Header */}
       <div className="aimtrainer-header">
-        <button
-          onClick={() => navigate("/")}
-          className="back-button"
-        >
-          ← Back To Home
-        </button>
-
         <h1>Select Your Practice Mode</h1>
         <div className="header-underline"></div>
       </div>
