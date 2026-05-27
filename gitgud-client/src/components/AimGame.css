@@ -17,17 +17,20 @@
   margin-bottom: 12px;
   width: 100%;
   max-width: 1100px;
+  transform: translateY(-18px); /* match the same value as .aim-wrapper */
 }
 
 .aim-header h1 {
   font-size: clamp(1.6rem, 2.3vw, 3rem);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
 }
+
 
 .aim-header p {
   font-size: 0.9rem;
   color: var(--qc-subtext);
   margin: 0;
+  margin-top: 0.15rem;
 }
 
 /* MAIN WRAPPER */
@@ -39,6 +42,14 @@
   width: 100%;
   max-width: 1600px;
 }
+
+/* Nudge aim game + header up on tall desktop viewports (e.g. 1080p) */
+@media (min-height: 900px) {
+  .aim-wrapper {
+    margin-top: -18px; /* adjust -12 to -28px to taste */
+  }
+} 
+
 
 /* SETTINGS PANEL */
 .aim-settings {
@@ -116,9 +127,11 @@
 
 /* MAIN GAME AREA */
 .aim-game {
+  width: 1200px;                   /* fixed design size */
+  max-width: calc(100vw - 40px);   /* allows small screens to fit */
+  height: 675px;                   /* fixed 16:9 height */
+  aspect-ratio: auto;              /* not needed anymore */
   position: relative;
-  width: min(1200px, 78vw, calc((100vh - 280px) * 16 / 9));
-  aspect-ratio: 16/9;
   overflow: hidden;
   border-radius: 12px;
   background-position: center;
@@ -126,6 +139,7 @@
   border: 3px solid transparent;
   transition: .25s ease;
 }
+
 
 .aim-game:hover {
   border-color: var(--qc-frame);

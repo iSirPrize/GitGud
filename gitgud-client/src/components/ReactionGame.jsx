@@ -118,6 +118,20 @@ async function saveReactionResult(avg, best, rounds) {
   }, delay);
 }
 
+
+const [targetLoaded, setTargetLoaded] = useState(false);
+
+useEffect(() => {
+  const img = new Image();
+  img.src = target;
+  img.onload = () => setTargetLoaded(true);
+  img.onerror = () => setTargetLoaded(true); // fail safe
+  return () => {
+    // no cleanup needed for Image, but keep consistent
+  };
+}, []);
+
+
   // Handle clicking on the game area
   function handleShot() {
     // Too early

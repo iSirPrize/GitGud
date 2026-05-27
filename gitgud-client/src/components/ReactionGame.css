@@ -42,6 +42,7 @@
   /* Keep the header above everything else */
   position: relative;
   z-index: 30;
+  transform: translateY(-18px);
 
   /* Prevent the header from shrinking */
   flex-shrink: 0;
@@ -65,6 +66,7 @@
 .reaction-header p {
   font-size: 0.9rem;
   margin: 0;
+  margin-top: 0.15rem; 
   color: var(--qc-subtext);
 }
 
@@ -117,22 +119,32 @@
 /* Game Wrapper */
 .game-wrapper {
   position: relative;
-  display: flex;           
+  display: flex;
   justify-content: center;
   align-items: flex-start;
-  width: 100%;              
-  max-width: 1600px;       
-  margin-top: 8px;          
+  width: 100%;
+  max-width: 1600px;
+  margin-top: 8px;        /* existing default */
+  touch-action: none;
 }
+
+/* Nudge the game up on taller desktop viewports (e.g. 1080p) */
+@media (min-height: 900px) {
+  .game-wrapper {
+    margin-top: -18px; /* adjust between -12px and -28px to taste */
+  }
+}
+
 
 /* Main Game Box */
 .reaction-game {
   position: relative;
-  width: min(
-    1200px,
-    78vw,
-    calc((100vh - 280px) * 16 / 9)
-  );
+
+  width: 1200px;
+  height: 675px;
+
+  max-width: 100%;
+  max-height: calc(100vh - 220px);
 
   aspect-ratio: 16 / 9;
 
@@ -196,28 +208,46 @@
 /* Enemy Target */
 .enemy-target {
   position: absolute;
-  top: 42%;
-  left: 45%;
-  width: 12%;
+
+  width: 145px;
   height: auto;
+
+  top: 315px;
+  left: 44.7%;
+
+   transform: translate(-50%, -50%);
+
+
   z-index: 5;
   pointer-events: none;
+
   animation: peekIn 0.6s ease-out forwards;
+
+  user-select: none;
 }
 @keyframes peekIn {
-  from { transform: translateX(-35px); }
-  to   { transform: translateX(0); }
+  from { transform: translateX(-25px);}
+  to   { transform: translateX(0);}
 }
 /* Scope Overlay */
 .scope-image {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+
+  top: 50%;
+  left: 50%;
+
+  width: 1200px;
+  height: 675px;
+
+  transform: translate(-50%, -50%);
+
   object-fit: cover;
   object-position: center -425px;
+
   z-index: 10;
   pointer-events: none;
+
+  user-select: none;
 }
 /* Center Message */
 .game-message {
@@ -374,6 +404,8 @@
   cursor: pointer;
   transition: 0.2s ease;
   box-shadow: 0 0 8px var(--qc-header-line);
+
+  margin-top: 1rem;
 }
 
 .back-button:hover {
