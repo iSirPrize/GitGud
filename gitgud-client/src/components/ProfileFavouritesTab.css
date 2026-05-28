@@ -1,0 +1,81 @@
+.quiz-carousel.dark
+{
+    --qc-bg:    #0d0d0d;
+    --qc-surface:   #181818;
+    --qc-frame:     #ff6a00;
+    --qc-text:  #f0f0f0;
+    --qc-subtext:   #999;
+    --qc-input-bg:  #222222;
+    --qc-input-border: #333;
+    --qc-submit-bg:  #000;
+    --qc-header-line: rgba(255, 105, 0, 0.35);
+}
+
+.quiz-carousel.light
+{
+    --qc-bg:    #f4f4f4;
+    --qc-surface:   #ffffff;
+    --qc-frame:     #0066cc;
+    --qc-text:  #111111;
+    --qc-subtext:   #666;
+    --qc-input-bg:  #f0f4f8;
+    --qc-input-border: #d0dcea;
+    --qc-submit-bg:  #fff;
+    --qc-header-line: rgba(0, 102, 204, 0.2);
+}
+
+.fav-clips-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.fav-clip-card {
+  background: var(--qc-surface);
+  border: 1px solid var(--qc-input-border);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.fav-clip-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--qc-frame);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.fav-clip-thumb {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid var(--qc-input-border);
+}
+
+.fav-clip-info {
+  padding: 14px;
+}
+
+.fav-clip-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--qc-text);
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.fav-clip-game {
+  font-size: 12px;
+  color: var(--qc-subtext);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.fav-clip-card:hover .fav-clip-title {
+  color: var(--qc-frame);
+}

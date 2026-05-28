@@ -9,6 +9,7 @@ import CommunityVote from "./CommunityVote";
 import "./QuizCarousel.css";
 import { awardPoints } from "../usePoints";
 import { useDailies } from "../useDailies"
+import FavVideoButton from "./FavVideoButton";
 
 // ─── Standard question used across ALL games ──────────────────────────────────
 const STANDARD_QUESTION = "What is the play here?";
@@ -536,13 +537,37 @@ export default function QuizCarousel({ user }) {
       )}
 
       {/* ── Instructions trigger button ──────────────────────────────────────── */}
-      <button
-        className="how-to-play-btn"
-        onClick={() => setShowInstructions(true)}
-        title="How to play"
-      >
-        ? How to Play
-      </button>
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "12px",
+    flexWrap: "wrap",
+  }}
+>
+  <button
+    className="how-to-play-btn"
+    onClick={() => setShowInstructions(true)}
+    title="How to play"
+  >
+    ? How to Play
+  </button>
+
+  {scenario?.youtubeId && (
+  <div className="fav-btn-wrapper">
+    <FavVideoButton
+      clip={{
+        id: `${gameId}-${scenario.id}`,
+        title: scenario.question,
+        videoId: scenario.youtubeId,
+        game: gameId,
+      }}
+    />
+  </div>
+)}
+</div>
 
       {/* ── Progress dots ─────────────────────────────────────────────────────── */}
       <div className="quiz-progress">

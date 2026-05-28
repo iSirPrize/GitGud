@@ -102,7 +102,22 @@
   z-index: 10;
 }
 
+/* Fav button wrapper (positioned relative to the how-to-play button) */
+
+.fav-btn-wrapper {
+  position: absolute;
+  top: 16px;
+  right: 180px;
+  z-index: 10;
+}
+
 .how-to-play-btn:hover {
+  background: var(--qc-frame);
+  color: #000;
+  transform: scale(1.05);
+}
+
+.fav-video-btn:hover {
   background: var(--qc-frame);
   color: #000;
   transform: scale(1.05);

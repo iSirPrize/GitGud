@@ -36,6 +36,7 @@ import CommentSection from "./components/CommentSection";
 import CommunityVote from "./components/CommunityVote";
 import "./components/QuizCarousel.css";
 import "./UserQuizCarousel.css";
+import FavVideoButton from "./components/FavVideoButton"; // for testing, can remove or replace with a "favourite this quiz" button if you like
 
 // ── Value answer matching (mirrors adminQuizUtils logic, no shared import needed) ─
 function normaliseValue(raw) {
@@ -579,9 +580,36 @@ export default function UserQuizCarousel({ user }) {
         {/* Creator credit */}
         {scenario?.createdByName && (
           <p style={{ color: "var(--qc-subtext)", fontSize: "0.78rem", alignSelf: "center", marginBottom: 4 }}>
-            Quiz by <strong style={{ color: "var(--qc-text)" }}>{scenario.createdByName}</strong>
           </p>
         )}
+
+        {scenario?.createdByName && (
+  <p
+    style={{
+      color: "var(--qc-subtext)",
+      fontSize: "0.78rem",
+      alignSelf: "center",
+      marginBottom: 4,
+    }}
+  >
+    Quiz by{" "}
+    <strong style={{ color: "var(--qc-text)" }}>
+      {scenario.createdByName}
+    </strong>
+  </p>
+)}
+
+<div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+  <FavVideoButton
+    clip={{
+  id: `${gameId}-${scenario.id}`,
+  title: scenario.question,
+  videoId: scenario.youtubeId,
+  game: gameId,
+  videoPath: `/user-quiz/play/${gameId}`,
+}}
+  />
+</div>
 
         {/* Multi-question progress within a scenario */}
         {qTotal > 1 && (

@@ -6,6 +6,8 @@ import './ProfilePage.css';
 import { updateProfile } from 'firebase/auth';
 import { useTheme } from './context/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
+import ProfileFavouritesTab from './components/ProfileFavouritesTab';
+import { useSearchParams } from "react-router-dom";
 
 function ProfilePage({ user, targetUser })
 {
@@ -23,6 +25,8 @@ function ProfilePage({ user, targetUser })
     const [friends, setFriends] = useState([]);
     const [requests, setRequests] = useState([]);
     const [friendStatus, setFriendStatus] = useState("none");
+    const [searchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState( searchParams.get("tab") || "overview" );
 
     useEffect(() => {
         async function loadProfileData() {
@@ -393,9 +397,10 @@ function ProfilePage({ user, targetUser })
                                 </>
                             ) : (
                                 <button className="edit-btn" onClick={() => setIsEditing(true)}>Edit Profile</button>
-                            )}                        
+                            )}      
+                                              
                         </div>
-
+                    
                         {requests.length > 0 && !isEditing && (
                             <div className="request-panel">
                                 <h4>Pending Requests ({requests.length})</h4>
@@ -439,35 +444,65 @@ function ProfilePage({ user, targetUser })
             </div>
 
             {!isEditing && (
-                <>
-                    <hr className="divider" />
-                    <div className="friends-section">
-                        <h3>Friends ({friends.length})</h3>
-                        <div className="friends-grid">
-                            {friends.length > 0 ? (
-                                friends.map((friend) => (
-                                    <div
-                                        key={friend.id}
-                                        className="friend-item"
-                                        onClick={() => navigate(`/profile/${friend.id}`)}
-                                    >
-                                        <div className="friend-thumb">
-                                            {friend.photoURL ? (
-                                                <img src={friend.photoURL} alt={friend.username} />
-                                            ) : (
-                                                <div className="thumb-placeholder">{friend.username?.charAt(0)}</div>
-                                            )}
-                                        </div>
-                                        <span className="friend-name">{friend.username}</span>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="no-friends-text">Friends List is Empty</p>
-                            )}
-                        </div>
+  <>
+    <hr className="divider" />
+
+    {/* Tabs */}
+    <div className="profile-tabs">
+      <button
+        className={activeTab === "overview" ? "tab-btn active" : "tab-btn"}
+        onClick={() => setActiveTab("overview")}
+      >
+        Overview
+      </button>
+      <button
+        className={activeTab === "favourites" ? "tab-btn active" : "tab-btn"}
+        onClick={() => setActiveTab("favourites")}
+      >
+        Favourite Clips
+      </button>
+    </div>
+
+    {/* Overview tab: Friends */}
+    {activeTab === "overview" && (
+      <div className="friends-section">
+        <h3>Friends ({friends.length})</h3>
+        <div className="friends-grid">
+          {friends.length > 0 ? (
+            friends.map((friend) => (
+              <div
+                key={friend.id}
+                className="friend-item"
+                onClick={() => navigate(`/profile/${friend.id}`)}
+              >
+                <div className="friend-thumb">
+                  {friend.photoURL ? (
+                    <img src={friend.photoURL} alt={friend.username} />
+                  ) : (
+                    <div className="thumb-placeholder">
+                      {friend.username?.charAt(0)}
                     </div>
-                </>
-            )}
+                  )}
+                </div>
+                <span className="friend-name">{friend.username}</span>
+              </div>
+            ))
+          ) : (
+            <p className="no-friends-text">Friends List is Empty</p>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* Favourites tab: saved clips */}
+    {activeTab === "favourites" && (
+      <div className="favourites-section">
+        <h3>Favourite Clips</h3>
+        <ProfileFavouritesTab uidProp={targetId} />
+      </div>
+    )}
+  </>
+)}
         </div>
     );
 }

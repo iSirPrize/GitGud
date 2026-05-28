@@ -63,6 +63,51 @@
     margin-bottom: 30px;
 }
 
+.profile-tabs
+{
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.tab-btn
+{
+    background: var(--qc-input-bg);
+    color: var(--qc-subtext);
+    border: 1px solid var(--qc-input-border);
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn:hover
+{
+    color: var(--qc-text);
+    border-color: var(--qc-frame);
+    transform: translateY(-2px);
+    box-shadow: 0 0 12px var(--qc-frame-glow);
+}
+
+.tab-btn.active
+{
+    background: var(--qc-frame);
+    color: var(--qc-submit-text);
+    border-color: var(--qc-frame);
+    box-shadow: 0 0 18px var(--qc-frame-glow);
+}
+
+.tab-btn.active:hover
+{
+    filter: brightness(1.08);
+}
+
 .avatar
 {
     width: 100px;
