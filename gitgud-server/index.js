@@ -54,7 +54,7 @@ app.post('/api/notifications/schedule-notification', async (req, res) => {
                         .doc(`users/${userId}/notifications/${notificationId}`)
                         .get();
 
-                    if (!notifSnap.exists() || notifSnap.data().isRead === true) {
+                    if (!notifSnap.exists || notifSnap.data()?.isRead === true) {
                         shouldSendEmail = false;
                     }
                 }
