@@ -197,10 +197,51 @@ function CommentSection({ quizId }) {
           parentId:  parentId,
         }
       );
+      
+      const parentComment = comments.find(c => c.id === parentId);
+
       // Increment parent replyCount
       await updateDoc(commentRef(parentId), {
-        replyCount: (comments.find(c => c.id === parentId)?.replyCount || 0) + 1,
+        replyCount: (parentComment?.replyCount || 0) + 1,
       });
+
+      // DB Notification document addition
+      if (parentComment && parentComment.userId !== currentUser.uid) {
+        
+        //notifbell alert
+        let newNotifId = "";
+        const cleanSnippet = replyText.trim().length > 60 ? `${replyText.trim().slice(0, 60)}...` : replyText.trim();
+        
+        try {
+          const newNotifRef = await addDoc(collection(db, "users", parentComment.userId, "notifications"), {
+            type: "comment_reply",
+            senderName: currentUser.displayName || "Someone",
+            quizId: quizId,
+            replySnippet: cleanSnippet,
+            isRead: false,
+            timestamp: serverTimestamp()
+          });
+          newNotifId = newNotifRef.id;
+        } catch (notifErr) {
+          console.error("Failed to send reply notification:", notifErr);
+        }
+
+        // Send msg to jobs for email processing
+        if (newNotifId) {
+          fetch("http://localhost:3001/api/notifications/schedule-notification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: parentComment.userId,
+              notificationId: newNotifId,
+              quizId: quizId,
+              type: "comment_reply",
+              senderName: currentUser.displayName || "Someone",
+              messageSnippet: replyText.trim()
+            })
+          }).catch(err => console.error("Failed to alert Express scheduler for reply email:", err));
+        }
+      }
       setReplyText("");
       setReplyingTo(null);
       // Auto-expand replies for this thread
@@ -509,9 +550,9 @@ function CommentSection({ quizId }) {
         <div className="cs-input-area">
           {/*QM also making current user clickable to goto own profile as well*/}
           <Link
-          to={`/profile/${userRef.current?.uid}`}
-          style={{ textDecoration: 'none', cursor: 'pointer' }}
-        >
+            to={`/profile/${userRef.current?.uid}`}
+            style={{ textDecoration: 'none', cursor: 'pointer' }}
+          >
             {/* FIX 1: Always read photoURL fresh from auth.currentUser */}
             <Avatar
               photo={auth.currentUser?.photoURL}

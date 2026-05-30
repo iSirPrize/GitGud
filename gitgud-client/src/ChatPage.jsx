@@ -11,7 +11,10 @@ import {
     onSnapshot,
     serverTimestamp,
     increment,
-    getDoc
+    getDoc,
+    where,
+    getDocs,
+    writeBatch
 } from 'firebase/firestore';
 import { useTheme } from "./context/ThemeContext";
 import './chatPage.css';
@@ -24,7 +27,7 @@ function ChatPage({ user }) {
     const dummySpace = useRef(null);
     const navigate = useNavigate();
 
-    // 1. Clear unread count for the logged user
+    // Clear unread count for the logged-in user and cancel any server countdowns
     useEffect(() => {
         if (!chatId || !user?.uid) return;
 
@@ -34,15 +37,40 @@ function ChatPage({ user }) {
                 await updateDoc(chatDocRef, {
                     [`unreadCounts.${user.uid}`]: 0
                 });
+
+                // Find any existing notifications for this specific chat in the user's bell center
+                const myNotifsRef = collection(db, "users", user.uid, "notifications");
+                const q = query(myNotifsRef, where("chatId", "==", chatId));
+                const snap = await getDocs(q);
+
+                if (!snap.empty) {
+                    const batch = writeBatch(db);
+                    
+                    snap.docs.forEach((d) => {
+                        // Cancel the exact notification job key on the backend
+                        const jobKey = d.id;
+                        fetch("http://localhost:3001/api/notifications/cancel-notification", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ jobKey })
+                        }).catch(err => console.error("Express cancellation notice dropped:", err));
+
+                        // Hard delete from the bell database to keep it clean
+                        batch.delete(d.ref);
+                    });
+
+                    await batch.commit();
+                }
+
             } catch (err) {
                 console.error("Error clearing unread counts: ", err);
             }
         };
 
         clearUnreadCount();
-    }, [chatId, user?.uid, messages.length]);
+    }, [chatId, user?.uid]);
 
-    // Listener for messages to update in real time
+    // real time message listener
     useEffect(() => {
         if (!chatId) return;
 
@@ -61,7 +89,6 @@ function ChatPage({ user }) {
 
             setMessages(msgs);
 
-            // Scroll to last message
             setTimeout(() => {
                 dummySpace.current?.scrollIntoView({ behavior: 'smooth' });
             }, 60);
@@ -87,6 +114,7 @@ function ChatPage({ user }) {
             const chatData = chatSnapshot.data();
             const participants = chatData?.participants || [];
 
+            // commit doc to subcollection
             await addDoc(messagesSubcollectionRef, {
                 senderId: user.uid,
                 senderName: user.displayName || "Anonymous",
@@ -95,17 +123,56 @@ function ChatPage({ user }) {
                 timestamp: serverTimestamp()
             });
 
+            // prep tracking for email
             const updates = {
                 lastMessage: currentText,
                 updatedAt: serverTimestamp(),
             };
 
-            participants.forEach(memberId => {
-                if (memberId !== user.uid) {
-                    updates[`unreadCounts.${memberId}`] = increment(1);
-                }
-            });
+            //checking all particpant id
+            for (const participantId of participants) {
+                if (participantId !== user.uid) {
+                    const currentUnread = chatData?.unreadCounts?.[participantId] || 0;
 
+                    // Increment structural counter parameters mapping directly to participant IDs
+                    updates[`unreadCounts.${participantId}`] = increment(1);
+
+                    // sedn push notif if unread msg
+                    if (currentUnread === 0) {
+                        let newNotifId = "";
+                        try {
+                            const newNotifRef = await addDoc(collection(db, "users", participantId, "notifications"), {
+                                type: "unread_message",
+                                senderName: user.displayName || "Someone",
+                                chatId: chatId,
+                                messageSnippet: currentText.length > 60 ? `${currentText.slice(0, 60)}...` : currentText,
+                                isRead: false,
+                                timestamp: serverTimestamp()
+                            });
+                            newNotifId = newNotifRef.id;
+                        } catch (notifErr) {
+                            console.error("Failed to push to notification center:", notifErr);
+                        }
+
+                        // send msg to jobs for email
+                        if (newNotifId) {
+                            fetch("http://localhost:3001/api/notifications/schedule-notification", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    userId: participantId,
+                                    notificationId: newNotifId,
+                                    chatId: chatId,
+                                    type: "unread_message",
+                                    senderName: user.displayName || "Someone",
+                                    messageSnippet: currentText
+                                })
+                            }).catch(err => console.error("Failed to alert Express scheduler:", err));
+                        }
+                    }
+                }
+            }
+            // Update parent chat document counters globally
             await updateDoc(chatDocRef, updates);
 
         } catch (err) {

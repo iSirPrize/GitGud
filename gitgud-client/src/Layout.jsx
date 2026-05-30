@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "./firebase"
 import FavouriteButton from "./components/FavouriteButton"
+import NotificationBell from "./NotficationBell"
 
 
 
@@ -144,6 +145,7 @@ function Layout({ user }) {
         }}
       >
         <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 10, zIndex: 100 }}>
+          <NotificationBell user={user} />
           <FavouriteButton onClick={() => navigate(`/profile/${user?.uid || "me"}?tab=favourites`)} />
           <DarkModeToggle />
           <ProfileDropdown user={user} />

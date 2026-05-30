@@ -139,6 +139,30 @@ function ProfilePage({ user, targetUser })
                 status: "pending",
                 timestamp: serverTimestamp()
             });
+
+            try {
+                const notifRef = await addDoc(collection(db, "users", targetId, "notifications"), {
+                    type: "friend_request",
+                    senderName: user.displayName || "Someone",
+                    isRead: false,
+                    timestamp: serverTimestamp()
+                });
+
+                fetch('http://localhost:3001/api/notifications/schedule-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: targetId,
+                        notificationId: notifRef.id,
+                        type: "friend_request",
+                        senderName: user.displayName || "Someone"
+                    })
+                }).catch(err => console.error("Server scheduler connection failed:", err));
+
+            } catch (notifErr) {
+                console.error("Failed to add bell notification for friend request:", notifErr);
+            }
+
             setFriendStatus("pending")
             alert("Friend request sent");
         } catch(err) {
@@ -208,11 +232,8 @@ function ProfilePage({ user, targetUser })
         }
     }
 
-    // ── Backfill all past comments with new username/photo ────────────────
-    // This fixes the "old comments still show old name/avatar" problem.
     const backfillComments = async (newUsername, newPhotoURL) => {
         try {
-            // collectionGroup queries ALL "comments" subcollections across every quiz
             const commentsQuery = query(
                 collectionGroup(db, "comments"),
                 where("userId", "==", user.uid)
@@ -221,7 +242,6 @@ function ProfilePage({ user, targetUser })
 
             if (snapshot.empty) return;
 
-            // Firestore batch limit is 500 writes — chunk if needed
             const BATCH_SIZE = 400;
             const docs = snapshot.docs;
 
@@ -238,7 +258,6 @@ function ProfilePage({ user, targetUser })
 
             console.log(`Backfilled ${docs.length} comment(s) with updated profile.`);
         } catch (err) {
-            // Non-fatal — profile still saves even if backfill fails
             console.error("Comment backfill failed:", err);
         }
     };
@@ -246,13 +265,11 @@ function ProfilePage({ user, targetUser })
     const handleSave = async () => {
         setSaving(true);
         try {
-            // 1. Update Firebase Auth display name
             await updateProfile(auth.currentUser, { 
                 displayName: username,
                 photoURL: profilePic 
             });
 
-            // 2. Save profile to Firestore (include photoURL so it persists)
             await setDoc(doc(db, "users", user.uid), {
                 username:  username,
                 aboutMe:   aboutMe,
@@ -260,7 +277,6 @@ function ProfilePage({ user, targetUser })
                 updatedAt: serverTimestamp(),
             }, { merge: true });
 
-            // 3. Backfill all past comments with new name + photo
             await backfillComments(username, profilePic);
 
             setIsEditing(false);
@@ -398,7 +414,7 @@ function ProfilePage({ user, targetUser })
                             ) : (
                                 <button className="edit-btn" onClick={() => setIsEditing(true)}>Edit Profile</button>
                             )}      
-                                              
+                                                                                                                                                
                         </div>
                     
                         {requests.length > 0 && !isEditing && (
@@ -418,7 +434,7 @@ function ProfilePage({ user, targetUser })
                                         </div>
                                         <div className="request-actions">
                                             <button className="accept-btn" onClick={() => handleAcceptFriend(req)}>Accept</button>
-                                            <button className="decline-btn" onClick={() => handleDeclineFriend(req)}>Decline</button>                                  
+                                            <button className="decline-btn" onClick={() => handleDeclineFriend(req)}>Decline</button>                                    
                                         </div>
                                     </div>
                                 ))}
@@ -447,7 +463,6 @@ function ProfilePage({ user, targetUser })
   <>
     <hr className="divider" />
 
-    {/* Tabs */}
     <div className="profile-tabs">
       <button
         className={activeTab === "overview" ? "tab-btn active" : "tab-btn"}
@@ -463,7 +478,6 @@ function ProfilePage({ user, targetUser })
       </button>
     </div>
 
-    {/* Overview tab: Friends */}
     {activeTab === "overview" && (
       <div className="friends-section">
         <h3>Friends ({friends.length})</h3>
