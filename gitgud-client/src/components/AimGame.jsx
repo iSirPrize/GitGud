@@ -27,6 +27,9 @@ export default function AimGame() {
   const clicksRef = useRef(clicks);
   const gameEndedRef = useRef(false);
 
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
   const crosshairSymbols = {
     dotCross: "✚",
     plus: "＋",
@@ -61,6 +64,14 @@ export default function AimGame() {
     setClicks((c) => c + 1);
     spawnTarget();
   };
+
+  useEffect(() => {
+  const hideInstructions = localStorage.getItem("hideAimInstructions");
+
+  if (!hideInstructions) {
+    setShowInstructions(true);
+  }
+}, []);
 
   const handleMisses = () => {
     if (gameActive) setClicks((c) => c + 1);
@@ -196,10 +207,60 @@ export default function AimGame() {
   return (
     <div className={`aim-page ${theme}`}>
 
+      {showInstructions && (
+  <div className="instructions-overlay">
+    <div className="instructions-modal">
+
+      <h2 className="instructions-title">
+        How to Play
+      </h2>
+
+      <ul className="instructions-list">
+        <li>Click targets as quickly as possible.</li>
+        <li>Each hit increases your score.</li>
+        <li>Missed clicks lower your accuracy.</li>
+        <li>Try to achieve the highest score before time runs out.</li>
+      </ul>
+
+      <div className="instructions-actions">
+  <button
+    className="instructions-start-btn"
+    onClick={() => {
+      if (dontShowAgain) {
+        localStorage.setItem("hideAimInstructions", "true");
+      }
+      setShowInstructions(false);
+    }}
+  >
+    Got It
+  </button>
+
+  <label className="instructions-checkbox">
+    <input
+      type="checkbox"
+      checked={dontShowAgain}
+      onChange={(e) => setDontShowAgain(e.target.checked)}
+    />
+    <span className="checkmark"></span>
+    Don't show again
+  </label>
+</div>
+
+    </div>
+  </div>
+)}
+
       <div className="aim-header">
         <h1>Aim Trainer</h1>
         <p>Click targets quickly to improve your aim.</p>
       </div>
+
+      <button
+  className="how-to-play-btn"
+  onClick={() => setShowInstructions(true)}
+>
+  ? How To Play
+</button>
 
       <div className="aim-wrapper">
 
