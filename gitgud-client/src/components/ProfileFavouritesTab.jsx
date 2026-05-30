@@ -19,6 +19,7 @@ export default function ProfileFavouritesTab({ uidProp }) {
       return;
     }
     const unsub = subscribeClipFavourites(uid, (items) => {
+      console.log("Favourite items:", items);
       setClips(items);
       setLoading(false);
     });
@@ -35,7 +36,9 @@ export default function ProfileFavouritesTab({ uidProp }) {
       <div
         key={c.id}
         className="fav-clip-card"
-        onClick={() => navigate(c.videoPath || `/clip/${c.id}`)}
+        onClick={() => { console.log("Navigating to:", c.videoPath);
+          navigate(c.videoPath || `/quiz/${c.id}`);
+}}
       >
         {c.thumbnail && (
           <img

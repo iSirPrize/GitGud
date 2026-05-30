@@ -363,14 +363,14 @@ const GAME_LABELS = { valorant: "Valorant", cs2: "Counter-Strike 2", other: "Oth
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function UserQuizCarousel({ user }) {
-  const { gameId }  = useParams();
+  const { gameId, scenarioId }  = useParams();
   const { theme }   = useTheme();
   const isDark      = theme === "dark";
   const navigate    = useNavigate();
 
   const [scenarios,    setScenarios]    = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [current,      setCurrent]      = useState(0);
+  const [current, setCurrent] = useState(0);
   const [currentQ,     setCurrentQ]     = useState(0); // question index within scenario
   const [answers,      setAnswers]      = useState([]);   // answers[scenarioIdx][questionIdx]
   const [submitted,    setSubmitted]    = useState([]);   // submitted[scenarioIdx][questionIdx]
@@ -388,6 +388,8 @@ export default function UserQuizCarousel({ user }) {
         const snap = await getDocs(query(collection(db, "userQuizzes"), where("game", "==", gameId), where("approved", "==", true)));
         const docs = snap.docs.map(d => normaliseScenario({ id: d.id, ...d.data() }));
         setScenarios(docs);
+        if (scenarioId) {
+        const idx = docs.findIndex( (s) => String(s.id) === String(scenarioId));if (idx >= 0) {setCurrent(idx);}}
         setAnswers(docs.map(d => Array(d.questions.length).fill(null)));
         setSubmitted(docs.map(d => Array(d.questions.length).fill(false)));
         setVideoPaused(docs.map(d => Array(d.questions.length).fill(false)));
@@ -606,7 +608,7 @@ export default function UserQuizCarousel({ user }) {
   title: scenario.question,
   videoId: scenario.youtubeId,
   game: gameId,
-  videoPath: `/user-quiz/play/${gameId}`,
+  videoPath: `/user-quiz/play/${gameId}/${scenario.id}`,
 }}
   />
 </div>

@@ -56,6 +56,7 @@ if (!clip || !clip.id) {
       } else {
         await addClipFavorite(uid, clip);
         setIsFav(true);
+        console.log("Saving favourite path:", clip.videoPath);
       }
     } catch (err) {
       console.error("Favourite toggle failed:", err);

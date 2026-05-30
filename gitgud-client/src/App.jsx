@@ -77,7 +77,7 @@ function App() {
 
         {/* ── Original hardcoded Valorant demo — PRESERVED ─────────────── */}
         <Route path="quiz/:gameId" element={<QuizCarousel user={user} />} />
-
+        <Route path="quiz/:gameId/:scenarioId" element={<QuizCarousel user={user} />} />
         {/* ── Admin quiz game landing (Play Quiz / Create Quiz) ─────────── */}
         <Route path="admin-quiz/:gameId" element={<AdminQuizPage user={user} />} />
 

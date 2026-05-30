@@ -16,9 +16,9 @@ const clipFavDoc = (uid, clipId) =>
 export async function addClipFavorite(uid, clip) {
   return setDoc(clipFavDoc(uid, clip.id), {
     id: clip.id,
-    title: clip.title || "",
+    title: clip.title || "User Quiz",
     thumbnail: clip.thumbnail || "",
-    videoPath: clip.videoPath || clip.route || `/clip/${clip.id}`,
+    videoPath: clip.videoPath || clip.route || `/quiz/${clip.id}`,
     game: clip.game || "",
     createdAt: serverTimestamp(),
   });

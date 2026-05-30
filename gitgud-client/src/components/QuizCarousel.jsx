@@ -299,13 +299,21 @@ export default function QuizCarousel({ user }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const { gameId } = useParams();
+  const { gameId, scenarioId } = useParams();
   const SCENARIOS = SCENARIOS_BY_GAME[gameId] ?? FALLBACK_SCENARIOS;
 
   // DAILIES: hook called directly — no prop threading or wrapper component needed
   const { recordProgress } = useDailies(user?.uid);
 
-  const [current, setCurrent]           = useState(0);
+  const initialIndex = scenarioId
+  ? Math.max(
+      0,
+      SCENARIOS.findIndex(
+        s => String(s.id) === String(scenarioId)
+      )
+    )
+  : 0;
+  const [current, setCurrent] = useState(initialIndex);
   const [selected, setSelected]         = useState(Array(SCENARIOS.length).fill(null));
   const [submitted, setSubmitted]       = useState(Array(SCENARIOS.length).fill(false));
   const [videoPaused, setVideoPaused]   = useState(Array(SCENARIOS.length).fill(false));
@@ -563,6 +571,7 @@ export default function QuizCarousel({ user }) {
         title: scenario.question,
         videoId: scenario.youtubeId,
         game: gameId,
+        videoPath: `/quiz/${gameId}/${scenario.id}`,
       }}
     />
   </div>
