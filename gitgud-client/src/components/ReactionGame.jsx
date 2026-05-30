@@ -34,6 +34,16 @@ export default function ReactionGame() {
   const nextRoundTimeoutRef = useRef(null);
   const gameEndedRef = useRef(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+  const hideInstructions = localStorage.getItem("hideReactionInstructions");
+
+  if (!hideInstructions) {
+    setShowInstructions(true);
+  }
+}, []);
 
   useEffect(() => {
   return () => {
@@ -280,12 +290,64 @@ useEffect(() => {
   return (
     <div className={`reaction-page ${theme}`}>
 
+      {showInstructions && (
+  <div className="instructions-overlay">
+    <div className="instructions-modal">
+
+      <h2 className="instructions-title">
+        How to Play
+      </h2>
+
+      <ol className="instructions-list">
+        <li>Click targets as quickly as possible.</li>
+        <li>Each hit increases your score.</li>
+        <li>Slow clicks will increase your average reaction time.</li>
+        <li>Try to achieve the lowest average reaction time over 8 rounds.</li>
+      </ol>
+
+      <div className="instructions-actions">
+  <button
+    className="instructions-start-btn"
+    onClick={() => {
+      if (dontShowAgain) {
+        localStorage.setItem("hideReactionInstructions", "true");
+      }
+      setShowInstructions(false);
+    }}
+  >
+    Got It
+  </button>
+
+  <label className="instructions-checkbox">
+    <input
+      type="checkbox"
+      checked={dontShowAgain}
+      onChange={(e) => setDontShowAgain(e.target.checked)}
+    />
+    <span className="checkmark"></span>
+    Don't show again
+  </label>
+  </div>
+
+    </div>
+  </div>
+)}
+
+
   {/* Header */}
   <div className="reaction-header">
 
     <h1>Reaction Trainer</h1>
     <p>Wait for the enemy to peek and click as fast as you can.</p>
   </div>
+
+  <button
+  className="how-to-play-btn"
+  onClick={() => setShowInstructions(true)}
+>
+  ? How To Play
+</button>
+
   {/* Game Area */}
   <div className="game-wrapper">
 
