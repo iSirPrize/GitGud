@@ -117,10 +117,38 @@
   transform: scale(1.05);
 }
 
-.fav-video-btn:hover {
-  background: var(--qc-frame);
-  color: #000;
-  transform: scale(1.05);
+.fav-video-btn
+{
+    background: transparent;
+    border: 2px solid var(--qc-frame);
+    color: var(--qc-frame);
+
+    border-radius: 20px;
+
+    padding: 6px 14px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    letter-spacing: 0.03em;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    transition:
+      background 0.2s,
+      color 0.2s,
+      transform 0.15s;
+}
+
+.fav-video-btn:hover
+{
+    background: var(--qc-frame);
+    color: #000;
+    transform: scale(1.05);
 }
 
 /* ── Instructions overlay ────────────────────────────────────────────────── */

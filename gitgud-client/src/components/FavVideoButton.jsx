@@ -69,26 +69,41 @@ if (!clip || !clip.id) {
 
   return (
     <button
+
+    onMouseEnter={(e) => {
+  e.currentTarget.style.background = accent;
+  e.currentTarget.style.color = "#000";
+  e.currentTarget.style.transform = "scale(1.05)";
+}}
+
+onMouseLeave={(e) => {
+  e.currentTarget.style.background = "transparent";
+  e.currentTarget.style.color = accent;
+  e.currentTarget.style.transform = "scale(1)";
+}}
       onClick={handleClick}
       disabled={loading}
       style={{
-        padding: "8px 14px",
-        borderRadius: 999,
-        border: `1px solid ${accent}`,
-        background: isFav
-          ? dark
-            ? "rgba(255,106,0,0.15)"
-            : "rgba(0,102,204,0.12)"
-          : "transparent",
-        color: accent,
-        fontSize: 13,
-        fontWeight: 700,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        cursor: loading ? "default" : "pointer",
-        transition: "background 0.18s ease, transform 0.1s ease",
-      }}
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "6px",
+
+  padding: "6px 14px",
+  borderRadius: "20px",
+  border: `2px solid ${accent}`,
+
+  background: "transparent",
+
+  color: accent,
+  fontSize: "13px",
+  fontWeight: 600,
+  letterSpacing: "0.03em",
+
+  cursor: loading ? "default" : "pointer",
+
+  transition:
+    "background 0.2s, color 0.2s, transform 0.15s",
+}}
     >
       <svg
         width="15"
@@ -105,12 +120,12 @@ if (!clip || !clip.id) {
                  5.5 0 0 0 0-7.78z" />
       </svg>
       <span>
-        {loading
-          ? "Saving..."
-          : isFav
-          ? "✓ Favourited"
-          : "Favourite this video"}
-      </span>
+  {loading
+    ? "Saving..."
+    : isFav
+    ? "✓ Favourited"
+    : "Favourite"}
+</span>
     </button>
   );
 }
