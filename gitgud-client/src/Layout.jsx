@@ -1,3 +1,14 @@
+/**
+ * Layout.jsx — UPDATED VERSION
+ *
+ * Changes from original:
+ *  1. Added SkillTreeIndicator import
+ *  2. Added /skill-tree NavLink with red ! badge
+ *
+ * Place at: gitgud-client/src/Layout.jsx
+ * (replaces existing Layout.jsx entirely)
+ */
+
 import { Outlet, NavLink, useNavigate } from "react-router-dom"
 import DarkModeToggle from "./components/DarkModeToggle"
 import ProfileDropdown from "./ProfileDropdown"
@@ -8,7 +19,7 @@ import { doc, getDoc } from "firebase/firestore"
 import { db } from "./firebase"
 import FavouriteButton from "./components/FavouriteButton"
 import NotificationBell from "./NotficationBell"
-
+import SkillTreeIndicator from "./components/SkillTreeIndicator"   // ← NEW
 
 
 function Layout({ user }) {
@@ -17,27 +28,16 @@ function Layout({ user }) {
   const [open, setOpen] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  // Sidebar width constants.
-  // Reverted to original 200px open width, then shifted content right by 10px
-  // (210px total) so the "B" in "Browse by Game" clears the sidebar edge.
-  // SIDEBAR_CLOSED_WIDTH stays at 40px (original).
   const SIDEBAR_OPEN_WIDTH   = 170
   const SIDEBAR_CLOSED_WIDTH = 40
 
   useEffect(() => {
-    if (!user?.uid)
-    {
-      setIsAdmin(false);
-      return;
-    }
+    if (!user?.uid) { setIsAdmin(false); return; }
     getDoc(doc(db, "users", user.uid)).then((snap) => {
       if (snap.exists() && snap.data().isAdmin === true) setIsAdmin(true)
     }).catch(() => {})
   }, [user?.uid])
 
-  // GGG_MAS pattern: content panel's left offset = sidebar width.
-  // When sidebar toggles, main content repositions immediately so it
-  // never sits under or clips behind the sidebar.
   const sidebarWidth  = open ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH
   const contentOffset = sidebarWidth
 
@@ -49,15 +49,10 @@ function Layout({ user }) {
         className={`sidebar ${open ? "open" : ""}`}
         style={{ width: sidebarWidth }}
       >
-        {/* Toggle button */}
-        <button
-          className="sidebar-toggle"
-          onClick={() => setOpen(!open)}
-        >
+        <button className="sidebar-toggle" onClick={() => setOpen(!open)}>
           <span className="arrow">{open ? "◀" : "☰"}</span>
         </button>
 
-        {/* Logo — only visible when open */}
         <div className="sidebar-logo">
           <NavLink to="/" className="sidebar-logo-link">
             <img
@@ -69,15 +64,14 @@ function Layout({ user }) {
           </NavLink>
         </div>
 
-        {/* Nav links */}
         <div className="sidebar-content">
           <NavLink to="/" className={({ isActive }) => isActive ? "practice active" : "practice"}>
             <div className="nav-main">Home</div>
             <div className="nav-desc">Back to Main Menu!</div>
           </NavLink>
 
-          <NavLink 
-            to={user?.uid ? `/profile/${user.uid}` : "/"} 
+          <NavLink
+            to={user?.uid ? `/profile/${user.uid}` : "/"}
             className={({ isActive }) => isActive ? "practice active" : "practice"}
           >
             <div className="nav-main">Profile</div>
@@ -99,21 +93,29 @@ function Layout({ user }) {
             <div className="nav-desc">Test Your Game Sense &amp; Knowledge!</div>
           </NavLink>
 
-          <NavLink to="/dailies" className={({ isActive }) => isActive ? "practice active" : "practice"}>
-          <div className="nav-main">Dailies</div>
-          <div className="nav-desc">Your Daily Quests!</div>
-        </NavLink>
+          {/* ── NEW: Skill Tree link with pending indicator ────────────── */}
+          <NavLink to="/skill-tree" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+            <div className="nav-main" style={{ display: 'flex', alignItems: 'center' }}>
+              Skill Tree
+              <SkillTreeIndicator uid={user?.uid} />
+            </div>
+            <div className="nav-desc">Unlock Powerful Perks!</div>
+          </NavLink>
 
-          <NavLink to="/rewards" className={({ isActive }) => isActive ? "practice active" : "practice" }>
-          <div className="nav-main">Rewards</div>
-          <div className="nav-desc"> Unlock Achievements & Cosmetics!</div>
-        </NavLink>  
+          <NavLink to="/dailies" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+            <div className="nav-main">Dailies</div>
+            <div className="nav-desc">Your Daily Quests!</div>
+          </NavLink>
+
+          <NavLink to="/rewards" className={({ isActive }) => isActive ? "practice active" : "practice"}>
+            <div className="nav-main">Rewards</div>
+            <div className="nav-desc">Unlock Achievements &amp; Cosmetics!</div>
+          </NavLink>
 
           <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "practice active" : "practice"}>
             <div className="nav-main">Leaderboard</div>
             <div className="nav-desc">Check Your Rankings!</div>
           </NavLink>
-          
 
           <NavLink to="/user-quiz" className={({ isActive }) => isActive ? "practice active" : "practice"}>
             <div className="nav-main">User Quizzes</div>
@@ -135,12 +137,6 @@ function Layout({ user }) {
       </div>
 
       {/* ── Main content area ────────────────────────────────────────────── */}
-      {/*
-        GGG_MAS pattern translated to CSS:
-          C#:  _pnlMain.Location = new Point(sidebarWidth, 0)
-          JS:  marginLeft = sidebarWidth (inline style, updates on toggle)
-        The transition matches the sidebar animation so they slide together.
-      */}
       <section
         id="center"
         className={theme}

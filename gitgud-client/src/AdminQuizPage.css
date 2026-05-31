@@ -958,3 +958,96 @@
   .aqp-quiz-grid { padding: 0 20px 32px; }
   .aqp-question-card { padding: 0 14px; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   AdminQuizPage.css ADDITIONS — append to bottom of existing AdminQuizPage.css
+   ─────────────────────────────────────────────────────────────────────────────
+
+   Adds support for:
+     - Perk action buttons row in the quiz player
+     - Perk visual states on multi-choice buttons (hidden, perk-correct, perk-wrong)
+     - Skill Perks dropdown positioning inside .aqp-header
+*/
+
+/* ── Perk-aware choice button states ─────────────────────────────────────── */
+
+/* Hidden by 50/50 */
+.aqp-choice-btn.hidden {
+  display: none;
+}
+
+/* Coin Toss: revealed correct */
+.aqp-choice-btn.perk-correct {
+  border-color: #4ade80 !important;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.35);
+}
+.aqp-choice-btn.perk-correct::after {
+  content: ' 🪙✓';
+  font-size: 0.8em;
+}
+
+/* Reveal Wrong / Coin Toss: revealed wrong */
+.aqp-choice-btn.perk-wrong {
+  border-color: #ef4444 !important;
+  opacity: 0.5;
+}
+.aqp-choice-btn.perk-wrong::after {
+  content: ' 🚫';
+  font-size: 0.8em;
+}
+
+/* ── Perk action buttons row ─────────────────────────────────────────────── */
+.perk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.perk-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid;
+  background: transparent;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+.perk-btn:hover  { opacity: 0.8; transform: translateY(-1px); }
+.perk-btn:active { transform: translateY(0); }
+
+.perk-btn.fifty-fifty,
+.perk-btn.coin-toss {
+  color: #f59e0b;
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+.perk-btn.reveal-wrong {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+.perk-btn.retry-q {
+  color: #818cf8;
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.1);
+}
+
+/* ── Skill Perks dropdown in admin quiz header ───────────────────────────── */
+.aqp-header {
+  /* extend existing rule to wrap nicely when dropdown is present */
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ── Completed quiz XP label tweak ──────────────────────────────────────── */
+.aqp-points-earned {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--aqp-subtext);
+  margin: 8px 0 0;
+}

@@ -11,6 +11,11 @@ import { awardPoints } from "../usePoints";
 import { useDailies } from "../useDailies"
 import FavVideoButton from "./FavVideoButton";
 import { updateQuizStats } from "../statsService";
+// ── SECTION 1: Skill tree imports ──────────────────────────────────────────
+import { useSkillTree, useSkillExp } from '../skilltree/useSkillTree';
+import { applyFiftyFifty, applyReveal1Wrong, canTryAgain } from '../skilltree/skillTreeEngine';
+import { PERK_KEY } from '../skilltree/skillTreeData';
+import SkillPerksDropdown from './SkillPerksDropdown';
 
 // ─── Standard question used across ALL games ──────────────────────────────────
 const STANDARD_QUESTION = "What is the play here?";
@@ -303,6 +308,26 @@ export default function QuizCarousel({ user }) {
   const { gameId, scenarioId } = useParams();
   const SCENARIOS = SCENARIOS_BY_GAME[gameId] ?? FALLBACK_SCENARIOS;
 
+  // ── SECTION 2: Skill tree hooks ───────────────────────────────────────────
+  const {
+    unlockedPerks,
+    passivePerks,
+    activePerks,
+    sessionActivePerks,
+    toggleSessionPerk,
+    resetSessionPerks,
+  } = useSkillTree(user?.uid);
+
+  const { getExp } = useSkillExp(unlockedPerks, sessionActivePerks);
+
+  // Skill perk state per question:
+  const [hiddenChoices, setHiddenChoices]         = useState([]);
+  const [revealedWrong, setRevealedWrong]         = useState(null);
+  const [revealedCorrect, setRevealedCorrect]     = useState(null);
+  const [questionRetryUsed, setQuestionRetryUsed] = useState(false);
+  const [tryAgainUsed, setTryAgainUsed]           = useState(false);
+  const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
+
   // DAILIES: hook called directly — no prop threading or wrapper component needed
   const { recordProgress } = useDailies(user?.uid);
 
@@ -405,7 +430,77 @@ export default function QuizCarousel({ user }) {
     setSelected(updated);
   };
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // ── SECTION 3: Perk action handlers ───────────────────────────────────────
+
+  // ── Perk action: 50/50 (or Coin Toss if unlocked) ─────────────────────────
+  const handleFiftyFifty = () => {
+    if (!sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY)) return;
+    const wrongIndices = scenario.choices
+      .map((_, i) => i)
+      .filter(i => i !== scenario.correctIndex);
+
+    const result = applyFiftyFifty(
+      wrongIndices,
+      scenario.correctIndex,
+      unlockedPerks,
+      sessionActivePerks
+    );
+
+    setHiddenChoices(result.hiddenIndices);
+    setRevealedWrong(result.revealedWrong);
+    setRevealedCorrect(result.revealedCorrect);
+
+    // Consume the active perk for this question (deactivate after use)
+    toggleSessionPerk(PERK_KEY.FIFTY_FIFTY);
+    if (unlockedPerks.includes(PERK_KEY.COIN_TOSS)) {
+      toggleSessionPerk(PERK_KEY.COIN_TOSS);
+    }
+  };
+
+  // ── Perk action: Reveal 1 Wrong ────────────────────────────────────────────
+  const handleReveal1Wrong = () => {
+    if (!sessionActivePerks.includes(PERK_KEY.REVEAL_1_WRONG)) return;
+    const wrongIndices = scenario.choices
+      .map((_, i) => i)
+      .filter(i => i !== scenario.correctIndex);
+    setRevealedWrong(applyReveal1Wrong(wrongIndices));
+    toggleSessionPerk(PERK_KEY.REVEAL_1_WRONG);
+  };
+
+  // ── Perk action: Retry Question ────────────────────────────────────────────
+  const handleRetryQuestion = () => {
+    if (questionRetryUsed) return;
+    // Reset current question state only
+    const newSelected = [...selected];
+    newSelected[current] = null;
+    setSelected(newSelected);
+    const newSubmitted = [...submitted];
+    newSubmitted[current] = false;
+    setSubmitted(newSubmitted);
+    setHiddenChoices([]);
+    setRevealedWrong(null);
+    setRevealedCorrect(null);
+    setQuestionRetryUsed(true);
+  };
+
+  // ── Perk action: Try Again (whole quiz) ────────────────────────────────────
+  const handleTryAgain = () => {
+    if (tryAgainUsed) return;
+    setShowComplete(false);
+    setCurrent(0);
+    setSelected(Array(SCENARIOS.length).fill(null));
+    setSubmitted(Array(SCENARIOS.length).fill(false));
+    setVideoPaused(Array(SCENARIOS.length).fill(false));
+    setFeedback(null);
+    setHiddenChoices([]);
+    setRevealedWrong(null);
+    setRevealedCorrect(null);
+    setConsecutiveCorrect(0);
+    setTryAgainUsed(true);
+    resetSessionPerks();
+  };
+
+  // ── SECTION 4: Submit (with skill-adjusted EXP) ───────────────────────────
   const handleSubmit = async () => {
     if (selected[current] === null) return;
 
@@ -416,9 +511,24 @@ export default function QuizCarousel({ user }) {
     const correct = selected[current] === scenario.correctIndex;
     setFeedback(correct ? "correct" : "wrong");
 
-    if (correct && user?.uid) {
-      awardPoints(user.uid, 10).catch((err) => console.error("awardPoints failed:", err));
+    // Award skill-adjusted EXP on correct answers
+    if (user?.uid && correct) {
+      const expToAward = getExp(10, consecutiveCorrect);
+      awardPoints(user.uid, expToAward).catch((err) => console.error("awardPoints failed:", err));
     }
+
+    // Update consecutive correct counter
+    if (correct) {
+      setConsecutiveCorrect(c => c + 1);
+    } else {
+      setConsecutiveCorrect(0);
+    }
+
+    // Reset per-question perk state when moving to next question
+    setHiddenChoices([]);
+    setRevealedWrong(null);
+    setRevealedCorrect(null);
+    setQuestionRetryUsed(false);
 
     // DAILIES: correct answer submitted — increment quiz correct-answer quests
     if (correct) recordProgress("quiz", { correct: 1 });
@@ -444,6 +554,25 @@ export default function QuizCarousel({ user }) {
   };
 
   const choiceLabels = ["A", "B", "C", "D"];
+
+  // ── SECTION 5: getChoiceClass with perk visual states ─────────────────────
+  const getChoiceClass = (idx) => {
+    if (hiddenChoices.includes(idx)) return 'choice-btn hidden';
+    let cls = 'choice-btn';
+    if (submitted[current]) {
+      cls += ' locked';
+      if (idx === scenario.correctIndex) cls += ' correct';
+      else if (idx === selected[current]) cls += ' wrong';
+    } else if (selected[current] === idx) {
+      cls += ' selected';
+    }
+    // Perk visual hints (before submit)
+    if (!submitted[current]) {
+      if (idx === revealedCorrect) cls += ' perk-correct';
+      if (idx === revealedWrong)   cls += ' perk-wrong';
+    }
+    return cls;
+  };
 
   // ── Quiz Complete screen ──────────────────────────────────────────────────
   if (showComplete) {
@@ -502,18 +631,24 @@ export default function QuizCarousel({ user }) {
             <p className="complete-points">+{correctCount * 10} points earned this quiz</p>
 
             <div className="complete-actions">
+              {/* SECTION 7: Try Again button with perk awareness */}
               <button
                 className="complete-retry-btn"
                 onClick={() => {
-                  setShowComplete(false);
-                  setCurrent(0);
-                  setSelected(Array(SCENARIOS.length).fill(null));
-                  setSubmitted(Array(SCENARIOS.length).fill(false));
-                  setVideoPaused(Array(SCENARIOS.length).fill(false));
-                  setFeedback(null);
+                  if (canTryAgain(unlockedPerks) && !tryAgainUsed) {
+                    handleTryAgain();
+                  } else {
+                    // original reset (no perk)
+                    setShowComplete(false);
+                    setCurrent(0);
+                    setSelected(Array(SCENARIOS.length).fill(null));
+                    setSubmitted(Array(SCENARIOS.length).fill(false));
+                    setVideoPaused(Array(SCENARIOS.length).fill(false));
+                    setFeedback(null);
+                  }
                 }}
               >
-                Try Again
+                {canTryAgain(unlockedPerks) && !tryAgainUsed ? '🔄 Try Again (perk)' : 'Try Again'}
               </button>
               <button
                 className="complete-review-btn"
@@ -528,18 +663,6 @@ export default function QuizCarousel({ user }) {
     );
   }
 
-  const getChoiceClass = (idx) => {
-    let cls = "choice-btn";
-    if (submitted[current]) {
-      cls += " locked";
-      if (idx === scenario.correctIndex) cls += " correct";
-      else if (idx === selected[current]) cls += " wrong";
-    } else if (selected[current] === idx) {
-      cls += " selected";
-    }
-    return cls;
-  };
-
   return (
     <div className={`quiz-carousel ${isDark ? "dark" : "light"}`}>
 
@@ -551,39 +674,73 @@ export default function QuizCarousel({ user }) {
         />
       )}
 
-      {/* ── Instructions trigger button ──────────────────────────────────────── */}
+      {/* ── Instructions trigger button + Skill Perks Dropdown ──────────────── */}
+      {/* SECTION 6: SkillPerksDropdown + perk action buttons */}
       <div
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "12px",
-    marginBottom: "12px",
-    flexWrap: "wrap",
-  }}
->
-  <button
-    className="how-to-play-btn"
-    onClick={() => setShowInstructions(true)}
-    title="How to play"
-  >
-    ? How to Play
-  </button>
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          className="how-to-play-btn"
+          onClick={() => setShowInstructions(true)}
+          title="How to play"
+        >
+          ? How to Play
+        </button>
 
-  {scenario?.youtubeId && (
-  <div className="fav-btn-wrapper">
-    <FavVideoButton
-      clip={{
-        id: `${gameId}-${scenario.id}`,
-        title: scenario.question,
-        videoId: scenario.youtubeId,
-        game: gameId,
-        videoPath: `/quiz/${gameId}/${scenario.id}`,
-      }}
-    />
-  </div>
-)}
-</div>
+        {/* SkillPerksDropdown sits alongside How to Play */}
+        <SkillPerksDropdown
+          passivePerks={passivePerks}
+          activePerks={activePerks}
+          sessionActivePerks={sessionActivePerks}
+          onToggle={toggleSessionPerk}
+          isDark={isDark}
+        />
+
+        {scenario?.youtubeId && (
+          <div className="fav-btn-wrapper">
+            <FavVideoButton
+              clip={{
+                id: `${gameId}-${scenario.id}`,
+                title: scenario.question,
+                videoId: scenario.youtubeId,
+                game: gameId,
+                videoPath: `/quiz/${gameId}/${scenario.id}`,
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Perk action buttons row */}
+      <div className="perk-actions">
+        {sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY) && !submitted[current] && (
+          <button className="perk-btn fifty-fifty" onClick={handleFiftyFifty}>
+            ½ Use 50/50
+          </button>
+        )}
+        {sessionActivePerks.includes(PERK_KEY.COIN_TOSS) && !submitted[current] && (
+          <button className="perk-btn coin-toss" onClick={handleFiftyFifty}>
+            🪙 Coin Toss
+          </button>
+        )}
+        {sessionActivePerks.includes(PERK_KEY.REVEAL_1_WRONG) && !submitted[current] && (
+          <button className="perk-btn reveal-wrong" onClick={handleReveal1Wrong}>
+            🚫 Reveal Wrong
+          </button>
+        )}
+        {unlockedPerks.includes(PERK_KEY.RETRY_QUESTION) && submitted[current] && !questionRetryUsed && (
+          <button className="perk-btn retry-q" onClick={handleRetryQuestion}>
+            ↩ Retry Question
+          </button>
+        )}
+      </div>
 
       {/* ── Progress dots ─────────────────────────────────────────────────────── */}
       <div className="quiz-progress">

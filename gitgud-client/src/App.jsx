@@ -1,3 +1,9 @@
+/**
+ * App.jsx — UPDATED VERSION
+ * Adds /skill-tree route.
+ * Place at: gitgud-client/src/App.jsx (replaces existing)
+ */
+
 import { Routes, Route } from 'react-router-dom'
 import Layout from './Layout'
 import Home from './Home'
@@ -26,8 +32,9 @@ import { useRef } from 'react'
 import LeaderboardPage from "./LeaderboardPage"
 import ChatPage from './ChatPage'
 import ChatDashboard from './ChatDashboard'
-import DailiesPage from './DailiesPage'   // DAILIES: new page
-import RewardPage from './RewardPage'     // REWARDS: new page
+import DailiesPage from './DailiesPage'
+import RewardPage from './RewardPage'
+import SkillTreePage from './SkillTreePage'   // ← NEW
 
 function App() {
   const [user, setUser] = useState(undefined)
@@ -72,44 +79,27 @@ function App() {
         <Route path="practice" element={<Practice />} />
         <Route path="practice/aim" element={<AimTrainer />} />
         <Route path="practice/reaction" element={<ReactionTrainer />} />
-
-        {/* ── Quiz hub (game selection) ─────────────────────────────────── */}
         <Route path="quiz" element={<Category user={user} />} />
-
-        {/* ── Original hardcoded Valorant demo — PRESERVED ─────────────── */}
         <Route path="quiz/:gameId" element={<QuizCarousel user={user} />} />
         <Route path="quiz/:gameId/:scenarioId" element={<QuizCarousel user={user} />} />
-        {/* ── Admin quiz game landing (Play Quiz / Create Quiz) ─────────── */}
         <Route path="admin-quiz/:gameId" element={<AdminQuizPage user={user} />} />
-
-        {/* ── Admin quiz builder ────────────────────────────────────────── */}
         <Route path="admin-quiz/create" element={<AdminQuizCreate user={user} />} />
-
-        {/* ── Rewards page (achievements, frames, titles) ────────────────── */}
         <Route path="rewards" element={<RewardPage user={user} />} />
-
-        {/* ── Leaderboard ───────────────────────────────────────────────── */}
         <Route path="leaderboard" element={<LeaderboardPage currentUid={user.uid} />} />
-
-        {/* ── User quizzes ──────────────────────────────────────────────── */}
         <Route path="user-quiz" element={<UserQuizPage user={user} />} />
         <Route path="user-quiz/create" element={<UserQuizCreate user={user} />} />
         <Route path="user-quiz/play/:gameId/:quizId?" element={<UserQuizCarousel user={user} />} />
-
         {/* ── Admin moderation panel ────────────────────────────────────── */}
         <Route path="admin" element={<AdminPanel user={user} />} />
-
-        {/* ── Critique ──────────────────────────────────────────────────── */}
         <Route path="critique" element={<CritiquePage user={user} />} />
         <Route path="critique/create" element={<CritiqueCreate user={user} />} />
-
-        {/* ── Messaging ─────────────────────────────────────────────────── */}
         <Route path="messages" element={<ChatDashboard user={user} />} />
         <Route path="messages/:chatId" element={<ChatPage user={user} />} />
         <Route path="dailies" element={<DailiesPage user={user} />} />
+        {/* ── NEW: Skill Tree ────────────────────────────────────────────── */}
+        <Route path="skill-tree" element={<SkillTreePage user={user} />} />
       </Route>
     </Routes>
   )
 }
-
 export default App

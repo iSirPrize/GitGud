@@ -981,3 +981,69 @@
     flex-direction: column;
   }
 }
+/* QuizCarousel.perk-additions.css
+   ADD these rules to your existing QuizCarousel.css
+   ──────────────────────────────────────────────────
+*/
+
+/* ── Hidden choices (50/50 perk) ─────────────────────────────────────────── */
+.choice-btn.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── Perk hint colours (before submit) ───────────────────────────────────── */
+.choice-btn.perk-wrong {
+  border-color: #ef4444 !important;
+  opacity: 0.55;
+}
+.choice-btn.perk-wrong::after {
+  content: ' 🚫';
+}
+
+.choice-btn.perk-correct {
+  border-color: #4ade80 !important;
+  box-shadow: 0 0 8px rgba(74,222,128,0.4);
+}
+.choice-btn.perk-correct::after {
+  content: ' 🪙✓';
+}
+
+/* ── Perk action buttons row ─────────────────────────────────────────────── */
+.perk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.perk-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.perk-btn:hover { opacity: 0.8; transform: translateY(-1px); }
+.perk-btn:active { transform: translateY(0); }
+
+.perk-btn.fifty-fifty,
+.perk-btn.coin-toss {
+  background: rgba(251,191,36,0.15);
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+.perk-btn.reveal-wrong {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.perk-btn.retry-q {
+  background: rgba(99,102,241,0.12);
+  color: #818cf8;
+  border-color: #818cf8;
+}

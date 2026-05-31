@@ -1,44 +1,5 @@
 // AdminQuizPage.jsx
-// Game landing page for admin-created quizzes.
-//
-// Layout per game:
-//   - Splash art (same images as Category.jsx)
-//   - "Play Quiz" button → dropdown of all admin quizzes for that game
-//   - "Create Quiz" button → /admin-quiz/create (admin only)
-//
-// Also hosts the full quiz player (AdminQuizPlayer) which handles:
-//   multi_choice  — standard ABCD selection
-//   rank          — drag-and-drop cards top=1st bottom=last
-//   enter_value   — text input with flexible numeric matching
-//
-// The existing 5-question Valorant demo quiz (hardcoded in QuizCarousel.jsx)
-// is preserved at /quiz/valorant — this page is an ADDITIONAL entry point
-// under /admin-quiz/:gameId.
-//
-// SOLID:
-//   S – AdminQuizLanding and AdminQuizPlayer are separate components
-//   O – New question play renderers are registered in PLAYER_RENDERERS
-//   L – All player renderers share (question, answer, onAnswer, submitted) props
-//   I – AdminQuizPage only imports what it needs
-//   D – Firestore queries are in one place (loadQuizList / loadQuiz)
-//
-// Gherkin:
-//   Given a user navigates to /admin-quiz/valorant
-//   When the page loads
-//   Then the Valorant splash art is shown with "Play Quiz" and "Create Quiz" buttons
-//
-//   Given the user clicks "Play Quiz"
-//   When at least one admin quiz exists for that game
-//   Then a dropdown of quiz titles is shown
-//   And selecting one starts the quiz
-//
-//   Given the quiz contains a rank question
-//   When the player drags the cards
-//   Then the order updates in real time and top = 1st
-//
-//   Given the quiz contains an enter_value question
-//   When the player types "$4000"
-//   Then it is matched correctly against the stored answer "4000"
+// Drop this file into: gitgud-client/src/AdminQuizPage.jsx
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -55,7 +16,12 @@ import {
 } from "./adminQuizUtils";
 import { awardPoints } from "./usePoints";
 import "./AdminQuizPage.css";
-import { updateQuizStats } from "./statsService"; // for updating user quiz stats after each question submission
+import { updateQuizStats } from "./statsService";
+// ── Skill tree integration ─────────────────────────────────────────────────────
+import { useSkillTree, useSkillExp } from "./skilltree/useSkillTree";
+import { applyFiftyFifty, applyReveal1Wrong, canTryAgain } from "./skilltree/skillTreeEngine";
+import { PERK_KEY } from "./skilltree/skillTreeData";
+import SkillPerksDropdown from "./components/SkillPerksDropdown";
 
 // ── Game metadata ─────────────────────────────────────────────────────────────
 const GAME_META = {
@@ -81,10 +47,8 @@ const GAME_META = {
 
 // ── Rank Question Player ──────────────────────────────────────────────────────
 function RankPlayer({ question, answer, onAnswer, submitted }) {
-  // answer is an array of item indices representing the player's current order
   const initial = question.items.map((_, i) => i);
   const order = answer ?? initial;
-
   const dragRef = useRef(null);
 
   const handleDragStart = (e, pos) => {
@@ -92,7 +56,6 @@ function RankPlayer({ question, answer, onAnswer, submitted }) {
     dragRef.current = pos;
     e.dataTransfer.effectAllowed = "move";
   };
-
   const handleDrop = (e, pos) => {
     e.preventDefault();
     if (submitted || dragRef.current === null || dragRef.current === pos) return;
@@ -108,36 +71,26 @@ function RankPlayer({ question, answer, onAnswer, submitted }) {
 
   return (
     <div className="aqp-rank-player">
-      <p className="aqp-rank-instruction">
-        Drag cards into the correct order — top is 1st, bottom is last.
-      </p>
+      <p className="aqp-rank-instruction">Drag cards into the correct order — top is 1st, bottom is last.</p>
       <div className="aqp-rank-list">
         {order.map((itemIdx, pos) => {
           const item = question.items[itemIdx];
           let cardClass = "aqp-rank-card";
-          if (submitted) {
-            cardClass += order[pos] === question.correctOrder[pos] ? " correct-pos" : " wrong-pos";
-          }
+          if (submitted) cardClass += order[pos] === question.correctOrder[pos] ? " correct-pos" : " wrong-pos";
           return (
-            <div
-              key={`rank-${pos}`}
-              className={cardClass}
+            <div key={`rank-${pos}`} className={cardClass}
               draggable={!submitted}
               onDragStart={(e) => handleDragStart(e, pos)}
               onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => handleDrop(e, pos)}
-            >
+              onDrop={(e) => handleDrop(e, pos)}>
               <span className="aqp-rank-pos">{pos + 1}</span>
-              {question.useImages && item?.imageUrl && (
-                <img src={item.imageUrl} alt={item.label} className="aqp-rank-img" />
-              )}
+              {question.useImages && item?.imageUrl && <img src={item.imageUrl} alt={item.label} className="aqp-rank-img" />}
               <span className="aqp-rank-text">{item?.label || `Item ${itemIdx + 1}`}</span>
               {!submitted && <span className="aqp-drag-handle">drag</span>}
             </div>
           );
         })}
       </div>
-
       {submitted && (
         <div className={`aqp-rank-result ${isCorrect ? "correct" : "wrong"}`}>
           {isCorrect ? (
@@ -150,9 +103,7 @@ function RankPlayer({ question, answer, onAnswer, submitted }) {
                 {correctLabels.map((item, i) => (
                   <div key={i} className="aqp-co-row">
                     <span className="aqp-co-num">{i + 1}</span>
-                    {question.useImages && item?.imageUrl && (
-                      <img src={item.imageUrl} alt={item.label} className="aqp-co-img" />
-                    )}
+                    {question.useImages && item?.imageUrl && <img src={item.imageUrl} alt={item.label} className="aqp-co-img" />}
                     <span>{item?.label}</span>
                   </div>
                 ))}
@@ -169,7 +120,6 @@ function RankPlayer({ question, answer, onAnswer, submitted }) {
 // ── Enter Value Player ────────────────────────────────────────────────────────
 function EnterValuePlayer({ question, answer, onAnswer, submitted }) {
   const isCorrect = submitted && isValueAnswerCorrect(answer ?? "", question.correctAnswer);
-
   return (
     <div className="aqp-value-player">
       <input
@@ -179,10 +129,7 @@ function EnterValuePlayer({ question, answer, onAnswer, submitted }) {
         onChange={(e) => !submitted && onAnswer(e.target.value)}
         disabled={submitted}
       />
-      <p className="aqp-value-hint">
-        Numbers are matched flexibly. You can include or omit the dollar sign, commas, or units.
-      </p>
-
+      <p className="aqp-value-hint">Numbers are matched flexibly. You can include or omit the dollar sign, commas, or units.</p>
       {submitted && (
         <div className={`aqp-rank-result ${isCorrect ? "correct" : "wrong"}`}>
           {isCorrect ? (
@@ -190,10 +137,7 @@ function EnterValuePlayer({ question, answer, onAnswer, submitted }) {
           ) : (
             <>
               <p className="aqp-verdict wrong">Incorrect</p>
-              <p className="aqp-chosen">
-                You answered: <strong>{answer || "(no answer)"}</strong>
-                &nbsp;— correct answer: <strong>{question.correctAnswer}</strong>
-              </p>
+              <p className="aqp-chosen">You answered: <strong>{answer || "(no answer)"}</strong> — correct answer: <strong>{question.correctAnswer}</strong></p>
             </>
           )}
           <p className="aqp-reason"><span className="aqp-reason-label">Why:</span> {question.reason}</p>
@@ -203,8 +147,8 @@ function EnterValuePlayer({ question, answer, onAnswer, submitted }) {
   );
 }
 
-// ── Multi Choice Player ───────────────────────────────────────────────────────
-function MultiChoicePlayer({ question, answer, onAnswer, submitted }) {
+// ── Multi Choice Player — perk-aware ─────────────────────────────────────────
+function MultiChoicePlayer({ question, answer, onAnswer, submitted, hiddenChoices = [], revealedWrong = null, revealedCorrect = null }) {
   const LABELS = ["A", "B", "C", "D", "E", "F"];
   const isCorrect = submitted && answer === question.correctIndex;
 
@@ -212,6 +156,7 @@ function MultiChoicePlayer({ question, answer, onAnswer, submitted }) {
     <div className="aqp-mc-player">
       <div className="aqp-choices">
         {question.choices.map((choice, idx) => {
+          if (hiddenChoices.includes(idx)) return null;
           let cls = "aqp-choice-btn";
           if (submitted) {
             cls += " locked";
@@ -220,13 +165,13 @@ function MultiChoicePlayer({ question, answer, onAnswer, submitted }) {
           } else if (answer === idx) {
             cls += " selected";
           }
+          // Perk visual hints (pre-submit)
+          if (!submitted) {
+            if (idx === revealedCorrect) cls += " perk-correct";
+            if (idx === revealedWrong)   cls += " perk-wrong";
+          }
           return (
-            <button
-              key={idx}
-              className={cls}
-              onClick={() => !submitted && onAnswer(idx)}
-              disabled={submitted}
-            >
+            <button key={idx} className={cls} onClick={() => !submitted && onAnswer(idx)} disabled={submitted}>
               <span className="aqp-choice-label">{LABELS[idx]}</span>
               <span className="aqp-choice-text">{choice}</span>
               {submitted && idx === question.correctIndex && <span className="aqp-choice-icon">correct</span>}
@@ -235,7 +180,6 @@ function MultiChoicePlayer({ question, answer, onAnswer, submitted }) {
           );
         })}
       </div>
-
       {submitted && (
         <div className={`aqp-rank-result ${isCorrect ? "correct" : "wrong"}`}>
           {isCorrect ? (
@@ -243,10 +187,7 @@ function MultiChoicePlayer({ question, answer, onAnswer, submitted }) {
           ) : (
             <>
               <p className="aqp-verdict wrong">Incorrect</p>
-              <p className="aqp-chosen">
-                You chose: <strong>{question.choices[answer]}</strong>
-                &nbsp;— correct answer: <strong>{question.choices[question.correctIndex]}</strong>
-              </p>
+              <p className="aqp-chosen">You chose: <strong>{question.choices[answer]}</strong> — correct answer: <strong>{question.choices[question.correctIndex]}</strong></p>
             </>
           )}
           <p className="aqp-reason"><span className="aqp-reason-label">Why:</span> {question.reason}</p>
@@ -256,14 +197,13 @@ function MultiChoicePlayer({ question, answer, onAnswer, submitted }) {
   );
 }
 
-// ── Player renderer dispatch (Open/Closed) ────────────────────────────────────
 const PLAYER_RENDERERS = {
   [QUESTION_TYPES.MULTI_CHOICE]: MultiChoicePlayer,
   [QUESTION_TYPES.RANK]:         RankPlayer,
   [QUESTION_TYPES.ENTER_VALUE]:  EnterValuePlayer,
 };
 
-// ── Quiz Player ───────────────────────────────────────────────────────────────
+// ── Quiz Player — skill perk aware ────────────────────────────────────────────
 function AdminQuizPlayer({ quiz, user, onBack }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -271,35 +211,100 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
   const questions = quiz.questions ?? [];
   const total = questions.length;
 
-  const [current,   setCurrent]   = useState(0);
-  const [answers,   setAnswers]   = useState(Array(total).fill(null));
-  const [submitted, setSubmitted] = useState(Array(total).fill(false));
+  const [current,      setCurrent]      = useState(0);
+  const [answers,      setAnswers]      = useState(Array(total).fill(null));
+  const [submitted,    setSubmitted]    = useState(Array(total).fill(false));
   const [showComplete, setShowComplete] = useState(false);
 
-  const q          = questions[current];
+  // ── Skill tree ──────────────────────────────────────────────────────────────
+  const {
+    unlockedPerks,
+    passivePerks,
+    activePerks,
+    sessionActivePerks,
+    toggleSessionPerk,
+    resetSessionPerks,
+  } = useSkillTree(user?.uid);
+  const { getExp } = useSkillExp(unlockedPerks, sessionActivePerks);
+
+  // ── Perk state per question ─────────────────────────────────────────────────
+  const [hiddenChoices,     setHiddenChoices]     = useState([]);
+  const [revealedWrong,     setRevealedWrong]     = useState(null);
+  const [revealedCorrect,   setRevealedCorrect]   = useState(null);
+  const [questionRetryUsed, setQuestionRetryUsed] = useState(false);
+  const [tryAgainUsed,      setTryAgainUsed]      = useState(false);
+  const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
+
+  const resetQuestionPerkState = () => {
+    setHiddenChoices([]);
+    setRevealedWrong(null);
+    setRevealedCorrect(null);
+    setQuestionRetryUsed(false);
+  };
+
+  const q           = questions[current];
   const isSubmitted = submitted[current];
   const currAnswer  = answers[current];
+  const isMC        = q?.type === QUESTION_TYPES.MULTI_CHOICE;
 
   const Renderer = q ? PLAYER_RENDERERS[q.type] : null;
 
-  const handleAnswer = (val) => {
-    setAnswers((prev) => prev.map((a, i) => (i === current ? val : a)));
-  };
+  const handleAnswer = (val) => setAnswers((prev) => prev.map((a, i) => (i === current ? val : a)));
 
   const canSubmit = () => {
     if (isSubmitted) return false;
-    if (q?.type === QUESTION_TYPES.RANK) return true; // always has a default order
+    if (q?.type === QUESTION_TYPES.RANK) return true;
     return currAnswer !== null && currAnswer !== undefined && currAnswer !== "";
   };
 
+  // ── Perk: 50/50 ────────────────────────────────────────────────────────────
+  const handleFiftyFifty = () => {
+    if (!isMC) return;
+    const wrongIndices = q.choices.map((_, i) => i).filter(i => i !== q.correctIndex);
+    const result = applyFiftyFifty(wrongIndices, q.correctIndex, unlockedPerks, sessionActivePerks);
+    setHiddenChoices(result.hiddenIndices);
+    setRevealedWrong(result.revealedWrong);
+    setRevealedCorrect(result.revealedCorrect);
+    toggleSessionPerk(PERK_KEY.FIFTY_FIFTY);
+    if (unlockedPerks.includes(PERK_KEY.COIN_TOSS)) toggleSessionPerk(PERK_KEY.COIN_TOSS);
+  };
+
+  // ── Perk: Reveal 1 Wrong ───────────────────────────────────────────────────
+  const handleReveal1Wrong = () => {
+    if (!isMC) return;
+    const wrongIndices = q.choices.map((_, i) => i).filter(i => i !== q.correctIndex);
+    setRevealedWrong(applyReveal1Wrong(wrongIndices));
+    toggleSessionPerk(PERK_KEY.REVEAL_1_WRONG);
+  };
+
+  // ── Perk: Retry Question ───────────────────────────────────────────────────
+  const handleRetryQuestion = () => {
+    if (questionRetryUsed) return;
+    setAnswers(prev => prev.map((a, i) => i === current ? null : a));
+    setSubmitted(prev => prev.map((s, i) => i === current ? false : s));
+    resetQuestionPerkState();
+    setQuestionRetryUsed(true);
+  };
+
+  // ── Perk: Try Again ────────────────────────────────────────────────────────
+  const handleTryAgain = () => {
+    if (tryAgainUsed) return;
+    setShowComplete(false);
+    setCurrent(0);
+    setAnswers(Array(total).fill(null));
+    setSubmitted(Array(total).fill(false));
+    resetQuestionPerkState();
+    setConsecutiveCorrect(0);
+    setTryAgainUsed(true);
+    resetSessionPerks();
+  };
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!canSubmit()) return;
     const updatedSubmitted = submitted.map((s, i) => (i === current ? true : s));
     setSubmitted(updatedSubmitted);
 
-    const allDone = updatedSubmitted.every(Boolean);
-
-    // Award points for correct answer
     const answerObj = { type: q.type };
     if (q.type === QUESTION_TYPES.MULTI_CHOICE) {
       answerObj.playerAnswer = currAnswer;
@@ -313,70 +318,39 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
     }
 
     const { correct } = calculateScore([answerObj]);
+
     if (correct && user?.uid) {
-      awardPoints(user.uid, 10).catch((err) => console.error("awardPoints failed:", err));
+      const expToAward = getExp(10, consecutiveCorrect);
+      awardPoints(user.uid, expToAward).catch(err => console.error("awardPoints failed:", err));
     }
 
+    if (correct) setConsecutiveCorrect(c => c + 1);
+    else         setConsecutiveCorrect(0);
+
+    const allDone = updatedSubmitted.every(Boolean);
     if (allDone && current === total - 1) {
-
-  const finalAnswers = questions.map((question, i) => {
-    const a = { type: question.type };
-
-    if (question.type === QUESTION_TYPES.MULTI_CHOICE) {
-      a.playerAnswer = answers[i];
-      a.correctIndex = question.correctIndex;
+      const finalAnswers = questions.map((question, i) => {
+        const a = { type: question.type };
+        if (question.type === QUESTION_TYPES.MULTI_CHOICE) { a.playerAnswer = answers[i]; a.correctIndex = question.correctIndex; }
+        else if (question.type === QUESTION_TYPES.ENTER_VALUE) { a.playerAnswer = answers[i] ?? ""; a.correctAnswer = question.correctAnswer; }
+        else if (question.type === QUESTION_TYPES.RANK) { a.playerAnswer = answers[i] ?? question.items.map((_, idx) => idx); a.correctOrder = question.correctOrder; }
+        return a;
+      });
+      const finalScore = calculateScore(finalAnswers);
+      if (user?.uid) await updateQuizStats(user.uid, finalScore.correct, finalScore.total);
+      setTimeout(() => setShowComplete(true), 800);
     }
-    else if (question.type === QUESTION_TYPES.ENTER_VALUE) {
-      a.playerAnswer = answers[i] ?? "";
-      a.correctAnswer = question.correctAnswer;
-    }
-    else if (question.type === QUESTION_TYPES.RANK) {
-      a.playerAnswer =
-        answers[i] ??
-        question.items.map((_, idx) => idx);
-
-      a.correctOrder =
-        question.correctOrder;
-    }
-
-    return a;
-  });
-
-  const finalScore =
-    calculateScore(finalAnswers);
-
-  if (user?.uid) {
-    await updateQuizStats(
-      user.uid,
-      finalScore.correct,
-      finalScore.total
-    );
-  }
-
-  setTimeout(
-    () => setShowComplete(true),
-    800
-  );
-}
   };
 
-  const goNext = () => {
-    if (current < total - 1) setCurrent((c) => c + 1);
-    else setShowComplete(true);
-  };
-  const goPrev = () => { if (current > 0) setCurrent((c) => c - 1); };
+  const goNext = () => { if (current < total - 1) { setCurrent(c => c + 1); resetQuestionPerkState(); } else setShowComplete(true); };
+  const goPrev = () => { if (current > 0) { setCurrent(c => c - 1); resetQuestionPerkState(); } };
 
-  // Build score for complete screen
+  // Score for complete screen
   const scoreAnswers = questions.map((question, i) => {
     const a = { type: question.type };
-    if (question.type === QUESTION_TYPES.MULTI_CHOICE) {
-      a.playerAnswer = answers[i]; a.correctIndex = question.correctIndex;
-    } else if (question.type === QUESTION_TYPES.ENTER_VALUE) {
-      a.playerAnswer = answers[i] ?? ""; a.correctAnswer = question.correctAnswer;
-    } else if (question.type === QUESTION_TYPES.RANK) {
-      a.playerAnswer = answers[i] ?? question.items.map((_, idx) => idx);
-      a.correctOrder = question.correctOrder;
-    }
+    if (question.type === QUESTION_TYPES.MULTI_CHOICE) { a.playerAnswer = answers[i]; a.correctIndex = question.correctIndex; }
+    else if (question.type === QUESTION_TYPES.ENTER_VALUE) { a.playerAnswer = answers[i] ?? ""; a.correctAnswer = question.correctAnswer; }
+    else if (question.type === QUESTION_TYPES.RANK) { a.playerAnswer = answers[i] ?? question.items.map((_, idx) => idx); a.correctOrder = question.correctOrder; }
     return a;
   });
   const score = calculateScore(scoreAnswers);
@@ -390,29 +364,30 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
       return               { label: "Keep Practising",   color: "#ef4444" };
     };
     const rank = getRank();
-
     return (
       <div className={`aqp-page ${isDark ? "dark" : "light"}`}>
         <div className="aqp-complete-card">
           <h2 className="aqp-complete-title">Quiz Complete!</h2>
           <p className="aqp-complete-rank" style={{ color: rank.color }}>{rank.label}</p>
           <div className="aqp-score-wrap">
-            <div className="aqp-score-label">
-              <span>Score</span>
-              <span className="aqp-fraction">{score.correct} / {score.total}</span>
-            </div>
-            <div className="aqp-score-track">
-              <div className="aqp-score-fill" style={{ width: `${pct}%`, background: rank.color }} />
-            </div>
+            <div className="aqp-score-label"><span>Score</span><span className="aqp-fraction">{score.correct} / {score.total}</span></div>
+            <div className="aqp-score-track"><div className="aqp-score-fill" style={{ width: `${pct}%`, background: rank.color }} /></div>
             <div className="aqp-score-pct">{pct}%</div>
           </div>
-          <p className="aqp-points-earned">+{score.points} points earned</p>
+          <p className="aqp-points-earned">+{score.points} XP earned</p>
           <div className="aqp-complete-actions">
             <button className="aqc-btn-primary" onClick={() => {
-              setShowComplete(false); setCurrent(0);
-              setAnswers(Array(total).fill(null));
-              setSubmitted(Array(total).fill(false));
-            }}>Try Again</button>
+              if (canTryAgain(unlockedPerks) && !tryAgainUsed) {
+                handleTryAgain();
+              } else {
+                setShowComplete(false); setCurrent(0);
+                setAnswers(Array(total).fill(null));
+                setSubmitted(Array(total).fill(false));
+                resetQuestionPerkState(); setConsecutiveCorrect(0);
+              }
+            }}>
+              {canTryAgain(unlockedPerks) && !tryAgainUsed ? "🔄 Try Again (perk)" : "Try Again"}
+            </button>
             <button className="aqc-btn-secondary" onClick={onBack}>Back to Quizzes</button>
           </div>
         </div>
@@ -420,12 +395,37 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
     );
   }
 
+  // Active perk buttons visibility
+  const showFiftyFiftyBtn  = isMC && sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY) && !isSubmitted;
+  const showCoinTossBtn    = isMC && sessionActivePerks.includes(PERK_KEY.COIN_TOSS) && !isSubmitted && unlockedPerks.includes(PERK_KEY.COIN_TOSS);
+  const showRevealWrongBtn = isMC && sessionActivePerks.includes(PERK_KEY.REVEAL_1_WRONG) && !isSubmitted;
+  const showRetryQBtn      = unlockedPerks.includes(PERK_KEY.RETRY_QUESTION) && isSubmitted && !questionRetryUsed;
+  const hasPerkBtns        = showFiftyFiftyBtn || showCoinTossBtn || showRevealWrongBtn || showRetryQBtn;
+
   return (
     <div className={`aqp-page ${isDark ? "dark" : "light"}`}>
       <div className="aqp-header">
         <button className="aqp-back-btn" onClick={onBack}>Back</button>
         <h2 className="aqp-quiz-title">{quiz.title}</h2>
+        {/* Skill Perks dropdown */}
+        <SkillPerksDropdown
+          passivePerks={passivePerks}
+          activePerks={activePerks}
+          sessionActivePerks={sessionActivePerks}
+          onToggle={toggleSessionPerk}
+          isDark={isDark}
+        />
       </div>
+
+      {/* Perk action buttons */}
+      {hasPerkBtns && (
+        <div className="perk-actions" style={{ justifyContent: "center", marginBottom: 8 }}>
+          {showFiftyFiftyBtn  && <button className="perk-btn fifty-fifty" onClick={handleFiftyFifty}>½ Use 50/50</button>}
+          {showCoinTossBtn    && <button className="perk-btn coin-toss"   onClick={handleFiftyFifty}>🪙 Coin Toss</button>}
+          {showRevealWrongBtn && <button className="perk-btn reveal-wrong" onClick={handleReveal1Wrong}>🚫 Reveal Wrong</button>}
+          {showRetryQBtn      && <button className="perk-btn retry-q"     onClick={handleRetryQuestion}>↩ Retry Question</button>}
+        </div>
+      )}
 
       <div className="aqp-progress-row">
         {questions.map((_, i) => (
@@ -441,37 +441,30 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
         </div>
         <p className="aqp-q-text">{q?.question}</p>
 
-        {Renderer ? (
-          <Renderer
+        {Renderer && isMC ? (
+          <MultiChoicePlayer
             question={q}
             answer={currAnswer}
             onAnswer={handleAnswer}
             submitted={isSubmitted}
+            hiddenChoices={hiddenChoices}
+            revealedWrong={revealedWrong}
+            revealedCorrect={revealedCorrect}
           />
+        ) : Renderer ? (
+          <Renderer question={q} answer={currAnswer} onAnswer={handleAnswer} submitted={isSubmitted} />
         ) : (
           <p>Unknown question type.</p>
         )}
 
         <div className="aqp-question-nav">
-          <button className="aqc-btn-secondary" onClick={goPrev} disabled={current === 0}>
-            Prev
-          </button>
+          <button className="aqc-btn-secondary" onClick={goPrev} disabled={current === 0}>Prev</button>
           {!isSubmitted ? (
-            <button
-              className="aqc-btn-primary"
-              onClick={handleSubmit}
-              disabled={!canSubmit()}
-            >
-              Submit Answer
-            </button>
+            <button className="aqc-btn-primary" onClick={handleSubmit} disabled={!canSubmit()}>Submit Answer</button>
           ) : current < total - 1 ? (
-            <button className="aqc-btn-primary" onClick={goNext}>
-              Next Question
-            </button>
+            <button className="aqc-btn-primary" onClick={goNext}>Next Question</button>
           ) : (
-            <button className="aqc-btn-primary" onClick={() => setShowComplete(true)}>
-              See Results
-            </button>
+            <button className="aqc-btn-primary" onClick={() => setShowComplete(true)}>See Results</button>
           )}
         </div>
       </div>
@@ -479,10 +472,7 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
   );
 }
 
-// ── Inline quiz editor (title, questions list, basic field editing) ───────────
-// Reuses AdminQuizCreate's logic but loads an existing quiz and calls updateDoc.
-// Admins can: rename the quiz, edit question text / choices / answers, delete
-// individual questions, and save back to Firestore in one click.
+// ── Inline quiz editor (unchanged) ────────────────────────────────────────────
 function AdminQuizEdit({ quiz, isDark, onSave, onCancel }) {
   const [title,     setTitle]     = useState(quiz.title ?? "");
   const [questions, setQuestions] = useState(quiz.questions ?? []);
@@ -490,11 +480,8 @@ function AdminQuizEdit({ quiz, isDark, onSave, onCancel }) {
   const [error,     setError]     = useState("");
 
   const LABELS = ["A", "B", "C", "D", "E", "F"];
-
-  const updateQ = (i, patch) =>
-    setQuestions((prev) => prev.map((q, qi) => (qi === i ? { ...q, ...patch } : q)));
-
-  const removeQ = (i) => setQuestions((prev) => prev.filter((_, qi) => qi !== i));
+  const updateQ = (i, patch) => setQuestions(prev => prev.map((q, qi) => (qi === i ? { ...q, ...patch } : q)));
+  const removeQ = (i) => setQuestions(prev => prev.filter((_, qi) => qi !== i));
 
   const handleSave = async () => {
     if (!title.trim()) { setError("Quiz title cannot be empty."); return; }
@@ -505,9 +492,7 @@ function AdminQuizEdit({ quiz, isDark, onSave, onCancel }) {
     } catch (err) {
       console.error("Failed to save quiz:", err);
       setError("Save failed. Please try again.");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   return (
@@ -517,127 +502,57 @@ function AdminQuizEdit({ quiz, isDark, onSave, onCancel }) {
           <h2 className="aqp-edit-title">Edit Quiz</h2>
           <button className="aqp-back-btn" onClick={onCancel}>Cancel</button>
         </div>
-
-        {/* Title */}
         <label className="aqp-edit-label">Quiz Title</label>
-        <input
-          className="aqp-edit-input"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Quiz title"
-        />
-
-        {/* Questions */}
+        <input className="aqp-edit-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Quiz title" />
         {questions.map((q, i) => (
           <div key={i} className="aqp-edit-qblock">
             <div className="aqp-edit-qheader">
               <span className="aqp-edit-qnum">Q{i + 1}</span>
               <span className="aqp-edit-qtype">{q.type?.replace("_", " ")}</span>
-              {questions.length > 1 && (
-                <button className="aqp-admin-btn delete" onClick={() => removeQ(i)}>Remove</button>
-              )}
+              {questions.length > 1 && <button className="aqp-admin-btn delete" onClick={() => removeQ(i)}>Remove</button>}
             </div>
-
-            {/* Question text — common to all types */}
             <label className="aqp-edit-label">Question</label>
-            <textarea
-              className="aqp-edit-textarea"
-              rows={2}
-              value={q.question ?? ""}
-              onChange={(e) => updateQ(i, { question: e.target.value })}
-            />
-
-            {/* Multi choice specifics */}
+            <textarea className="aqp-edit-textarea" rows={2} value={q.question ?? ""} onChange={(e) => updateQ(i, { question: e.target.value })} />
             {q.type === "multi_choice" && (
               <>
                 <label className="aqp-edit-label">Choices — click a letter to mark as correct</label>
                 {(q.choices ?? []).map((choice, ci) => (
                   <div key={ci} className="aqp-edit-choice-row">
-                    <button
-                      className={`aqp-edit-radio ${q.correctIndex === ci ? "correct" : ""}`}
-                      onClick={() => updateQ(i, { correctIndex: ci })}
-                    >
-                      {LABELS[ci]}
-                    </button>
-                    <input
-                      className="aqp-edit-input"
-                      value={choice}
-                      onChange={(e) => {
-                        const updated = [...(q.choices ?? [])];
-                        updated[ci] = e.target.value;
-                        updateQ(i, { choices: updated });
-                      }}
-                    />
+                    <button className={`aqp-edit-radio ${q.correctIndex === ci ? "correct" : ""}`} onClick={() => updateQ(i, { correctIndex: ci })}>{LABELS[ci]}</button>
+                    <input className="aqp-edit-input" value={choice} onChange={(e) => { const updated = [...(q.choices ?? [])]; updated[ci] = e.target.value; updateQ(i, { choices: updated }); }} />
                   </div>
                 ))}
                 <label className="aqp-edit-label">Explanation</label>
-                <textarea
-                  className="aqp-edit-textarea"
-                  rows={2}
-                  value={q.reason ?? ""}
-                  onChange={(e) => updateQ(i, { reason: e.target.value })}
-                />
+                <textarea className="aqp-edit-textarea" rows={2} value={q.reason ?? ""} onChange={(e) => updateQ(i, { reason: e.target.value })} />
               </>
             )}
-
-            {/* Enter value specifics */}
             {q.type === "enter_value" && (
               <>
                 <label className="aqp-edit-label">Correct Answer</label>
-                <input
-                  className="aqp-edit-input"
-                  value={q.correctAnswer ?? ""}
-                  onChange={(e) => updateQ(i, { correctAnswer: e.target.value })}
-                />
+                <input className="aqp-edit-input" value={q.correctAnswer ?? ""} onChange={(e) => updateQ(i, { correctAnswer: e.target.value })} />
                 <label className="aqp-edit-label">Explanation</label>
-                <textarea
-                  className="aqp-edit-textarea"
-                  rows={2}
-                  value={q.reason ?? ""}
-                  onChange={(e) => updateQ(i, { reason: e.target.value })}
-                />
+                <textarea className="aqp-edit-textarea" rows={2} value={q.reason ?? ""} onChange={(e) => updateQ(i, { reason: e.target.value })} />
               </>
             )}
-
-            {/* Rank specifics — item labels and explanation */}
             {q.type === "rank" && (
               <>
                 <label className="aqp-edit-label">Item Labels</label>
                 {(q.items ?? []).map((item, ii) => (
                   <div key={ii} className="aqp-edit-choice-row">
                     <span className="aqp-edit-rank-num">{ii + 1}</span>
-                    <input
-                      className="aqp-edit-input"
-                      value={item.label ?? ""}
-                      onChange={(e) => {
-                        const updated = [...(q.items ?? [])];
-                        updated[ii] = { ...updated[ii], label: e.target.value };
-                        updateQ(i, { items: updated });
-                      }}
-                    />
+                    <input className="aqp-edit-input" value={item.label ?? ""} onChange={(e) => { const updated = [...(q.items ?? [])]; updated[ii] = { ...updated[ii], label: e.target.value }; updateQ(i, { items: updated }); }} />
                   </div>
                 ))}
                 <label className="aqp-edit-label">Explanation</label>
-                <textarea
-                  className="aqp-edit-textarea"
-                  rows={2}
-                  value={q.reason ?? ""}
-                  onChange={(e) => updateQ(i, { reason: e.target.value })}
-                />
+                <textarea className="aqp-edit-textarea" rows={2} value={q.reason ?? ""} onChange={(e) => updateQ(i, { reason: e.target.value })} />
               </>
             )}
           </div>
         ))}
-
         {error && <p className="aqp-edit-error">{error}</p>}
-
         <div className="aqp-edit-actions">
-          <button className="aqp-action-btn play" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-          <button className="aqp-action-btn classic" onClick={onCancel}>
-            Cancel
-          </button>
+          <button className="aqp-action-btn play" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
+          <button className="aqp-action-btn classic" onClick={onCancel}>Cancel</button>
         </div>
       </div>
     </div>
@@ -650,87 +565,51 @@ export default function AdminQuizPage({ user }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const navigate = useNavigate();
-
   const game = GAME_META[gameId] ?? GAME_META.other;
 
   const [quizList,     setQuizList]     = useState([]);
   const [loadingList,  setLoadingList]  = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeQuiz,   setActiveQuiz]   = useState(null);
-
   const [isAdmin,      setIsAdmin]      = useState(false);
   const [deletingId,   setDeletingId]   = useState(null);
-  const [editingQuiz,  setEditingQuiz]  = useState(null); // quiz object being edited
-  const [confirmId,    setConfirmId]    = useState(null); // quiz id awaiting delete confirm
+  const [editingQuiz,  setEditingQuiz]  = useState(null);
+  const [confirmId,    setConfirmId]    = useState(null);
 
-  // Check admin status from Firestore (source of truth)
   useEffect(() => {
     if (!user?.uid) return;
-    getDoc(doc(db, "users", user.uid))
-      .then((snap) => { if (snap.exists()) setIsAdmin(snap.data().isAdmin === true); })
-      .catch(() => {});
+    getDoc(doc(db, "users", user.uid)).then(snap => { if (snap.exists()) setIsAdmin(snap.data().isAdmin === true); }).catch(() => {});
   }, [user?.uid]);
 
-  // Load all admin quizzes for this game
   useEffect(() => {
     async function load() {
       setLoadingList(true);
       try {
-        const snap = await getDocs(
-          query(collection(db, "adminQuizzes"), where("game", "==", gameId), where("approved", "==", true))
-        );
-        setQuizList(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch (err) {
-        console.error("Failed to load admin quizzes:", err);
-      } finally {
-        setLoadingList(false);
-      }
+        const snap = await getDocs(query(collection(db, "adminQuizzes"), where("game", "==", gameId), where("approved", "==", true)));
+        setQuizList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (err) { console.error("Failed to load admin quizzes:", err); }
+      finally { setLoadingList(false); }
     }
     load();
   }, [gameId]);
 
-  // ── Delete handler ─────────────────────────────────────────────────────────
   const handleDelete = async (quizId) => {
     setDeletingId(quizId);
-    try {
-      await deleteDoc(doc(db, "adminQuizzes", quizId));
-      setQuizList((prev) => prev.filter((q) => q.id !== quizId));
-      setConfirmId(null);
-    } catch (err) {
-      console.error("Failed to delete quiz:", err);
-    } finally {
-      setDeletingId(null);
-    }
+    try { await deleteDoc(doc(db, "adminQuizzes", quizId)); setQuizList(prev => prev.filter(q => q.id !== quizId)); setConfirmId(null); }
+    catch (err) { console.error("Failed to delete quiz:", err); }
+    finally { setDeletingId(null); }
   };
 
-  if (activeQuiz) {
-    return (
-      <AdminQuizPlayer
-        quiz={activeQuiz}
-        user={user}
-        onBack={() => setActiveQuiz(null)}
-      />
-    );
-  }
-
-  // ── Inline edit modal ──────────────────────────────────────────────────────
-  if (editingQuiz) {
-    return (
-      <AdminQuizEdit
-        quiz={editingQuiz}
-        isDark={isDark}
-        onSave={(updated) => {
-          setQuizList((prev) => prev.map((q) => q.id === updated.id ? updated : q));
-          setEditingQuiz(null);
-        }}
-        onCancel={() => setEditingQuiz(null)}
-      />
-    );
-  }
+  if (activeQuiz) return <AdminQuizPlayer quiz={activeQuiz} user={user} onBack={() => setActiveQuiz(null)} />;
+  if (editingQuiz) return (
+    <AdminQuizEdit quiz={editingQuiz} isDark={isDark}
+      onSave={updated => { setQuizList(prev => prev.map(q => q.id === updated.id ? updated : q)); setEditingQuiz(null); }}
+      onCancel={() => setEditingQuiz(null)}
+    />
+  );
 
   return (
     <div className={`aqp-landing ${isDark ? "dark" : "light"}`}>
-      {/* Splash banner */}
       <div className="aqp-splash" style={{ backgroundImage: `url(${game.image})` }}>
         <div className="aqp-splash-overlay" />
         <div className="aqp-splash-content">
@@ -739,50 +618,26 @@ export default function AdminQuizPage({ user }) {
         </div>
       </div>
 
-      {/* Action buttons */}
       <div className="aqp-actions-row">
-        {/* Play Quiz */}
         <div className="aqp-play-wrap">
-          <button
-            className="aqp-action-btn play"
-            onClick={() => setShowDropdown((v) => !v)}
-            disabled={loadingList}
-          >
+          <button className="aqp-action-btn play" onClick={() => setShowDropdown(v => !v)} disabled={loadingList}>
             {loadingList ? "Loading..." : "Play Quiz"}
           </button>
           {showDropdown && (
             <div className="aqp-quiz-dropdown">
               {quizList.length === 0 ? (
-                <div className="aqp-dropdown-empty">
-                  No quizzes yet for {game.name}.
-                </div>
+                <div className="aqp-dropdown-empty">No quizzes yet for {game.name}.</div>
               ) : (
-                quizList.map((quiz) => (
+                quizList.map(quiz => (
                   <div key={quiz.id} className="aqp-dropdown-row">
-                    <button
-                      className="aqp-dropdown-item"
-                      onClick={() => { setActiveQuiz(quiz); setShowDropdown(false); }}
-                    >
+                    <button className="aqp-dropdown-item" onClick={() => { setActiveQuiz(quiz); setShowDropdown(false); }}>
                       <span className="aqp-dropdown-title">{quiz.title}</span>
                       <span className="aqp-dropdown-count">{quiz.questions?.length ?? 0} questions</span>
                     </button>
                     {isAdmin && (
                       <div className="aqp-dropdown-admin-btns">
-                        <button
-                          className="aqp-admin-btn edit"
-                          onClick={(e) => { e.stopPropagation(); setShowDropdown(false); setEditingQuiz(quiz); }}
-                          title="Edit this quiz"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="aqp-admin-btn delete"
-                          onClick={(e) => { e.stopPropagation(); setConfirmId(quiz.id); }}
-                          disabled={deletingId === quiz.id}
-                          title="Delete this quiz"
-                        >
-                          {deletingId === quiz.id ? "..." : "Delete"}
-                        </button>
+                        <button className="aqp-admin-btn edit" onClick={e => { e.stopPropagation(); setShowDropdown(false); setEditingQuiz(quiz); }} title="Edit">Edit</button>
+                        <button className="aqp-admin-btn delete" onClick={e => { e.stopPropagation(); setConfirmId(quiz.id); }} disabled={deletingId === quiz.id} title="Delete">{deletingId === quiz.id ? "..." : "Delete"}</button>
                       </div>
                     )}
                   </div>
@@ -791,57 +646,24 @@ export default function AdminQuizPage({ user }) {
             </div>
           )}
         </div>
-
-        {/* Classic Demo (preserved for Valorant) */}
-        {gameId === "valorant" && (
-          <button
-            className="aqp-action-btn classic"
-            onClick={() => navigate("/quiz/valorant")}
-          >
-            Classic Demo Quiz
-          </button>
-        )}
-
-        {/* Create Quiz (admin only) */}
-        {isAdmin && (
-          <button
-            className="aqp-action-btn create"
-            onClick={() => navigate("/admin-quiz/create")}
-          >
-            Create Quiz
-          </button>
-        )}
+        {gameId === "valorant" && <button className="aqp-action-btn classic" onClick={() => navigate("/quiz/valorant")}>Classic Demo Quiz</button>}
+        {isAdmin && <button className="aqp-action-btn create" onClick={() => navigate("/admin-quiz/create")}>Create Quiz</button>}
       </div>
 
-      {/* Quiz grid cards */}
       {!loadingList && quizList.length > 0 && (
         <div className={`aqp-quiz-grid ${isDark ? "dark" : "light"}`}>
           <h2 className="aqp-grid-title">Available Quizzes</h2>
           <div className="aqp-grid">
-            {quizList.map((quiz) => (
+            {quizList.map(quiz => (
               <div key={quiz.id} className="aqp-quiz-card-wrap">
-                <button
-                  className="aqp-quiz-card"
-                  onClick={() => setActiveQuiz(quiz)}
-                >
+                <button className="aqp-quiz-card" onClick={() => setActiveQuiz(quiz)}>
                   <span className="aqp-qcard-title">{quiz.title}</span>
                   <span className="aqp-qcard-meta">{quiz.questions?.length ?? 0} questions</span>
                 </button>
                 {isAdmin && (
                   <div className="aqp-card-admin-row">
-                    <button
-                      className="aqp-admin-btn edit"
-                      onClick={() => setEditingQuiz(quiz)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="aqp-admin-btn delete"
-                      onClick={() => setConfirmId(quiz.id)}
-                      disabled={deletingId === quiz.id}
-                    >
-                      {deletingId === quiz.id ? "Deleting..." : "Delete"}
-                    </button>
+                    <button className="aqp-admin-btn edit" onClick={() => setEditingQuiz(quiz)}>Edit</button>
+                    <button className="aqp-admin-btn delete" onClick={() => setConfirmId(quiz.id)} disabled={deletingId === quiz.id}>{deletingId === quiz.id ? "Deleting..." : "Delete"}</button>
                   </div>
                 )}
               </div>
@@ -850,25 +672,14 @@ export default function AdminQuizPage({ user }) {
         </div>
       )}
 
-      {/* Delete confirmation modal */}
       {confirmId && (
         <div className="aqp-confirm-overlay" onClick={() => setConfirmId(null)}>
-          <div className="aqp-confirm-box" onClick={(e) => e.stopPropagation()}>
+          <div className="aqp-confirm-box" onClick={e => e.stopPropagation()}>
             <h3 className="aqp-confirm-title">Delete Quiz?</h3>
-            <p className="aqp-confirm-msg">
-              This will permanently remove the quiz for all players. This cannot be undone.
-            </p>
+            <p className="aqp-confirm-msg">This will permanently remove the quiz for all players. This cannot be undone.</p>
             <div className="aqp-confirm-actions">
-              <button
-                className="aqp-admin-btn delete"
-                onClick={() => handleDelete(confirmId)}
-                disabled={!!deletingId}
-              >
-                {deletingId ? "Deleting..." : "Yes, Delete"}
-              </button>
-              <button className="aqp-admin-btn edit" onClick={() => setConfirmId(null)}>
-                Cancel
-              </button>
+              <button className="aqp-admin-btn delete" onClick={() => handleDelete(confirmId)} disabled={!!deletingId}>{deletingId ? "Deleting..." : "Yes, Delete"}</button>
+              <button className="aqp-admin-btn edit" onClick={() => setConfirmId(null)}>Cancel</button>
             </div>
           </div>
         </div>
