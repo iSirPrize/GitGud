@@ -359,3 +359,60 @@
   transform: translateY(-50%) translateX(5px);
   transition-delay: 0.1s;
 }
+/* ─────────────────────────────────────────────────────────────────────────────
+   NavBar.css ADDITION — append to bottom of existing NavBar.css
+   ─────────────────────────────────────────────────────────────────────────────
+   Adds a hover tooltip on the Skill Tree nav link explaining what it is,
+   and ensures the SkillTreeIndicator badge sits correctly.
+*/
+
+/* ── Skill Tree nav link tooltip ─────────────────────────────────────────── */
+.practice[href="/skill-tree"] {
+  position: relative;
+}
+
+.practice[href="/skill-tree"]::after {
+  content: "Spend skill points to unlock quiz perks";
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e1e1e;
+  color: #f0f0f0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 9999;
+}
+
+/* Show tooltip only when sidebar is open (has enough width) */
+.sidebar.open .practice[href="/skill-tree"]:hover::after {
+  opacity: 1;
+}
+
+/* Light mode override */
+.quiz-carousel.light .practice[href="/skill-tree"]::after {
+  background: #ffffff;
+  color: #111;
+  border-color: #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* ── Skill Tree Indicator badge alignment ────────────────────────────────── */
+.nav-main {
+  display: flex;
+  align-items: center;
+  gap: 0; /* badge has its own margin-left */
+}
+
+/* Ensure the badge doesn't cause layout shift when collapsed */
+.sidebar:not(.open) .sti-badge {
+  display: none;
+}

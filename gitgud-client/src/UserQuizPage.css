@@ -351,3 +351,23 @@
   max-width: 860px;
   width: 100%;
 }
+/* UserQuizPage.css ADDITION
+   Append these rules to the bottom of your existing UserQuizPage.css
+   ──────────────────────────────────────────────────────────────────── */
+
+/* Clickable my-quiz card */
+.uq-my-card.clickable {
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.uq-my-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  border-color: var(--game-accent, #ff6a00);
+}
+
+/* Play hint text */
+.uq-play-hint {
+  color: var(--game-accent, #ff6a00);
+  font-style: italic;
+  font-size: 0.78rem;
+}

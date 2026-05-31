@@ -1,0 +1,261 @@
+/* SkillTreePage.css — full replacement */
+
+/* ── Theme tokens ─────────────────────────────────────────────────────────── */
+.st-page.dark {
+  --st-bg:           #0d0d0d;
+  --st-surface:      #181818;
+  --st-border:       #2a2a2a;
+  --st-text:         #f0f0f0;
+  --st-subtext:      #999;
+  --st-accent:       #ff6a00;
+  --st-accent-glow:  rgba(255, 106, 0, 0.35);
+  --st-node-locked:       #1a1a1a;
+  --st-node-available:    #1e2d1e;
+  --st-node-unlocked:     #1a1000;
+  --st-node-stroke-lock:  #333;
+  --st-node-stroke-avail: #4ade80;
+  --st-node-stroke-unlock:#ff6a00;
+  --st-available:         #4ade80;
+  --st-line:         #333;
+  --st-line-active:  #ff6a00;
+  --st-tooltip-bg:   #1e1e1e;
+  --st-overlay-bg:   rgba(0,0,0,0.7);
+  --st-toast-success:#1a3a1a;
+  --st-toast-error:  #3a1a1a;
+  --st-toast-border-success: #4ade80;
+  --st-toast-border-error:   #ef4444;
+  --st-banner-bg:    rgba(255,106,0,0.12);
+  --st-banner-border:#ff6a00;
+  --st-nt-bg:        #1e1e1e;
+  --st-nt-border:    #333;
+  --st-nt-shadow:    rgba(0,0,0,0.6);
+  --st-how-bg:       #111;
+  --st-how-border:   #222;
+}
+
+.st-page.light {
+  --st-bg:           #f4f4f4;
+  --st-surface:      #ffffff;
+  --st-border:       #e0e0e0;
+  --st-text:         #111111;
+  --st-subtext:      #666;
+  --st-accent:       #0066cc;
+  --st-accent-glow:  rgba(0, 102, 204, 0.2);
+  --st-node-locked:       #f0f0f0;
+  --st-node-available:    #e8f8e8;
+  --st-node-unlocked:     #fff3e0;
+  --st-node-stroke-lock:  #ccc;
+  --st-node-stroke-avail: #16a34a;
+  --st-node-stroke-unlock:#ff6a00;
+  --st-available:         #16a34a;
+  --st-line:         #ccc;
+  --st-line-active:  #ff6a00;
+  --st-tooltip-bg:   #ffffff;
+  --st-overlay-bg:   rgba(0,0,0,0.45);
+  --st-toast-success:#e8f8e8;
+  --st-toast-error:  #fee2e2;
+  --st-toast-border-success: #16a34a;
+  --st-toast-border-error:   #ef4444;
+  --st-banner-bg:    rgba(0,102,204,0.08);
+  --st-banner-border:#0066cc;
+  --st-nt-bg:        #fff;
+  --st-nt-border:    #ddd;
+  --st-nt-shadow:    rgba(0,0,0,0.15);
+  --st-how-bg:       #f8f9fa;
+  --st-how-border:   #e0e0e0;
+}
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+.st-page {
+  min-height: 100vh;
+  background: var(--st-bg);
+  color: var(--st-text);
+  padding: 28px 24px 60px;
+  font-family: inherit;
+}
+
+.st-loading { text-align: center; padding: 80px; font-size: 1.2rem; color: var(--st-subtext); }
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.st-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.st-title { font-size: 1.9rem; font-weight: 800; margin: 0 0 4px; color: var(--st-accent); }
+.st-subtitle { margin: 0; color: var(--st-subtext); font-size: 0.9rem; }
+
+.st-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+
+.st-stat {
+  background: var(--st-surface); border: 1px solid var(--st-border);
+  border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 80px;
+}
+.st-stat-label { display: block; font-size: 0.72rem; color: var(--st-subtext); text-transform: uppercase; letter-spacing: 0.05em; }
+.st-stat-value { display: block; font-size: 1.4rem; font-weight: 700; color: var(--st-text); margin-top: 2px; }
+
+/* Reset button */
+.st-reset-btn {
+  background: rgba(239,68,68,0.1);
+  border: 1.5px solid #ef4444;
+  color: #ef4444;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.st-reset-btn:hover { background: rgba(239,68,68,0.2); transform: translateY(-1px); }
+
+/* ── Banner ───────────────────────────────────────────────────────────────── */
+.st-banner {
+  background: var(--st-banner-bg); border: 1px solid var(--st-banner-border);
+  border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
+  font-size: 0.95rem; color: var(--st-text); animation: st-pulse 2s ease-in-out infinite;
+}
+@keyframes st-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+/* ── Canvas ───────────────────────────────────────────────────────────────── */
+.st-canvas-wrap {
+  width: 100%; overflow-x: auto; background: var(--st-surface);
+  border: 1px solid var(--st-border); border-radius: 16px; padding: 16px; margin-bottom: 20px;
+}
+.st-canvas { display: block; width: 100%; max-width: 900px; margin: 0 auto; }
+
+/* ── Node states ──────────────────────────────────────────────────────────── */
+.st-node .st-node-rect {
+  fill: var(--st-node-locked); stroke: var(--st-node-stroke-lock);
+  stroke-width: 1.5; transition: fill 0.2s, stroke 0.2s, filter 0.2s;
+}
+.st-node.available .st-node-rect {
+  fill: var(--st-node-available); stroke: var(--st-node-stroke-avail);
+  stroke-width: 2.5; filter: drop-shadow(0 0 8px var(--st-node-stroke-avail));
+}
+.st-node.unlocked .st-node-rect { fill: var(--st-node-unlocked); stroke: var(--st-node-stroke-unlock); stroke-width: 2; }
+.st-node.pending .st-node-rect { animation: st-node-glow 1.5s ease-in-out infinite; }
+@keyframes st-node-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px var(--st-node-stroke-avail)); }
+  50%       { filter: drop-shadow(0 0 16px var(--st-node-stroke-avail)); }
+}
+.st-node-type  { font-size: 9px;  fill: var(--st-subtext); font-family: inherit; }
+.st-node-icon  { font-size: 16px; fill: var(--st-text);    font-family: inherit; }
+.st-node-label { font-size: 11px; font-weight: 700; fill: var(--st-text); font-family: inherit; }
+.st-lock       { font-size: 11px; fill: var(--st-subtext); font-family: inherit; }
+.st-check      { font-size: 11px; fill: var(--st-accent);  font-family: inherit; }
+.st-connector  { transition: stroke 0.3s; }
+
+/* ── Node hover tooltip (SVG foreignObject) ──────────────────────────────── */
+.st-node-tooltip {
+  background: var(--st-nt-bg);
+  border: 1px solid var(--st-nt-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 20px var(--st-nt-shadow);
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--st-text);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  width: 155px;
+  z-index: 9999;
+  animation: fade-in 0.12s ease;
+}
+.st-nt-title { font-weight: 800; font-size: 12px; color: var(--st-accent); }
+.st-nt-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 1px 6px; border-radius: 10px; width: fit-content;
+}
+.st-nt-badge.passive { background: rgba(156,163,175,0.2); color: var(--st-subtext); }
+.st-nt-badge.active  { background: rgba(255,106,0,0.15);  color: var(--st-accent); }
+.st-nt-desc   { font-size: 10px; color: var(--st-subtext); line-height: 1.4; margin: 0; }
+.st-nt-status { font-size: 9px; font-weight: 700; margin-top: 2px; color: var(--st-available); }
+
+/* ── Legend ───────────────────────────────────────────────────────────────── */
+.st-legend {
+  display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
+  font-size: 0.8rem; color: var(--st-subtext); margin-bottom: 24px;
+}
+.st-legend-sep { flex-basis: 100%; height: 0; }
+.st-legend-item.unlocked    { color: var(--st-accent); }
+.st-legend-item.available   { color: var(--st-available); }
+.st-legend-item.active-badge{ color: var(--st-accent); }
+
+/* ── How it works ─────────────────────────────────────────────────────────── */
+.st-how-wrap {
+  background: var(--st-how-bg); border: 1px solid var(--st-how-border);
+  border-radius: 14px; padding: 20px 24px; margin-bottom: 24px;
+}
+.st-how-title { font-size: 1rem; font-weight: 800; margin: 0 0 14px; color: var(--st-text); }
+.st-how-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.st-how-item  { display: flex; gap: 10px; align-items: flex-start; font-size: 0.85rem; color: var(--st-subtext); line-height: 1.5; }
+.st-how-icon  { font-size: 1.2rem; flex-shrink: 0; width: 24px; }
+@media (max-width: 600px) { .st-how-grid { grid-template-columns: 1fr; } }
+
+/* ── Overlay ──────────────────────────────────────────────────────────────── */
+.st-overlay {
+  position: fixed; inset: 0; background: var(--st-overlay-bg);
+  z-index: 9000; display: flex; align-items: center; justify-content: center;
+  animation: fade-in 0.15s ease;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Tooltip panel ────────────────────────────────────────────────────────── */
+.st-tooltip {
+  background: var(--st-tooltip-bg); border: 1px solid var(--st-border);
+  border-radius: 16px; padding: 28px 28px 24px; max-width: 360px; width: 90%;
+  position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  animation: slide-up 0.2s ease;
+}
+@keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.st-tooltip-close {
+  position: absolute; top: 14px; right: 14px; background: none; border: none;
+  color: var(--st-subtext); font-size: 1.1rem; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px;
+}
+.st-tooltip-close:hover { background: var(--st-border); }
+.st-tooltip-icon  { font-size: 2.5rem; text-align: center; margin-bottom: 8px; }
+.st-tooltip-title { font-size: 1.3rem; font-weight: 800; text-align: center; margin: 0 0 8px; color: var(--st-text); }
+.st-tooltip-badge {
+  display: block; text-align: center; font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;
+  padding: 3px 10px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto;
+}
+.st-tooltip-badge.passive { background: rgba(156,163,175,0.15); color: var(--st-subtext); border: 1px solid var(--st-border); }
+.st-tooltip-badge.active  { background: rgba(255,106,0,0.15); color: var(--st-accent); border: 1px solid var(--st-accent); }
+.st-tooltip-desc   { font-size: 0.92rem; color: var(--st-subtext); line-height: 1.55; margin-bottom: 18px; text-align: center; }
+.st-tooltip-unlock {
+  display: block; width: 100%; padding: 12px; background: var(--st-accent);
+  color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+  margin-bottom: 0;
+}
+.st-tooltip-unlock:hover { opacity: 0.85; }
+.st-tooltip-unlock:disabled { opacity: 0.5; cursor: not-allowed; }
+.st-tooltip-status        { text-align: center; font-size: 0.9rem; color: var(--st-subtext); margin: 0; }
+.st-tooltip-status.locked { color: #ef4444; }
+
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+.st-toast {
+  position: fixed; bottom: 30px; right: 30px; padding: 14px 22px;
+  border-radius: 12px; font-size: 0.95rem; font-weight: 600; z-index: 9999;
+  animation: toast-in 0.25s ease; max-width: 320px;
+}
+.st-toast.success { background: var(--st-toast-success); border: 1px solid var(--st-toast-border-success); color: var(--st-toast-border-success); }
+.st-toast.error   { background: var(--st-toast-error);   border: 1px solid var(--st-toast-border-error);   color: var(--st-toast-border-error); }
+@keyframes toast-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .st-header { flex-direction: column; }
+  .st-stats  { width: 100%; justify-content: space-between; }
+  .st-stat   { flex: 1; min-width: 70px; }
+  .st-reset-btn { align-self: stretch; text-align: center; }
+}

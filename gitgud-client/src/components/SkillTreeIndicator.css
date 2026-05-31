@@ -1,0 +1,22 @@
+/* SkillTreeIndicator.css */
+.sti-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 900;
+  margin-left: 5px;
+  vertical-align: middle;
+  animation: sti-pop 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes sti-pop {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.25); box-shadow: 0 0 6px rgba(239,68,68,0.6); }
+}

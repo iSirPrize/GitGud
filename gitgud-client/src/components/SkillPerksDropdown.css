@@ -1,0 +1,309 @@
+/* SkillPerksDropdown.css — full replacement */
+
+/* ── Theme tokens ─────────────────────────────────────────────────────────── */
+.spd-wrap.dark {
+  --spd-bg:          #181818;
+  --spd-border:      #2a2a2a;
+  --spd-text:        #f0f0f0;
+  --spd-subtext:     #999;
+  --spd-accent:      #ff6a00;
+  --spd-passive:     #4ade80;
+  --spd-on-bg:       rgba(255,106,0,0.12);
+  --spd-off-bg:      #111;
+  --spd-hover:       #222;
+  --spd-trigger-bg:  #1e1e1e;
+  --spd-shadow:      rgba(0,0,0,0.55);
+  --spd-tt-bg:       #242424;
+  --spd-tt-border:   #333;
+  --spd-tt-shadow:   rgba(0,0,0,0.6);
+}
+
+.spd-wrap.light {
+  --spd-bg:          #ffffff;
+  --spd-border:      #e0e0e0;
+  --spd-text:        #111;
+  --spd-subtext:     #666;
+  --spd-accent:      #0066cc;
+  --spd-passive:     #16a34a;
+  --spd-on-bg:       rgba(0,102,204,0.08);
+  --spd-off-bg:      #f8f8f8;
+  --spd-hover:       #f4f4f4;
+  --spd-trigger-bg:  #f0f4f8;
+  --spd-shadow:      rgba(0,0,0,0.15);
+  --spd-tt-bg:       #fff;
+  --spd-tt-border:   #ddd;
+  --spd-tt-shadow:   rgba(0,0,0,0.14);
+}
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.spd-wrap {
+  position: relative;
+  display: inline-block;
+  font-family: inherit;
+  z-index: 200;
+}
+
+/* ── Trigger button ───────────────────────────────────────────────────────── */
+.spd-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--spd-trigger-bg);
+  border: 1px solid var(--spd-border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: var(--spd-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.spd-trigger:hover {
+  border-color: var(--spd-accent);
+  background: var(--spd-hover);
+}
+.spd-icon  { font-size: 1rem; }
+.spd-arrow { font-size: 0.65rem; color: var(--spd-subtext); }
+
+/* ── Dropdown panel ───────────────────────────────────────────────────────── */
+.spd-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 320px;
+  max-width: 390px;
+  background: var(--spd-bg);
+  border: 1px solid var(--spd-border);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px var(--spd-shadow);
+  overflow: visible; /* allow tooltips to overflow */
+  animation: spd-open 0.15s ease;
+  z-index: 300;
+}
+@keyframes spd-open {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.spd-empty {
+  padding: 16px 18px;
+  font-size: 0.88rem;
+  color: var(--spd-subtext);
+  text-align: center;
+}
+.spd-empty p { margin: 0 0 6px; }
+.spd-empty-hint { font-size: 0.8rem; opacity: 0.8; }
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+.spd-section { padding: 10px 0 4px; }
+.spd-section + .spd-section { border-top: 1px solid var(--spd-border); }
+
+.spd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--spd-subtext);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 4px;
+  padding: 0 14px;
+}
+.spd-section-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+.spd-section-badge.passive {
+  background: rgba(74,222,128,0.12);
+  color: var(--spd-passive);
+  border: 1px solid var(--spd-passive);
+}
+.spd-section-badge.active {
+  background: rgba(255,106,0,0.12);
+  color: var(--spd-accent);
+  border: 1px solid var(--spd-accent);
+}
+
+/* ── Perk item row ────────────────────────────────────────────────────────── */
+.spd-item {
+  position: relative; /* anchor for tooltip */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  transition: background 0.12s;
+}
+.spd-item.active {
+  cursor: pointer;
+}
+.spd-item.active:hover,
+.spd-item.active:focus {
+  background: var(--spd-hover);
+  outline: none;
+}
+.spd-item.passive:hover {
+  background: var(--spd-hover);
+}
+.spd-item.on { background: var(--spd-on-bg); }
+
+.spd-item-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+.spd-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.spd-item-name {
+  display: block;
+  font-size: 0.87rem;
+  font-weight: 700;
+  color: var(--spd-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spd-item-desc {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--spd-subtext);
+  margin-top: 1px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status badge (passive ON) */
+.spd-item-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.spd-item-status.passive {
+  background: rgba(74,222,128,0.12);
+  color: var(--spd-passive);
+}
+
+/* Toggle button */
+.spd-toggle-btn {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.spd-toggle-btn.on {
+  background: var(--spd-accent);
+  color: #fff;
+  border-color: var(--spd-accent);
+}
+.spd-toggle-btn.off {
+  background: transparent;
+  color: var(--spd-subtext);
+  border-color: var(--spd-subtext);
+}
+.spd-toggle-btn:hover { opacity: 0.8; }
+
+/* Active hint */
+.spd-active-hint {
+  font-size: 0.75rem;
+  color: var(--spd-accent);
+  text-align: center;
+  padding: 6px 14px 10px;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ── Hover tooltip ────────────────────────────────────────────────────────── */
+.spd-item-tooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 9999;
+  width: 230px;
+  background: var(--spd-tt-bg);
+  border: 1px solid var(--spd-tt-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 24px var(--spd-tt-shadow);
+  pointer-events: none;
+  animation: spd-tt-in 0.12s ease;
+  font-family: inherit;
+}
+@keyframes spd-tt-in {
+  from { opacity: 0; transform: translateY(-50%) translateX(-4px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* Flip left when near right edge */
+@media (max-width: 700px) {
+  .spd-item-tooltip {
+    left: auto;
+    right: calc(100% + 8px);
+  }
+  @keyframes spd-tt-in {
+    from { opacity: 0; transform: translateY(-50%) translateX(4px); }
+    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+  }
+}
+
+.spd-tt-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.spd-tt-icon { font-size: 1.2rem; }
+.spd-tt-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--spd-text);
+  flex: 1;
+}
+.spd-tt-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+}
+.spd-tt-badge.passive {
+  background: rgba(74,222,128,0.12);
+  color: var(--spd-passive);
+  border: 1px solid var(--spd-passive);
+}
+.spd-tt-badge.active {
+  background: rgba(255,106,0,0.12);
+  color: var(--spd-accent);
+  border: 1px solid var(--spd-accent);
+}
+.spd-tt-desc {
+  font-size: 0.8rem;
+  color: var(--spd-subtext);
+  line-height: 1.45;
+  margin: 0 0 8px;
+}
+.spd-tt-usage {
+  font-size: 0.75rem;
+  color: var(--spd-accent);
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+  border-top: 1px solid var(--spd-tt-border);
+  padding-top: 7px;
+}

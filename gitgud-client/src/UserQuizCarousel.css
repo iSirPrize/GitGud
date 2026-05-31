@@ -170,3 +170,89 @@
   justify-content: flex-end;
   margin-top: 14px;
 }
+/* ─────────────────────────────────────────────────────────────────────────────
+   UserQuizCarousel.css ADDITIONS — append to bottom of existing UserQuizCarousel.css
+   ─────────────────────────────────────────────────────────────────────────────
+
+   Adds perk visual states and action buttons for the user quiz carousel.
+   The base .perk-btn / .perk-actions styles come from QuizCarousel.css
+   (already imported at the top of UserQuizCarousel.jsx).
+   These additions cover any user-quiz-specific overrides.
+*/
+
+/* ── Ensure hidden choices collapse fully (no gap) ───────────────────────── */
+.choice-btn.hidden {
+  display: none !important;
+}
+
+/* ── Perk hint colours on choices (pre-submit) ───────────────────────────── */
+.choice-btn.perk-correct {
+  border-color: #4ade80 !important;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.35);
+}
+.choice-btn.perk-correct::after {
+  content: ' 🪙✓';
+  font-size: 0.8em;
+}
+
+.choice-btn.perk-wrong {
+  border-color: #ef4444 !important;
+  opacity: 0.5;
+}
+.choice-btn.perk-wrong::after {
+  content: ' 🚫';
+  font-size: 0.8em;
+}
+
+/* ── Perk actions bar ────────────────────────────────────────────────────── */
+/* .perk-actions and .perk-btn already defined in QuizCarousel.css addition.
+   Listed here for completeness in case QuizCarousel.css changes. */
+.perk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.perk-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid;
+  background: transparent;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+.perk-btn:hover  { opacity: 0.8; transform: translateY(-1px); }
+.perk-btn:active { transform: translateY(0); }
+
+.perk-btn.fifty-fifty,
+.perk-btn.coin-toss {
+  color: #f59e0b;
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+.perk-btn.reveal-wrong {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+.perk-btn.retry-q {
+  color: #818cf8;
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.1);
+}
+
+/* ── Skill perks top bar wrapper ─────────────────────────────────────────── */
+.uqc-top-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
