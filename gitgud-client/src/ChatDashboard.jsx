@@ -13,6 +13,7 @@ import {
 import { useTheme } from "./context/ThemeContext";
 import './ChatDashboard.css';
 import GroupPicUpload from "./GroupPicUpload";
+import {TITLES} from "./titles";
 
 function ChatDashboard({ user }) {
     const { theme } = useTheme();

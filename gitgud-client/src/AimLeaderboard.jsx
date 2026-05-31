@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 import { useTheme } from "./context/ThemeContext";
+import { TITLES } from "./titles";
 
 export default function AimLeaderboard({ currentUid }) {
   const [entries, setEntries] = useState([]);
@@ -75,6 +76,8 @@ export default function AimLeaderboard({ currentUid }) {
 
           displayName: userData.displayName || "",
           photoURL: userData.photoURL || "",
+          equippedTitle: userData.equippedTitle || null,
+          titleFont: userData.titleFont || "default"
         };
       }
     });
@@ -159,8 +162,8 @@ export default function AimLeaderboard({ currentUid }) {
           }}
         >
           {entries.map((entry) => {
-            const name =
-              entry.username || entry.displayName || "Anonymous";
+            const name = entry.username || entry.displayName || "Anonymous";
+            const titleData = TITLES.find( t => t.id === entry.equippedTitle );
             const isMe = entry.uid === currentUid;
             const m = medal(entry.rank);
 
@@ -236,41 +239,56 @@ export default function AimLeaderboard({ currentUid }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginBottom: 5,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: textPri,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {name}
-                    </span>
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 5,
+    flexWrap: "wrap"
+  }}
+>
+  <span
+    style={{
+      color: textPri,
+      fontSize: 14,
+      fontWeight: 600,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }}
+  >
+    {name}
+  </span>
 
-                    {isMe && (
-                      <span
-                        style={{
-                          background: accent,
-                          color: avatarColor,
-                          fontSize: 10,
-                          fontWeight: 800,
-                          padding: "1px 7px",
-                          borderRadius: 99,
-                          flexShrink: 0,
-                        }}
-                      >
-                        you
-                      </span>
-                    )}
-                  </div>
+  {titleData && (
+    <span
+      className={`font-${entry.titleFont || "default"}`}
+      style={{
+        color: accent,
+        fontSize: 16,
+        fontWeight: 700,
+        flexShrink: 0
+      }}
+    >
+      • {titleData.title}
+    </span>
+  )}
+
+  {isMe && (
+    <span
+      style={{
+        background: accent,
+        color: avatarColor,
+        fontSize: 10,
+        fontWeight: 800,
+        padding: "1px 7px",
+        borderRadius: 99,
+        flexShrink: 0
+      }}
+    >
+      you
+    </span>
+  )}
+</div>
 
                   {/* Accuracy progress bar */}
                   <div

@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { useTheme } from "./context/ThemeContext";
 import './chatPage.css';
+import {TITLES} from "./titles";
 
 function ChatPage({ user }) {
     const { chatId } = useParams();
@@ -119,8 +120,10 @@ function ChatPage({ user }) {
                 senderId: user.uid,
                 senderName: user.displayName || "Anonymous",
                 senderPhoto: user.photoURL || "",
+                senderTitle: user.equippedTitle || null,
+                senderTitleFont: user.titleFont || "default",
                 text: currentText,
-                timestamp: serverTimestamp()
+                timestamp: serverTimestamp(),
             });
 
             // prep tracking for email
@@ -197,6 +200,7 @@ function ChatPage({ user }) {
                 <div className="messages-box">
                     {messages.map((msg) => {
                         const isMe = msg.senderId === user?.uid;
+                        const titleData = TITLES.find( t => t.id === msg.senderTitle );
                         return (
                             <div key={msg.id} className={`message-bubble ${isMe ? "sent" : "received"}`}>
                                 <div className="message-sender-header">
@@ -209,9 +213,19 @@ function ChatPage({ user }) {
                                             className="sender-avatar-img"
                                         />
                                     )}
-                                    <span className="sender-tag">
-                                        {isMe ? "Me" : msg.senderName}
-                                    </span>
+                                    <div className="sender-info">
+  <span className="sender-tag">
+    {isMe ? "Me" : msg.senderName}
+  </span>
+
+  {titleData && (
+    <span
+      className={`message-title font-${msg.senderTitleFont || "default"}`}
+    >
+     * {titleData.title}
+    </span>
+  )}
+</div>
                                 </div>
 
                                 <p className="message-text">{msg.text}</p>

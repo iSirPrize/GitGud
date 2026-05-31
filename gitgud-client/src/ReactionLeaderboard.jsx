@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 import { useTheme } from "./context/ThemeContext";
+import { TITLES } from "./titles";
 
 export default function ReactionLeaderboard({ currentUid }) {
   const [entries, setEntries] = useState([]);
@@ -57,6 +58,8 @@ export default function ReactionLeaderboard({ currentUid }) {
               username: u.username || u.displayName || data.username || "Anonymous",
               displayName: u.displayName || "",
               photoURL: u.photoURL || "",
+              equippedTitle: u.equippedTitle || null,
+              titleFont: u.titleFont || "default"
             };
           }
         });
@@ -105,6 +108,7 @@ export default function ReactionLeaderboard({ currentUid }) {
             const isMe = entry.uid === currentUid;
             const m = medal(entry.rank);
             const name = entry.username || entry.displayName || "Anonymous";
+            const titleData = TITLES.find( t => t.id === entry.equippedTitle );
 
             const pct = Math.max(0, Math.min(100, 200 - entry.average)); // inverted: lower avg → fuller bar
 
@@ -163,35 +167,58 @@ export default function ReactionLeaderboard({ currentUid }) {
 
                 {/* Name + bar */}
                 <div style={{ flex: 1 }}>
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 5,
-                  }}>
-                    <span style={{
-                      color: textPri,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}>
-                      {name}
-                    </span>
-                    {isMe && (
-                      <span style={{
-                        background: accent,
-                        color: avatarColor,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        padding: "1px 7px",
-                        borderRadius: 99,
-                      }}>
-                        you
-                      </span>
-                    )}
-                  </div>
+                  <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 5,
+    flexWrap: "wrap"
+  }}
+>
+  <span
+    style={{
+      color: textPri,
+      fontSize: 14,
+      fontWeight: 600,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }}
+  >
+    {name}
+  </span>
+
+  {titleData && (
+    <span
+      className={`font-${entry.titleFont || "default"}`}
+      style={{
+        color: accent,
+        fontSize: 16,
+        fontWeight: 700,
+        flexShrink: 0
+      }}
+    >
+      • {titleData.title}
+    </span>
+  )}
+
+  {isMe && (
+    <span
+      style={{
+        background: accent,
+        color: avatarColor,
+        fontSize: 10,
+        fontWeight: 800,
+        padding: "1px 7px",
+        borderRadius: 99,
+        flexShrink: 0
+      }}
+    >
+      you
+    </span>
+  )}
+</div>
 
                   {/* Reaction progress bar (lower avg = better = more filled) */}
                   <div style={{

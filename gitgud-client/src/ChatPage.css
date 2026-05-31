@@ -248,3 +248,17 @@ img.sender-avatar-img
 {
     transform: scale(0.97);
 }
+
+.sender-info
+{
+    display: flex;
+    flex-direction: column;
+}
+
+.message-title
+{
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--qc-frame);
+    opacity: 0.95;
+}

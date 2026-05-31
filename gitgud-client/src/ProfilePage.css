@@ -110,6 +110,7 @@
 
 .avatar
 {
+    position: relative;
     width: 100px;
     height: 100px;
     background-color: var(--qc-frame);
@@ -122,6 +123,34 @@
     font-weight: bold;
     overflow: hidden;
     box-shadow: 0 0 10px var(--qc-frame-glow);
+    z-index: 1;
+}
+
+.avatar-wrapper
+{
+    position: relative;
+
+    width: 160px;
+    height: 160px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-frame
+{
+    position: absolute;
+
+    width: 160px;
+    height: 160px;
+    top: 5px;
+
+    object-fit: contain;
+
+    z-index: 2;
+
+    pointer-events: none;
 }
 
 .avatar img{
@@ -654,4 +683,55 @@
     line-height: 1.3;
 
     color: var(--qc-text);
+}
+
+.font-section
+{
+    margin-top: 30px;
+    text-align: center;
+}
+
+.font-grid
+{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.font-btn
+{
+    padding: 10px 16px;
+
+    border-radius: 10px;
+
+    border: 2px solid var(--qc-frame);
+
+    background: transparent;
+    color: var(--qc-text);
+
+    cursor: pointer;
+
+    font-weight: 600;
+}
+
+.font-btn.active
+{
+    background: var(--qc-frame);
+    color: white;
+}
+
+.profile-title
+{
+    text-align: center;
+
+    margin-top: 4px;
+
+    font-size: 1rem;
+
+    font-weight: 700;
+
+    color: var(--qc-frame);
 }

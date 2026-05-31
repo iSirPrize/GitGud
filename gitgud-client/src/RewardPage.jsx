@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
-import { ACHIEVEMENTS } from "./achievement";
 import "./RewardPage.css";
 import { doc, getDoc, getDocs, collection, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
+import { ACHIEVEMENTS } from "./achievement";
+import { FRAMES } from "./frames";
+import { TITLES } from "./titles";
+import { TITLE_FONTS } from "./titleFonts";
+
 
 
 export default function RewardPage({ user }) {
@@ -11,8 +15,21 @@ export default function RewardPage({ user }) {
     const categories = ["aim", "reaction", "leaderboard", "daily", "quiz"];
     const [achievementCategory, setAchievementCategory] = useState("aim");
     const [rank, setRank] = useState(null);
+
+    // Achievements
     const [ selectedAchievement,setSelectedAchievement] = useState(null);
     const [equippedAchievement, setEquippedAchievement] = useState([]);
+
+    // Frames
+    const [equippedFrame, setEquippedFrame] = useState(null);
+    const [selectedFrame, setSelectedFrame] = useState(null);
+
+    // Titles
+    const [equippedTitle, setEquippedTitle] = useState(null);
+    const [selectedTitle, setSelectedTitle] = useState(null);
+
+    //Title fonts
+    const [titleFont, setTitleFont] = useState("default");
 
     async function loadStats() {
   if (!user?.uid) return;
@@ -28,6 +45,9 @@ export default function RewardPage({ user }) {
     setStats( data.stats || {});
 
     setEquippedAchievement( data.equippedAchievement || []);
+    setEquippedFrame( data.equippedFrame || null );
+    setEquippedTitle( data.equippedTitle || null );
+    setTitleFont( data.titleFont || "default" );
   }
 
   const usersSnap =
@@ -88,18 +108,24 @@ export default function RewardPage({ user }) {
   await updateDoc(
     doc(db, "users", user.uid),
     {
-      equippedAchievement:
-        updated
+      equippedAchievement: updated,
+      equippedFrame: equippedFrame // Ensure frame is not overwritten when equipping achievements
     }
   );
 
   setEquippedAchievement(
     updated
   );
-}   
+} 
+
 
     function isUnlocked(id) {
+
+      //For testing purposes only, uncomment to unlock all achievements
+    //return true;
+
   switch (id) {
+      // AIM TRAINER ACHIEVEMENTS
 
     case "first_blood":
       return (stats?.aim?.totalSessions || 0) >= 1;
@@ -111,10 +137,10 @@ export default function RewardPage({ user }) {
       return (stats?.aim?.bestAccuracy || 0) >= 90;
 
     case "cheetah":
-      return (stats?.reaction?.bestAverage || 9999) < 220;
+      return (stats?.reaction?.bestAverage || 9999) < 300;
 
     case "lightning_hawk":
-      return (stats?.reaction?.bestAverage || 9999) < 190;
+      return (stats?.reaction?.bestAverage || 9999) < 220;
 
     // QUIZ
 
@@ -155,6 +181,43 @@ export default function RewardPage({ user }) {
       return false;
   }
 }
+
+// Frames implementation
+function isFrameUnlocked(frame) {
+  return isUnlocked(frame.unlocksFrom);
+}
+
+async function handleFrameEquip( frameId ) {
+  await updateDoc( doc(db, "users", user.uid), { equippedFrame: frameId });
+
+  setEquippedFrame(frameId);
+}
+
+// Titles implementation
+
+function isTitleUnlocked(title) {
+  return isUnlocked(title.unlocksFrom);
+}
+async function handleTitleEquip(
+  titleId
+) {
+  await updateDoc(
+    doc(db, "users", user.uid),
+    {
+      equippedTitle: titleId
+    }
+  );
+
+  setEquippedTitle(titleId);
+}
+
+// Title fonts implementation save function
+async function handleFontChange(
+  fontId
+) {
+  await updateDoc(
+    doc(db, "users", user.uid), { titleFont: fontId });
+setTitleFont(fontId);}
 
     console.log("Current rank:", rank);
 
@@ -224,14 +287,14 @@ export default function RewardPage({ user }) {
 </div>
               </div>
 
-              <div className="equipped-showcase">
+              <div className="equipped-display">
 
-  <h3>
-    Equipped Achievements
-    ({equippedAchievement.length}/3)
-  </h3>
+  <h3 className="equipped-heading">
+  Equipped Achievements
+  ({equippedAchievement.length}/3)
+</h3>
 
-  <div className="equipped-grid">
+  <div className="equipped-display-grid">
 
     {equippedAchievement.length > 0
       ? equippedAchievement.map(id => {
@@ -246,7 +309,7 @@ export default function RewardPage({ user }) {
           return (
             <div
               key={id}
-              className="equipped-slot"
+              className="equipped-display-slot"
             >
               {achievement.icon}
             </div>
@@ -429,44 +492,239 @@ export default function RewardPage({ user }) {
           )}
 
           {activeTab === "frames" && (
-            <div className="coming-soon">
-              <h2>Frames</h2>
 
-              <div className="coming-soon-card">
-                <div className="coming-soon-icon">
-                  🖼️
-                </div>
+<>
+  <div className="rewards-header">
+    <h2>Frames</h2>
 
-                <h3>Coming Soon</h3>
+    <p>
+      Unlock profile frames through achievements.
+      Only one frame may be equipped at a time.
+    </p>
+  </div>
 
-                <p>
-                  Profile Frames will allow you to
-                  customise the appearance of your
-                  avatar border.
-                </p>
-              </div>
-            </div>
-          )}
+  <div className="achievement-grid">
+
+    {FRAMES.map(frame => {
+
+      const unlocked =
+        isFrameUnlocked(frame);
+
+      return (
+
+        <div
+          key={frame.id}
+          className={`achievement-card ${
+            unlocked
+              ? "unlocked"
+              : "locked"
+          } ${
+            selectedFrame?.id === frame.id
+              ? "selected"
+              : ""
+          }`}
+          onClick={() =>
+            setSelectedFrame(frame)
+          }
+        >
+
+          <div className="achievement-icon">
+
+            <img
+              src={frame.image}
+              alt={frame.name}
+              className="frame-preview"
+            />
+
+          </div>
+
+          <div className="achievement-info">
+            <h3>{frame.name}</h3>
+            <p>{frame.description}</p>
+          </div>
+
+          <div className="achievement-status">
+
+            {unlocked ? (
+              <>
+                <span>
+                  {equippedFrame === frame.id
+                    ? "✅ Equipped"
+                    : "✅ Unlocked"}
+                </span>
+
+                {selectedFrame?.id === frame.id && (
+                  <button
+                    className="equip-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFrameEquip(
+                        frame.id
+                      );
+                    }}
+                  >
+                    {equippedFrame === frame.id
+                      ? "Equipped"
+                      : "Equip"}
+                  </button>
+                )}
+
+              </>
+            ) : (
+              <span>🔒 Locked</span>
+            )}
+
+          </div>
+
+        </div>
+
+      );
+    })}
+
+  </div>
+</>
+
+)}
 
           {activeTab === "titles" && (
-            <div className="coming-soon">
-              <h2>Titles</h2>
 
-              <div className="coming-soon-card">
-                <div className="coming-soon-icon">
-                  🏷️
-                </div>
+<>
+  <div className="rewards-header">
 
-                <h3>Coming Soon</h3>
+    <h2>Titles</h2>
 
-                <p>
-                  Titles will appear underneath your
-                  username and can be earned through
-                  achievements.
-                </p>
-              </div>
-            </div>
-          )}
+    <p>
+      Unlock titles through achievements.
+      Only one title may be equipped at a time.
+    </p>
+
+  </div>
+
+  <div className="achievement-grid">
+
+    {TITLES.map(title => {
+
+      const unlocked =
+        isTitleUnlocked(title);
+
+      return (
+
+        <div
+          key={title.id}
+          className={`achievement-card ${
+            unlocked
+              ? "unlocked"
+              : "locked"
+          } ${
+            selectedTitle?.id === title.id
+              ? "selected"
+              : ""
+          }`}
+          onClick={() =>
+            setSelectedTitle(title)
+          }
+        >
+
+          <div className="achievement-icon">
+            {title.icon}
+          </div>
+
+          <div className="achievement-info">
+
+            <h3>
+              {title.title}
+            </h3>
+
+            <p>
+              Unlocks from:
+              {" "}
+              {title.description}
+            </p>
+
+          </div>
+
+          <div className="achievement-status">
+
+            {unlocked ? (
+              <>
+                <span>
+                  {equippedTitle === title.id
+                    ? "✅ Equipped"
+                    : "✅ Unlocked"}
+                </span>
+
+                {selectedTitle?.id === title.id && (
+                  <button
+                    className="equip-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      handleTitleEquip(
+                        title.id
+                      );
+                    }}
+                  >
+                    {equippedTitle === title.id
+                      ? "Equipped"
+                      : "Equip"}
+                  </button>
+                )}
+              </>
+            ) : (
+              <span>
+                🔒 Locked
+              </span>
+            )}
+
+          </div>
+        </div>
+
+
+      );
+    })}
+
+ </div>
+
+<div className="font-section">
+
+  <h3>Title Font</h3>
+
+  <div className="font-grid">
+
+    {TITLE_FONTS.map(font => (
+
+      <button
+        key={font.id}
+        className={`font-btn ${
+          titleFont === font.id
+            ? "active"
+            : ""
+        }`}
+        onClick={() =>
+          handleFontChange(font.id)
+        }
+      >
+        <>
+  <div>{font.name}</div>
+
+  <div
+    className={`font-preview font-${font.id}`}
+  >
+    {selectedTitle?.title ||
+   "The Champion"}
+  </div>
+</>
+      </button>
+
+    ))}
+
+  </div>
+
+</div>
+
+</>
+
+)}
 
         </div>
       </div>

@@ -9,6 +9,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ProfileFavouritesTab from './components/ProfileFavouritesTab';
 import { useSearchParams } from "react-router-dom";
 import { ACHIEVEMENTS } from "./achievement";
+import {FRAMES} from "./frames";
+import {TITLES} from "./titles";
 
 function ProfilePage({ user, targetUser })
 {
@@ -31,6 +33,9 @@ function ProfilePage({ user, targetUser })
     const [equippedAchievements, setEquippedAchievements] = useState([]);
     const canViewAchievements = isOwner || friendStatus === "friend";
     const canViewFavourites = isOwner;
+    const [equippedFrame, setEquippedFrame] = useState(null);
+    const [equippedTitle, setEquippedTitle] = useState(null);
+    const [titleFont, setTitleFont] = useState("default");
 
     useEffect(() => {
         async function loadProfileData() {
@@ -58,6 +63,9 @@ function ProfilePage({ user, targetUser })
                     const fallbackPic = isOwner ? user?.photoURL : "";
                     setProfilePic(data.photoURL || user.photoURL || "");
                     setEquippedAchievements( data.equippedAchievement || []);
+                    setEquippedFrame( data.equippedFrame || null );
+                    setEquippedTitle( data.equippedTitle || null );
+                    setTitleFont( data.titleFont || "default");
                 } else
                 { 
                     console.log("no doc exists")
@@ -358,16 +366,34 @@ function ProfilePage({ user, targetUser })
         return <div className="profile-container dark">Loading...</div>;
     }
 
+    const activeFrame = FRAMES.find( frame => frame.id === equippedFrame ); // Get the full frame data for the equipped frame ID
+    const equippedTitleData = TITLES.find( title => title.id === equippedTitle );
+
     return (
         <div className={`profile-container quiz-carousel dark ${theme}`}>
             <div className="profile-header-container">
                 <div className="profile-header">
-                    <div className="avatar">
-                        {profilePic
-                            ? <img src={profilePic} alt="Profile" />
-                            : ( <span>{username.charAt(0) || "G"}</span>
-                        )}
-                    </div>
+                    <div className="avatar-wrapper">
+
+  {activeFrame && (
+    <img
+      src={activeFrame.image}
+      alt=""
+      className="profile-frame"
+    />
+  )}
+
+  <div className="avatar">
+    {profilePic
+      ? <img src={profilePic} alt="Profile" />
+      : (
+        <span>
+          {username.charAt(0) || "G"}
+        </span>
+      )}
+  </div>
+
+</div>
 
                     {isEditing && isOwner && (
                         <div className="avatar-edit">
@@ -378,15 +404,27 @@ function ProfilePage({ user, targetUser })
 
                 <div>
                     {isEditing ? (
-                        <input
-                            className="profile-input"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Enter Username"
-                        />
-                    ) : (
-                        <h1 className="username-display">{username || "Set a Username"}</h1>
-                    )}
+    <input
+        className="profile-input"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Enter Username"
+    />
+) : (
+    <>
+      <h1 className="username-display">
+        {username || "Set a Username"}
+      </h1>
+
+      {equippedTitleData && (
+        <div
+          className={`profile-title font-${titleFont}`}
+        >
+          {equippedTitleData.title}
+        </div>
+      )}
+    </>
+)}
                 </div>
             </div>
 
@@ -534,11 +572,11 @@ function ProfilePage({ user, targetUser })
 
   <div className="achievements-section">
 
-    <h3>
-      Equipped Achievements
-    </h3>
+    <h3 className="equipped-heading">
+  Equipped Achievements
+</h3>
 
-    <div className="achievement-badges">
+    <div className="equipped-grid">
 
       {equippedAchievements.length > 0 ? (
         equippedAchievements.map(id => {

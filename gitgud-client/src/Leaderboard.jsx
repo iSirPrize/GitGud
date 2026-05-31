@@ -3,6 +3,7 @@ import { collection, getDocs } from "firebase/firestore"
 import { db } from "./firebase"
 import { useTheme } from "./context/ThemeContext"
 import { getLevelProgress } from "./usePoints"
+import { TITLES } from "./titles";
 
 export default function Leaderboard({ currentUid }) {
   const [entries, setEntries] = useState([])
@@ -50,6 +51,7 @@ export default function Leaderboard({ currentUid }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {entries.map(e => {
             const name = e.username || e.displayName || "Anonymous"
+            const titleData = TITLES.find( t => t.id === e.equippedTitle );
             const isMe = e.uid === currentUid
             const xp   = e.xp ?? e.points ?? 0
             const { level, pct, xpToNext, isMax } = getLevelProgress(xp)
@@ -72,13 +74,76 @@ export default function Leaderboard({ currentUid }) {
                     </div>
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-                    <span style={{ color: textPri, fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
-                    {isMe && <span style={{ background: accent, color: avatarColor, fontSize: 10, fontWeight: 800, padding: "1px 7px", borderRadius: 99, flexShrink: 0 }}>you</span>}
-                  </div>
-                  <div style={{ height: 4, background: barBg, borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: barFill, borderRadius: 99 }} />
-                  </div>
+                  <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 5,
+    flexWrap: "wrap"
+  }}
+>
+  <span
+    style={{
+      color: textPri,
+      fontSize: 14,
+      fontWeight: 600,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }}
+  >
+    {name}
+  </span>
+
+  {titleData && (
+    <span
+      className={`font-${e.titleFont || "default"}`}
+      style={{
+        color: accent,
+        fontSize: 14,
+        fontWeight: 700,
+        flexShrink: 0
+      }}
+    >
+      • {titleData.title}
+    </span>
+  )}
+
+  {isMe && (
+    <span
+      style={{
+        background: accent,
+        color: avatarColor,
+        fontSize: 10,
+        fontWeight: 800,
+        padding: "1px 7px",
+        borderRadius: 99,
+        flexShrink: 0
+      }}
+    >
+      you
+    </span>
+  )}
+</div>
+
+<div
+  style={{
+    height: 4,
+    background: barBg,
+    borderRadius: 99,
+    overflow: "hidden"
+  }}
+>
+  <div
+    style={{
+      width: `${pct}%`,
+      height: "100%",
+      background: barFill,
+      borderRadius: 99
+    }}
+  />
+</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
                   <span style={{ color: accent, fontSize: 12, fontWeight: 700 }}>Lvl {level}</span>

@@ -2,10 +2,10 @@
 {
     min-height: 100vh;
     width: 100%;
-    max-width: 1400px;
+    max-width: 1200px;
 
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 20px 20px;
 
     color: var(--qc-text);
 }
@@ -71,6 +71,79 @@
 .rewards-header p
 {
     color: var(--qc-subtext);
+}
+
+.equipped-display-grid
+{
+    display: flex;
+
+    justify-content: center;
+
+    gap: 24px;
+
+    flex-wrap: wrap;
+}
+
+.equipped-display-slot
+{
+    width: 140px;
+    height: 140px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 5rem;
+
+    border-radius: 20px;
+
+    background: var(--qc-surface);
+
+    border: 2px solid var(--qc-frame);
+
+    box-shadow: 0 0 10px var(--qc-frame-glow);
+
+    transition: all 0.2s ease;
+}
+
+.equipped-display-slot:hover
+{
+    transform: translateY(-3px);
+}
+
+.equipped-display
+{
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto 25px auto;
+
+    padding: 20px;
+
+    border-radius: 16px;
+
+    border: 2px solid var(--qc-frame);
+
+    background: var(--qc-input-bg);
+
+    box-shadow: 0 0 12px var(--qc-frame-glow);
+}
+
+.equipped-heading
+{
+    text-align: center;
+
+    margin-bottom: 20px;
+}
+
+
+.equipped-heading
+{
+    text-align: center;
+    width: 100%;
+    margin-bottom: 15px;
 }
 
 .achievement-grid
@@ -265,6 +338,14 @@
     color: var(--qc-text);
 }
 
+.frame-preview
+{
+    width: 70px;
+    height: 70px;
+
+    object-fit: contain;
+}
+
 .equip-btn
 {
     margin-top: 0;
@@ -285,4 +366,101 @@
 .equip-btn:hover
 {
     opacity: 0.9;
+}
+
+/* =========================
+   TITLE FONT PREVIEWS
+========================= */
+
+.font-section
+{
+    margin-top: 35px;
+
+    padding-top: 25px;
+
+    border-top: 1px solid var(--qc-input-border);
+
+    text-align: center;
+}
+
+.font-section h3
+{
+    margin-bottom: 20px;
+}
+
+.font-grid
+{
+    display: flex;
+    flex-wrap: wrap;
+
+    justify-content: center;
+
+    gap: 16px;
+}
+
+.font-btn
+{
+    min-width: 180px;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    border: 2px solid var(--qc-frame);
+
+    background: transparent;
+
+    color: var(--qc-text);
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.font-btn:hover
+{
+    transform: translateY(-2px);
+}
+
+.font-btn.active
+{
+    background: var(--qc-frame);
+
+    color: white;
+
+    box-shadow:
+        0 0 12px var(--qc-frame-glow);
+}
+
+.font-preview
+{
+    margin-top: 8px;
+
+    font-size: 1rem;
+}
+
+/* Actual fonts */
+
+.font-default
+{
+    font-family: Arial, sans-serif;
+}
+
+.font-pixel
+{
+    font-family: "Press Start 2P", cursive;
+
+    font-size: 0.7rem;
+}
+
+.font-script
+{
+    font-family: "Dancing Script", cursive;
+
+    font-size: 1.3rem;
+}
+
+.font-arcane
+{
+    font-family: "Cinzel", serif;
 }
