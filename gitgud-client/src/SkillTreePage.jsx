@@ -2,7 +2,7 @@
 // Drop this file into: gitgud-client/src/SkillTreePage.jsx
 // Changes: hover tooltips on nodes, reset skill tree feature
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTheme } from './context/ThemeContext';
 import { useSkillTree } from './skilltree/useSkillTree';
 import { SKILL_NODES, SKILL_MAP, skillPointsForLevel } from './skilltree/skillTreeData';
@@ -61,25 +61,20 @@ function Connector({ fromPos, toPos, active }) {
   );
 }
 
-// ── Node with inline hover tooltip ───────────────────────────────────────────
-function SkillNode({ node, pos, isUnlocked, isAvailable, isPending, onClick }) {
-  const [hovered, setHovered] = useState(false);
-
+// ── Node — reports hover position via callback so tooltip renders above SVG ──
+function SkillNode({ node, pos, isUnlocked, isAvailable, isPending, onClick, onHover }) {
   let stateClass = 'st-node';
   if (isUnlocked)       stateClass += ' unlocked';
   else if (isAvailable) stateClass += ' available';
   else                  stateClass += ' locked';
   if (isPending)        stateClass += ' pending';
 
-  // Tooltip position — flip sides for edge nodes
-  const tooltipX = pos.x > 700 ? -160 : NODE_W + 8;
-
   return (
     <g
       transform={`translate(${pos.x}, ${pos.y})`}
       onClick={() => isAvailable && !isUnlocked && onClick(node.id)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={e => onHover(node, e.currentTarget)}
+      onMouseLeave={() => onHover(null, null)}
       style={{ cursor: isAvailable && !isUnlocked ? 'pointer' : 'default' }}
       className={stateClass}
       role="button"
@@ -92,21 +87,52 @@ function SkillNode({ node, pos, isUnlocked, isAvailable, isPending, onClick }) {
       <text x={NODE_W / 2} y={56} textAnchor="middle" className="st-node-label">{node.label}</text>
       {!isUnlocked && !isAvailable && <text x={NODE_W - 12} y={16} className="st-lock">🔒</text>}
       {isUnlocked && <text x={NODE_W - 12} y={16} className="st-check">✓</text>}
-
-      {/* Hover tooltip — rendered inside SVG as foreignObject */}
-      {hovered && (
-        <foreignObject x={tooltipX} y={-10} width={160} height={130} style={{ overflow: 'visible', pointerEvents: 'none' }}>
-          <div className="st-node-tooltip">
-            <strong className="st-nt-title">{node.label}</strong>
-            <span className={`st-nt-badge ${node.type}`}>{node.type}</span>
-            <p className="st-nt-desc">{node.description}</p>
-            <span className="st-nt-status">
-              {isUnlocked ? '✓ Unlocked' : isAvailable ? '⬆ Click to unlock' : '🔒 Locked'}
-            </span>
-          </div>
-        </foreignObject>
-      )}
     </g>
+  );
+}
+
+// ── Hover tooltip rendered as HTML above everything ───────────────────────────
+function HoverTooltip({ node, anchorEl, isUnlocked, isAvailable, canvasWrapRef }) {
+  if (!node || !anchorEl || !canvasWrapRef.current) return null;
+
+  const wrapRect   = canvasWrapRef.current.getBoundingClientRect();
+  const nodeRect   = anchorEl.getBoundingClientRect();
+
+  // Position relative to the canvas wrapper
+  const nodeLeft   = nodeRect.left - wrapRect.left;
+  const nodeTop    = nodeRect.top  - wrapRect.top;
+  const nodeCenterX = nodeLeft + nodeRect.width / 2;
+
+  const TOOLTIP_W = 180;
+  const TOOLTIP_H = 140;
+
+  // Prefer right; flip left if it would overflow the wrapper
+  let left = nodeCenterX + nodeRect.width / 2 + 8;
+  if (left + TOOLTIP_W > wrapRect.width) {
+    left = nodeCenterX - nodeRect.width / 2 - TOOLTIP_W - 8;
+  }
+  const top = nodeTop - 10;
+
+  return (
+    <div
+      className="st-node-tooltip"
+      style={{
+        position: 'absolute',
+        left,
+        top,
+        width: TOOLTIP_W,
+        minHeight: TOOLTIP_H,
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}
+    >
+      <strong className="st-nt-title">{node.label}</strong>
+      <span className={`st-nt-badge ${node.type}`}>{node.type}</span>
+      <p className="st-nt-desc">{node.description}</p>
+      <span className="st-nt-status">
+        {isUnlocked ? '✓ Unlocked' : isAvailable ? '⬆ Click to unlock' : '🔒 Locked'}
+      </span>
+    </div>
   );
 }
 
@@ -184,6 +210,11 @@ export default function SkillTreePage({ user }) {
   const [showReset,      setShowReset]       = useState(false);
   const [resetLoading,   setResetLoading]    = useState(false);
   const [toast,          setToast]           = useState(null);
+
+  // Hover tooltip state
+  const [hoveredNode,    setHoveredNode]     = useState(null);
+  const [hoveredAnchor,  setHoveredAnchor]   = useState(null);
+  const canvasWrapRef = useRef(null);
 
   useEffect(() => { dismissLevelUp(); }, [dismissLevelUp]);
 
@@ -292,8 +323,9 @@ export default function SkillTreePage({ user }) {
         </div>
       )}
 
-      {/* SVG Tree */}
-      <div className="st-canvas-wrap">
+      {/* SVG Tree — wrapper is position:relative so the HTML tooltip can be
+          absolutely positioned inside it and always sit above the SVG. */}
+      <div className="st-canvas-wrap" ref={canvasWrapRef} style={{ position: 'relative' }}>
         <svg viewBox={`0 0 ${canvasW} ${canvasH}`} className="st-canvas" aria-label="Skill tree diagram">
           {/* Connectors */}
           {SKILL_NODES.map(node =>
@@ -317,9 +349,19 @@ export default function SkillTreePage({ user }) {
               isAvailable={isAvailable(node.id)}
               isPending={pendingLevelUp && isAvailable(node.id)}
               onClick={setSelectedNode}
+              onHover={(n, el) => { setHoveredNode(n); setHoveredAnchor(el); }}
             />
           ))}
         </svg>
+
+        {/* Hover tooltip lives outside the SVG so it's never clipped by node stacking order */}
+        <HoverTooltip
+          node={hoveredNode}
+          anchorEl={hoveredAnchor}
+          isUnlocked={hoveredNode ? isUnlocked(hoveredNode.id) : false}
+          isAvailable={hoveredNode ? isAvailable(hoveredNode.id) : false}
+          canvasWrapRef={canvasWrapRef}
+        />
       </div>
 
       {/* Legend */}
