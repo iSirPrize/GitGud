@@ -208,7 +208,7 @@ function InstructionsModal({ onClose, isDark }) {
 }
 
 // ─── Video Player with IFrame API ─────────────────────────────────────────────
-function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted, scenarioId }) {
+function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted, scenarioId, hidden }) {
   const containerRef = useRef(null);
   const playerRef    = useRef(null);
   const pollRef      = useRef(null);
@@ -295,7 +295,16 @@ function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted
 
   return (
     <div className="video-wrapper">
-      <div ref={containerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+      <div
+        ref={containerRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          visibility: hidden ? "hidden" : "visible",
+        }}
+      />
     </div>
   );
 }
@@ -666,13 +675,7 @@ export default function QuizCarousel({ user }) {
   return (
     <div className={`quiz-carousel ${isDark ? "dark" : "light"}`}>
 
-      {/* ── Instructions Modal ────────────────────────────────────────────────── */}
-      {showInstructions && (
-        <InstructionsModal
-          onClose={() => setShowInstructions(false)}
-          isDark={isDark}
-        />
-      )}
+
 
       {/* ── Instructions trigger button + Skill Perks Dropdown ──────────────── */}
       {/* SECTION 6: SkillPerksDropdown + perk action buttons */}
@@ -766,18 +769,24 @@ export default function QuizCarousel({ user }) {
           </button>
 
           <div className="video-frame">
-            <div className="video-label">
-              <span className="scenario-counter">{current + 1} / {total}</span>
-              {!isVideoPaused && !isSubmitted && (
-                <span className="video-hint">▶ Play the clip — it will pause at the key moment</span>
-              )}
-              {isVideoPaused && !isSubmitted && (
-                <span className="video-hint paused">⏸ Paused — pick your answer below</span>
-              )}
-              {isSubmitted && (
-                <span className="video-hint resumed">▶ Resuming to show the outcome…</span>
-              )}
-            </div>
+  {showInstructions && (
+    <InstructionsModal
+      onClose={() => setShowInstructions(false)}
+      isDark={isDark}
+    />
+  )}
+  <div className="video-label">
+    <span className="scenario-counter">{current + 1} / {total}</span>
+    {!isVideoPaused && !isSubmitted && (
+      <span className="video-hint">▶ Play the clip — it will pause at the key moment</span>
+    )}
+    {isVideoPaused && !isSubmitted && (
+      <span className="video-hint paused">⏸ Paused — pick your answer below</span>
+    )}
+    {isSubmitted && (
+      <span className="video-hint resumed">▶ Resuming to show the outcome…</span>
+    )}
+  </div>
 
             <YoutubePlayer
               key={`${scenario.id}-${current}`}
@@ -787,6 +796,7 @@ export default function QuizCarousel({ user }) {
               onVideoEnded={handleVideoEnded}
               isSubmitted={isSubmitted}
               scenarioId={scenario.id}
+              hidden={showInstructions}
             />
           </div>
 
