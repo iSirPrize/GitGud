@@ -127,7 +127,7 @@
   width: 100%; overflow-x: auto; background: var(--st-surface);
   border: 1px solid var(--st-border); border-radius: 16px; padding: 16px; margin-bottom: 20px;
 }
-.st-canvas { display: block; width: 100%; max-width: 1900px; margin: 0 auto; }
+.st-canvas { display: block; width: 100%; max-width: 1900px; margin: 0 auto; height: auto;min-height: 900px;}
 
 /* ── Node states ──────────────────────────────────────────────────────────── */
 .st-node .st-node-rect {
@@ -144,11 +144,11 @@
   0%, 100% { filter: drop-shadow(0 0 6px var(--st-node-stroke-avail)); }
   50%       { filter: drop-shadow(0 0 16px var(--st-node-stroke-avail)); }
 }
-.st-node-type  { font-size: 9px;  fill: var(--st-subtext); font-family: inherit; }
-.st-node-icon  { font-size: 16px; fill: var(--st-text);    font-family: inherit; }
-.st-node-label { font-size: 11px; font-weight: 700; fill: var(--st-text); font-family: inherit; }
-.st-lock       { font-size: 11px; fill: var(--st-subtext); font-family: inherit; }
-.st-check      { font-size: 11px; fill: var(--st-accent);  font-family: inherit; }
+.st-node-type  { font-size: 11px;  fill: var(--st-subtext); font-family: inherit; }
+.st-node-icon  { font-size: 22px; fill: var(--st-text);    font-family: inherit; }
+.st-node-label { font-size: 14px; font-weight: 700; fill: var(--st-text); font-family: inherit; }
+.st-lock       { font-size: 14px; fill: var(--st-subtext); font-family: inherit; }
+.st-check      { font-size: 14px; fill: var(--st-accent);  font-family: inherit; }
 .st-connector  { transition: stroke 0.3s; }
 
 /* ── Node hover tooltip (SVG foreignObject) ──────────────────────────────── */

@@ -12,8 +12,8 @@ import { db } from './firebase';
 import './SkillTreePage.css';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
-const NODE_W = 140;
-const NODE_H = 70;
+const NODE_W = 180;
+const NODE_H = 90;
 const H_GAP  = 60;
 const V_GAP  = 110;
 
@@ -22,6 +22,7 @@ function computeLayout(nodes) {
   nodes.forEach(n => { if (!byLevel[n.level]) byLevel[n.level] = []; byLevel[n.level].push(n); });
   const positions = {};
   const CANVAS_W = 1900;
+  const CANVAS_H = 1200;
 
   const l0 = byLevel[0] ?? [];
   l0.forEach(n => { positions[n.id] = { x: CANVAS_W / 2 - NODE_W / 2, y: 20 }; });
