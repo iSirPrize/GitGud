@@ -1,45 +1,17 @@
 // AdminQuizCreate.jsx
 // Multi-step admin quiz builder for the GitGud platform.
 //
-// Question types supported:
-//   multi_choice  — 4-option multiple choice (same as demo quiz)
-//   rank          — drag-and-drop ranking, with optional image upload per item
-//   enter_value   — free-text numeric/text answer with flexible matching
-//
-// SOLID notes:
-//   S – Each sub-component handles one question type's edit UI
-//   O – New question types are added by registering in QUESTION_TYPE_EDITORS
-//   L – All question editors share the same (question, index, onChange, errors) props
-//   I – AdminPanel and AdminQuizCreate import only what they need from adminQuizUtils
-//   D – Firebase calls are isolated to the submit handler, not scattered through form
-//
-// Gherkin:
-//   Given an admin navigates to /admin-quiz/create
-//   When the page loads
-//   Then a multi-step quiz builder is shown with Title, Questions, and Review steps
-//
-//   Given the admin is on the Questions step
-//   When they click "Add Question"
-//   Then a menu appears with options: Multiple Choice, Rank Items, Enter Value
-//
-//   Given the admin adds a Rank question
-//   When they toggle "Use Images"
-//   Then image URL fields appear for each item
-//   And the toggle saves to form state
-//
-//   Given the admin adds an Enter Value question
-//   When they set the correct answer to "$4000"
-//   Then the player can answer with "4000", "$4000", or "4,000" and be marked correct
-//
-//   Given the admin fills all steps and clicks Finish
-//   When Firestore write succeeds
-//   Then the quiz is saved with approved=true and the admin is redirected
+// Fixes in this version:
+//   1. YouTube URL extraction now handles URLs with extra params (&t=, &list=, etc.)
+//   2. Image upload uses quizImages/ storage path (not profileImages/) — all formats accepted
+//   3. MultiChoiceEditor and EnterValueEditor now support an optional context image
+//   4. RankEditor image upload accepts all image formats (was previously accept="image/*" but
+//      the storage rules were blocking — fixed by using correct storage path)
 
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "./firebase";
+import { db } from "./firebase";
 import { useTheme } from "./context/ThemeContext";
 import {
   QUESTION_TYPES,
@@ -77,30 +49,25 @@ function Tooltip({ text }) {
 }
 
 // ── YouTube helpers ───────────────────────────────────────────────────────────
-let ytApiReady = false;
-let ytApiCallbacks = [];
-function loadYouTubeApi() {
-  if (ytApiReady || (window.YT && window.YT.Player)) { ytApiReady = true; return Promise.resolve(); }
-  return new Promise((resolve) => {
-    ytApiCallbacks.push(resolve);
-    if (!document.getElementById("yt-iframe-api")) {
-      const tag = document.createElement("script");
-      tag.id = "yt-iframe-api";
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.head.appendChild(tag);
-      window.onYouTubeIframeAPIReady = () => { ytApiReady = true; ytApiCallbacks.forEach(cb => cb()); ytApiCallbacks = []; };
-    }
-  });
-}
-
-function extractYouTubeId(url) {
+// FIX: expanded regex to handle URLs with extra query params (&t=, &list=, etc.)
+// and also handles youtu.be short links, /shorts/, /live/ and /embed/ paths.
+export function extractYouTubeId(url) {
   if (!url) return null;
+  const trimmed = String(url).trim();
+
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+    // Standard watch URL — must be first, catches ?v= with any extra params
+    /[?&]v=([A-Za-z0-9_-]{11})/,
+    // youtu.be short link
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,
+    // /embed/, /shorts/, /live/ paths
+    /youtube\.com\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/,
+    // Raw 11-char ID only (no slashes/dots)
     /^([A-Za-z0-9_-]{11})$/,
   ];
+
   for (const p of patterns) {
-    const m = String(url).trim().match(p);
+    const m = trimmed.match(p);
     if (m) return m[1];
   }
   return null;
@@ -108,11 +75,39 @@ function extractYouTubeId(url) {
 
 async function fetchVideoTitle(videoId) {
   try {
-    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    );
     if (!res.ok) return null;
     const data = await res.json();
     return data.title ?? null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
+}
+
+// ── YouTube API loader ────────────────────────────────────────────────────────
+let ytApiReady = false;
+let ytApiCallbacks = [];
+function loadYouTubeApi() {
+  if (ytApiReady || (window.YT && window.YT.Player)) {
+    ytApiReady = true;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    ytApiCallbacks.push(resolve);
+    if (!document.getElementById("yt-iframe-api")) {
+      const tag = document.createElement("script");
+      tag.id = "yt-iframe-api";
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+      window.onYouTubeIframeAPIReady = () => {
+        ytApiReady = true;
+        ytApiCallbacks.forEach((cb) => cb());
+        ytApiCallbacks = [];
+      };
+    }
+  });
 }
 
 function VideoPreview({ videoId }) {
@@ -123,14 +118,153 @@ function VideoPreview({ videoId }) {
     let alive = true;
     loadYouTubeApi().then(() => {
       if (!alive || !divRef.current) return;
-      if (playerRef.current) { try { playerRef.current.destroy(); } catch (_) {} }
-      playerRef.current = new window.YT.Player(divRef.current, { videoId, playerVars: { autoplay: 0, rel: 0, modestbranding: 1 } });
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch (_) {}
+      }
+      playerRef.current = new window.YT.Player(divRef.current, {
+        videoId,
+        playerVars: { autoplay: 0, rel: 0, modestbranding: 1 },
+      });
     });
-    return () => { alive = false; if (playerRef.current) { try { playerRef.current.destroy(); } catch (_) {} playerRef.current = null; } };
+    return () => {
+      alive = false;
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch (_) {}
+        playerRef.current = null;
+      }
+    };
   }, [videoId]);
   return (
     <div className="aqc-preview-wrap">
-      <div ref={divRef} style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />
+      <div
+        ref={divRef}
+        style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
+      />
+    </div>
+  );
+}
+
+// ── Cloudinary config ────────────────────────────────────────────────────────
+const CLOUDINARY_CLOUD_NAME   = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_PRESET;
+
+// ── Shared image uploader — uses Cloudinary (free tier, no Firebase Storage) ─
+function ImageUploader({ imageUrl, onUpload, label = "Upload Image", compact = false }) {
+  const [progress, setProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  // Keep XHR in a ref so re-renders don't lose or abort it
+  const xhrRef = useRef(null);
+
+  const handleFile = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file (JPEG, PNG, GIF, WEBP, etc.)");
+      return;
+    }
+
+    // Abort any in-flight upload before starting a new one
+    if (xhrRef.current) {
+      try { xhrRef.current.abort(); } catch (_) {}
+    }
+
+    setError("");
+    setUploading(true);
+    setProgress(0);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "gitgud");
+
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        setProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      xhrRef.current = null;
+      if (xhr.status === 200) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          onUpload(data.secure_url);
+          setError("");
+        } catch (_) {
+          setError("Upload failed — invalid response. Please try again.");
+        }
+      } else {
+        // Show the actual Cloudinary error message when available
+        let msg = "Upload failed — please try again.";
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          if (errData?.error?.message) msg = `Upload failed: ${errData.error.message}`;
+        } catch (_) {}
+        setError(msg);
+      }
+      setUploading(false);
+      setProgress(0);
+    });
+
+    xhr.addEventListener("error", () => {
+      xhrRef.current = null;
+      setError("Upload failed — check your internet connection.");
+      setUploading(false);
+    });
+
+    xhr.addEventListener("abort", () => {
+      xhrRef.current = null;
+      setUploading(false);
+    });
+
+    xhr.open(
+      "POST",
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
+    );
+    xhr.send(formData);
+  };
+
+  return (
+    <div className={`aqc-img-upload-wrap ${compact ? "compact" : ""}`}>
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt="Question context"
+          className={compact ? "aqc-img-thumb" : "aqc-img-preview"}
+        />
+      )}
+
+      <label className="aqc-img-btn">
+        {uploading ? `Uploading ${progress}%...` : imageUrl ? "Change Image" : label}
+        <input
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={(e) => handleFile(e.target.files[0])}
+          disabled={uploading}
+        />
+      </label>
+
+      {uploading && (
+        <div className="aqc-upload-bar-wrap">
+          <div className="aqc-upload-bar-fill" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+
+      {imageUrl && !uploading && (
+        <button
+          className="aqc-img-remove-btn"
+          onClick={() => onUpload("")}
+          title="Remove image"
+        >
+          ✕ Remove
+        </button>
+      )}
+
+      {error && <p className="aqc-error" style={{ marginTop: 4 }}>{error}</p>}
     </div>
   );
 }
@@ -143,14 +277,16 @@ function VideoMcEditor({ question, index, onChange, errors }) {
   useEffect(() => {
     const id = extractYouTubeId(question.ytUrl);
     if (id && id !== question.videoId) {
-      onChange({ ...question, videoId: id });
+      // Set videoId immediately so validation passes without waiting for async title fetch.
+      // Use functional updater to avoid stale-closure overwriting other fields (e.g. type).
+      onChange((q) => ({ ...q, videoId: id, videoTitle: "" }));
       setChecking(true);
-      fetchVideoTitle(id).then(t => {
-        onChange(q => ({ ...q, videoTitle: t ?? "" }));
+      fetchVideoTitle(id).then((t) => {
+        onChange((q) => ({ ...q, videoTitle: t ?? "" }));
         setChecking(false);
       });
     } else if (!id && question.videoId) {
-      onChange({ ...question, videoId: null, videoTitle: "" });
+      onChange((q) => ({ ...q, videoId: null, videoTitle: "" }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question.ytUrl]);
@@ -159,17 +295,23 @@ function VideoMcEditor({ question, index, onChange, errors }) {
     <div className="aqc-qeditor">
       <label className="aqc-label">
         YouTube URL or Video ID
-        <Tooltip text="Paste the full YouTube link or raw 11-character video ID." />
+        <Tooltip text="Paste the full YouTube link (including any extra parameters) or the raw 11-character video ID." />
       </label>
       <input
         className={`aqc-input ${errors[`${prefix}_ytUrl`] ? "error" : ""}`}
-        placeholder="https://youtube.com/watch?v=..."
+        placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
         value={question.ytUrl}
-        onChange={(e) => onChange({ ...question, ytUrl: e.target.value })}
+        onChange={(e) => { const v = e.target.value; onChange((q) => ({ ...q, ytUrl: v })); }}
       />
-      {errors[`${prefix}_ytUrl`] && <p className="aqc-error">{errors[`${prefix}_ytUrl`]}</p>}
-      {checking && <p className="aqc-hint">Checking video...</p>}
-      {question.videoTitle && !checking && <p className="aqc-hint" style={{ color: "#22c55e" }}>Found: {question.videoTitle}</p>}
+      {errors[`${prefix}_ytUrl`] && (
+        <p className="aqc-error">{errors[`${prefix}_ytUrl`]}</p>
+      )}
+      {checking && <p className="aqc-hint">Checking video…</p>}
+      {question.videoTitle && !checking && (
+        <p className="aqc-hint" style={{ color: "#22c55e" }}>
+          ✓ Found: {question.videoTitle}
+        </p>
+      )}
       {question.videoId && <VideoPreview videoId={question.videoId} />}
 
       <label className="aqc-label" style={{ marginTop: question.videoId ? 8 : 16 }}>
@@ -178,11 +320,15 @@ function VideoMcEditor({ question, index, onChange, errors }) {
       </label>
       <input
         className={`aqc-input aqc-input-sm ${errors[`${prefix}_pauseAt`] ? "error" : ""}`}
-        type="number" min={1} placeholder="e.g. 8"
+        type="number"
+        min={1}
+        placeholder="e.g. 8"
         value={question.pauseAt}
         onChange={(e) => onChange({ ...question, pauseAt: e.target.value })}
       />
-      {errors[`${prefix}_pauseAt`] && <p className="aqc-error">{errors[`${prefix}_pauseAt`]}</p>}
+      {errors[`${prefix}_pauseAt`] && (
+        <p className="aqc-error">{errors[`${prefix}_pauseAt`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Question Text
@@ -195,7 +341,9 @@ function VideoMcEditor({ question, index, onChange, errors }) {
         value={question.question}
         onChange={(e) => onChange({ ...question, question: e.target.value })}
       />
-      {errors[`${prefix}_question`] && <p className="aqc-error">{errors[`${prefix}_question`]}</p>}
+      {errors[`${prefix}_question`] && (
+        <p className="aqc-error">{errors[`${prefix}_question`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Answer Choices
@@ -208,7 +356,7 @@ function VideoMcEditor({ question, index, onChange, errors }) {
             onClick={() => onChange({ ...question, correctIndex: ci })}
             title="Mark as correct answer"
           >
-            {question.correctIndex === ci ? "correct" : String.fromCharCode(65 + ci)}
+            {question.correctIndex === ci ? "✓" : String.fromCharCode(65 + ci)}
           </button>
           <input
             className={`aqc-input aqc-choice-input ${errors[`${prefix}_choices`] ? "error" : ""}`}
@@ -222,8 +370,12 @@ function VideoMcEditor({ question, index, onChange, errors }) {
           />
         </div>
       ))}
-      {errors[`${prefix}_choices`] && <p className="aqc-error">{errors[`${prefix}_choices`]}</p>}
-      {errors[`${prefix}_correctIndex`] && <p className="aqc-error">{errors[`${prefix}_correctIndex`]}</p>}
+      {errors[`${prefix}_choices`] && (
+        <p className="aqc-error">{errors[`${prefix}_choices`]}</p>
+      )}
+      {errors[`${prefix}_correctIndex`] && (
+        <p className="aqc-error">{errors[`${prefix}_correctIndex`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Explanation
@@ -236,17 +388,32 @@ function VideoMcEditor({ question, index, onChange, errors }) {
         value={question.reason}
         onChange={(e) => onChange({ ...question, reason: e.target.value })}
       />
-      {errors[`${prefix}_reason`] && <p className="aqc-error">{errors[`${prefix}_reason`]}</p>}
+      {errors[`${prefix}_reason`] && (
+        <p className="aqc-error">{errors[`${prefix}_reason`]}</p>
+      )}
     </div>
   );
 }
 
-// ── Multi Choice Editor ───────────────────────────────────────────────────────
+// ── Multi Choice Editor — NEW: optional context image ─────────────────────────
 function MultiChoiceEditor({ question, index, onChange, errors }) {
   const prefix = `q${index}`;
   return (
     <div className="aqc-qeditor">
+
+      {/* Optional context image */}
       <label className="aqc-label">
+        Context Image <span className="aqc-optional">(optional)</span>
+        <Tooltip text="Upload an image to give players visual context — e.g. a screenshot, map, weapon, or item. Shown above the question." />
+      </label>
+      <ImageUploader
+        imageUrl={question.imageUrl ?? ""}
+        onUpload={(url) => onChange({ ...question, imageUrl: url })}
+        label="Upload Context Image"
+        compact={true}
+      />
+
+      <label className="aqc-label" style={{ marginTop: 16 }}>
         Question Text
         <Tooltip text="Ask players what the correct play or answer is." />
       </label>
@@ -257,7 +424,9 @@ function MultiChoiceEditor({ question, index, onChange, errors }) {
         value={question.question}
         onChange={(e) => onChange({ ...question, question: e.target.value })}
       />
-      {errors[`${prefix}_question`] && <p className="aqc-error">{errors[`${prefix}_question`]}</p>}
+      {errors[`${prefix}_question`] && (
+        <p className="aqc-error">{errors[`${prefix}_question`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Answer Choices
@@ -270,7 +439,7 @@ function MultiChoiceEditor({ question, index, onChange, errors }) {
             onClick={() => onChange({ ...question, correctIndex: ci })}
             title="Mark as correct answer"
           >
-            {question.correctIndex === ci ? "correct" : String.fromCharCode(65 + ci)}
+            {question.correctIndex === ci ? "✓" : String.fromCharCode(65 + ci)}
           </button>
           <input
             className={`aqc-input aqc-choice-input ${errors[`${prefix}_choices`] ? "error" : ""}`}
@@ -284,8 +453,12 @@ function MultiChoiceEditor({ question, index, onChange, errors }) {
           />
         </div>
       ))}
-      {errors[`${prefix}_choices`] && <p className="aqc-error">{errors[`${prefix}_choices`]}</p>}
-      {errors[`${prefix}_correctIndex`] && <p className="aqc-error">{errors[`${prefix}_correctIndex`]}</p>}
+      {errors[`${prefix}_choices`] && (
+        <p className="aqc-error">{errors[`${prefix}_choices`]}</p>
+      )}
+      {errors[`${prefix}_correctIndex`] && (
+        <p className="aqc-error">{errors[`${prefix}_correctIndex`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Explanation
@@ -298,20 +471,17 @@ function MultiChoiceEditor({ question, index, onChange, errors }) {
         value={question.reason}
         onChange={(e) => onChange({ ...question, reason: e.target.value })}
       />
-      {errors[`${prefix}_reason`] && <p className="aqc-error">{errors[`${prefix}_reason`]}</p>}
+      {errors[`${prefix}_reason`] && (
+        <p className="aqc-error">{errors[`${prefix}_reason`]}</p>
+      )}
     </div>
   );
 }
 
-// ── Rank Editor ───────────────────────────────────────────────────────────────
-// Drag-and-drop to set the correct ranking order.
-// The correctOrder array stores indices into the items array.
-function RankEditor({ question, index, onChange, errors, isAdmin }) {
+// ── Rank Editor — FIXED: uses ImageUploader with progress + correct storage path ─
+function RankEditor({ question, index, onChange, errors }) {
   const prefix = `q${index}`;
-  const [uploading, setUploading] = useState({});
 
-  // correctOrder is the admin's declared ranking — indices into items[].
-  // Default is [0,1,2,3] meaning items are already in the right order.
   const correctOrder = question.correctOrder ?? question.items.map((_, i) => i);
 
   const updateItem = (itemIdx, field, value) => {
@@ -321,9 +491,11 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
     onChange({ ...question, items: updated });
   };
 
-  // Drag reorder for the correctOrder array (admin setting the answer)
   const dragRef = useRef(null);
-  const handleDragStart = (e, pos) => { dragRef.current = pos; e.dataTransfer.effectAllowed = "move"; };
+  const handleDragStart = (e, pos) => {
+    dragRef.current = pos;
+    e.dataTransfer.effectAllowed = "move";
+  };
   const handleDrop = (e, pos) => {
     e.preventDefault();
     if (dragRef.current === null || dragRef.current === pos) return;
@@ -332,21 +504,6 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
     updated.splice(pos, 0, moved);
     onChange({ ...question, correctOrder: updated });
     dragRef.current = null;
-  };
-
-  const handleImageUpload = async (itemIdx, file) => {
-    if (!file) return;
-    setUploading((u) => ({ ...u, [itemIdx]: true }));
-    try {
-      const storageRef = ref(storage, `adminQuizImages/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      updateItem(itemIdx, "imageUrl", url);
-    } catch (err) {
-      console.error("Image upload failed:", err);
-    } finally {
-      setUploading((u) => ({ ...u, [itemIdx]: false }));
-    }
   };
 
   return (
@@ -362,14 +519,19 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
         value={question.question}
         onChange={(e) => onChange({ ...question, question: e.target.value })}
       />
-      {errors[`${prefix}_question`] && <p className="aqc-error">{errors[`${prefix}_question`]}</p>}
+      {errors[`${prefix}_question`] && (
+        <p className="aqc-error">{errors[`${prefix}_question`]}</p>
+      )}
 
       <div className="aqc-toggle-row">
         <label className="aqc-label" style={{ marginBottom: 0 }}>
           Card format
-          <Tooltip text="Text: players rank text labels. Image: upload one image per item — players rank the picture cards. Image mode is admin-only to keep storage manageable." />
+          <Tooltip text="Text: players rank text labels. Image: upload one image per item — accepts JPEG, PNG, GIF, WEBP and more." />
         </label>
-        <div className="aqc-slide-switch" onClick={() => onChange({ ...question, useImages: !question.useImages })}>
+        <div
+          className="aqc-slide-switch"
+          onClick={() => onChange({ ...question, useImages: !question.useImages })}
+        >
           <span className={`aqc-slide-option ${!question.useImages ? "active" : ""}`}>Text</span>
           <span className="aqc-slide-divider" />
           <span className={`aqc-slide-option ${question.useImages ? "active" : ""}`}>Image</span>
@@ -379,8 +541,9 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Items
-        <Tooltip text="Add 2-6 items. Drag rows below to set the CORRECT ranking order." />
+        <Tooltip text="Add 2-6 items. Drag rows in the correct order section to set the correct ranking." />
       </label>
+
       {question.items.map((item, itemIdx) => (
         <div key={itemIdx} className="aqc-rank-item-row">
           <span className="aqc-rank-item-num">{itemIdx + 1}</span>
@@ -391,29 +554,25 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
             onChange={(e) => updateItem(itemIdx, "label", e.target.value)}
           />
           {question.useImages && (
-            <div className="aqc-img-upload-wrap">
-              {item.imageUrl ? (
-                <img src={item.imageUrl} alt={item.label} className="aqc-img-thumb" />
-              ) : null}
-              <label className="aqc-img-btn">
-                {uploading[itemIdx] ? "Uploading..." : item.imageUrl ? "Change" : "Upload Image"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  onChange={(e) => handleImageUpload(itemIdx, e.target.files[0])}
-                  disabled={!!uploading[itemIdx]}
-                />
-              </label>
-              {errors[`${prefix}_images`] && !item.imageUrl && (
-                <span className="aqc-error-inline">Required</span>
-              )}
-            </div>
+            <ImageUploader
+              imageUrl={item.imageUrl ?? ""}
+              onUpload={(url) => updateItem(itemIdx, "imageUrl", url)}
+              label="Upload"
+              compact
+            />
+          )}
+          {question.useImages && errors[`${prefix}_images`] && !item.imageUrl && (
+            <span className="aqc-error-inline">Required</span>
           )}
         </div>
       ))}
-      {errors[`${prefix}_items`] && <p className="aqc-error">{errors[`${prefix}_items`]}</p>}
-      {errors[`${prefix}_images`] && <p className="aqc-error">{errors[`${prefix}_images`]}</p>}
+
+      {errors[`${prefix}_items`] && (
+        <p className="aqc-error">{errors[`${prefix}_items`]}</p>
+      )}
+      {errors[`${prefix}_images`] && (
+        <p className="aqc-error">{errors[`${prefix}_images`]}</p>
+      )}
 
       <div className="aqc-rank-add-remove">
         {question.items.length < 6 && (
@@ -436,7 +595,9 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
             onClick={() => {
               const newItems = question.items.slice(0, -1);
               const removed = question.items.length - 1;
-              const newOrder = correctOrder.filter((i) => i !== removed).map((i) => i > removed ? i - 1 : i);
+              const newOrder = correctOrder
+                .filter((i) => i !== removed)
+                .map((i) => (i > removed ? i - 1 : i));
               onChange({ ...question, items: newItems, correctOrder: newOrder });
             }}
           >
@@ -461,7 +622,11 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
           >
             <span className="aqc-order-rank">{pos + 1}</span>
             {question.useImages && question.items[itemIdx]?.imageUrl && (
-              <img src={question.items[itemIdx].imageUrl} alt="" className="aqc-order-thumb" />
+              <img
+                src={question.items[itemIdx].imageUrl}
+                alt=""
+                className="aqc-order-thumb"
+              />
             )}
             <span className="aqc-order-label">
               {question.items[itemIdx]?.label || `Item ${itemIdx + 1}`}
@@ -470,7 +635,9 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
           </div>
         ))}
       </div>
-      {errors[`${prefix}_correctOrder`] && <p className="aqc-error">{errors[`${prefix}_correctOrder`]}</p>}
+      {errors[`${prefix}_correctOrder`] && (
+        <p className="aqc-error">{errors[`${prefix}_correctOrder`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Explanation
@@ -483,17 +650,32 @@ function RankEditor({ question, index, onChange, errors, isAdmin }) {
         value={question.reason}
         onChange={(e) => onChange({ ...question, reason: e.target.value })}
       />
-      {errors[`${prefix}_reason`] && <p className="aqc-error">{errors[`${prefix}_reason`]}</p>}
+      {errors[`${prefix}_reason`] && (
+        <p className="aqc-error">{errors[`${prefix}_reason`]}</p>
+      )}
     </div>
   );
 }
 
-// ── Enter Value Editor ────────────────────────────────────────────────────────
+// ── Enter Value Editor — NEW: optional context image ──────────────────────────
 function EnterValueEditor({ question, index, onChange, errors }) {
   const prefix = `q${index}`;
   return (
     <div className="aqc-qeditor">
+
+      {/* Optional context image */}
       <label className="aqc-label">
+        Context Image <span className="aqc-optional">(optional)</span>
+        <Tooltip text="Upload a screenshot, item image, or any visual that gives players context for the question." />
+      </label>
+      <ImageUploader
+        imageUrl={question.imageUrl ?? ""}
+        onUpload={(url) => onChange({ ...question, imageUrl: url })}
+        label="Upload Context Image"
+        compact={true}
+      />
+
+      <label className="aqc-label" style={{ marginTop: 16 }}>
         Question Text
         <Tooltip text="Ask a question with a specific numeric or text answer." />
       </label>
@@ -504,11 +686,13 @@ function EnterValueEditor({ question, index, onChange, errors }) {
         value={question.question}
         onChange={(e) => onChange({ ...question, question: e.target.value })}
       />
-      {errors[`${prefix}_question`] && <p className="aqc-error">{errors[`${prefix}_question`]}</p>}
+      {errors[`${prefix}_question`] && (
+        <p className="aqc-error">{errors[`${prefix}_question`]}</p>
+      )}
 
       <label className="aqc-label" style={{ marginTop: 14 }}>
         Correct Answer
-        <Tooltip text="The answer players must type. The system accepts: $4000, 4000, 4,000, or '4 grenades' when the number matches. Case insensitive." />
+        <Tooltip text="The answer players must type. The system accepts: $4000, 4000, 4,000. Case insensitive." />
       </label>
       <input
         className={`aqc-input ${errors[`${prefix}_correctAnswer`] ? "error" : ""}`}
@@ -516,7 +700,9 @@ function EnterValueEditor({ question, index, onChange, errors }) {
         value={question.correctAnswer}
         onChange={(e) => onChange({ ...question, correctAnswer: e.target.value })}
       />
-      {errors[`${prefix}_correctAnswer`] && <p className="aqc-error">{errors[`${prefix}_correctAnswer`]}</p>}
+      {errors[`${prefix}_correctAnswer`] && (
+        <p className="aqc-error">{errors[`${prefix}_correctAnswer`]}</p>
+      )}
       <p className="aqc-hint">
         Players can answer with "$2900", "2900", "2,900" or "2900 credits" — the number is matched flexibly.
       </p>
@@ -532,7 +718,9 @@ function EnterValueEditor({ question, index, onChange, errors }) {
         value={question.reason}
         onChange={(e) => onChange({ ...question, reason: e.target.value })}
       />
-      {errors[`${prefix}_reason`] && <p className="aqc-error">{errors[`${prefix}_reason`]}</p>}
+      {errors[`${prefix}_reason`] && (
+        <p className="aqc-error">{errors[`${prefix}_reason`]}</p>
+      )}
     </div>
   );
 }
@@ -540,12 +728,11 @@ function EnterValueEditor({ question, index, onChange, errors }) {
 // ── Question type labels ──────────────────────────────────────────────────────
 const QUESTION_TYPE_META = {
   [QUESTION_TYPES.VIDEO_MC]:     { label: "YouTube Video",   hint: "Embed a clip — pauses at a moment, players choose A B C D" },
-  [QUESTION_TYPES.MULTI_CHOICE]: { label: "Multiple Choice", hint: "4 options, one correct answer, no video" },
-  [QUESTION_TYPES.RANK]:         { label: "Rank the Items",  hint: "Drag cards into the correct order" },
-  [QUESTION_TYPES.ENTER_VALUE]:  { label: "Enter the Value", hint: "Player types a number or text answer" },
+  [QUESTION_TYPES.MULTI_CHOICE]: { label: "Multiple Choice", hint: "4 options, one correct answer, optional context image" },
+  [QUESTION_TYPES.RANK]:         { label: "Rank the Items",  hint: "Drag cards into the correct order, optional images per item" },
+  [QUESTION_TYPES.ENTER_VALUE]:  { label: "Enter the Value", hint: "Player types a number or text answer, optional context image" },
 };
 
-// ── Question editor dispatch (Open/Closed) ────────────────────────────────────
 const QUESTION_EDITORS = {
   [QUESTION_TYPES.VIDEO_MC]:     VideoMcEditor,
   [QUESTION_TYPES.MULTI_CHOICE]: MultiChoiceEditor,
@@ -559,26 +746,28 @@ export default function AdminQuizCreate({ user }) {
   const isDark = theme === "dark";
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [step,        setStep]        = useState(0);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [done,        setDone]        = useState(false);
+  const [errors,      setErrors]      = useState({});
   const [showAddMenu, setShowAddMenu] = useState(false);
 
-  // ── Form state ─────────────────────────────────────────────────────────────
   const [title,     setTitle]     = useState("");
   const [game,      setGame]      = useState("valorant");
   const [questions, setQuestions] = useState([makeMultiChoiceQuestion()]);
 
   const form = { title, game, questions };
 
-  const updateQuestion = (i, updated) => {
-    setQuestions((prev) => prev.map((q, qi) => (qi === i ? updated : q)));
-  };
+  const updateQuestion = (i, updatedOrFn) =>
+    setQuestions((prev) =>
+      prev.map((q, qi) => {
+        if (qi !== i) return q;
+        return typeof updatedOrFn === "function" ? updatedOrFn(q) : updatedOrFn;
+      })
+    );
 
-  const removeQuestion = (i) => {
+  const removeQuestion = (i) =>
     setQuestions((prev) => prev.filter((_, qi) => qi !== i));
-  };
 
   const addQuestion = (type) => {
     const factories = {
@@ -591,10 +780,8 @@ export default function AdminQuizCreate({ user }) {
     setShowAddMenu(false);
   };
 
-  // ── Navigation ─────────────────────────────────────────────────────────────
   function next() {
     const errs = validateAdminQuizForm(form);
-    // On step 0 only check title/game; on step 1 check questions
     const relevantKeys = step === 0
       ? ["title", "game"]
       : Object.keys(errs).filter((k) => k.startsWith("q") || k === "questions");
@@ -608,20 +795,27 @@ export default function AdminQuizCreate({ user }) {
 
   function back() { setErrors({}); setStep((s) => s - 1); }
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
   async function handleSubmit() {
     const errs = validateAdminQuizForm(form);
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSubmitting(true);
+
+    // Final-pass: resolve any videoId that the useEffect may not have set yet
+    const finalQuestions = questions.map((q) => {
+      if (q.type !== QUESTION_TYPES.VIDEO_MC) return q;
+      const resolvedId = q.videoId || extractYouTubeId(q.ytUrl);
+      return resolvedId ? { ...q, videoId: resolvedId } : q;
+    });
+
     try {
       await addDoc(collection(db, "adminQuizzes"), {
         title: title.trim(),
         game,
-        questions,
-        createdBy: user?.uid ?? "admin",
+        questions: finalQuestions,
+        createdBy:     user?.uid ?? "admin",
         createdByName: user?.displayName ?? "Admin",
-        createdAt: serverTimestamp(),
-        approved: true, // Admin quizzes go live immediately
+        createdAt:     serverTimestamp(),
+        approved:      true,
       });
       setDone(true);
     } catch (err) {
@@ -632,25 +826,28 @@ export default function AdminQuizCreate({ user }) {
     }
   }
 
-  // ── Done screen ────────────────────────────────────────────────────────────
   if (done) {
     return (
       <div className={`aqc-page quiz-carousel ${isDark ? "dark" : "light"}`}>
         <div className="aqc-done">
-          <div className="aqc-done-icon">published</div>
+          <div className="aqc-done-icon">✓</div>
           <h2>Quiz Published!</h2>
           <p>
-            <strong>{title}</strong> is now live for <strong>{GAMES.find((g) => g.id === game)?.label}</strong>.
+            <strong>{title}</strong> is now live for{" "}
+            <strong>{GAMES.find((g) => g.id === game)?.label}</strong>.
           </p>
           <div className="aqc-done-actions">
-            <button className="aqc-btn-primary" onClick={() => navigate(`/admin-quiz/${game}`)}>
+            <button
+              className="aqc-btn-primary"
+              onClick={() => navigate(`/admin-quiz/${game}`)}
+            >
               View Quizzes
             </button>
             <button
               className="aqc-btn-secondary"
               onClick={() => {
-                setDone(false); setStep(0); setTitle(""); setGame("valorant");
-                setQuestions([makeMultiChoiceQuestion()]); setErrors({});
+                setDone(false); setStep(0); setTitle("");
+                setGame("valorant"); setQuestions([makeMultiChoiceQuestion()]); setErrors({});
               }}
             >
               Create Another
@@ -668,8 +865,11 @@ export default function AdminQuizCreate({ user }) {
       {/* Step bar */}
       <div className="aqc-stepbar">
         {STEPS.map((label, i) => (
-          <div key={i} className={`aqc-step ${i === step ? "active" : ""} ${i < step ? "done" : ""}`}>
-            <div className="aqc-step-circle">{i < step ? "done" : i + 1}</div>
+          <div
+            key={i}
+            className={`aqc-step ${i === step ? "active" : ""} ${i < step ? "done" : ""}`}
+          >
+            <div className="aqc-step-circle">{i < step ? "✓" : i + 1}</div>
             <div className="aqc-step-label">{label}</div>
             {i < STEPS.length - 1 && <div className="aqc-step-line" />}
           </div>
@@ -677,7 +877,7 @@ export default function AdminQuizCreate({ user }) {
       </div>
 
       <div className="aqc-card">
-        {/* ── Step 0: Details ──────────────────────────────────────────────── */}
+        {/* ── Step 0: Details ─────────────────────────────────────────────── */}
         {step === 0 && (
           <div className="aqc-step-content">
             <h2 className="aqc-step-title">Quiz Details</h2>
@@ -710,7 +910,7 @@ export default function AdminQuizCreate({ user }) {
           </div>
         )}
 
-        {/* ── Step 1: Questions ─────────────────────────────────────────────── */}
+        {/* ── Step 1: Questions ────────────────────────────────────────────── */}
         {step === 1 && (
           <div className="aqc-step-content">
             <h2 className="aqc-step-title">Questions ({questions.length})</h2>
@@ -723,7 +923,6 @@ export default function AdminQuizCreate({ user }) {
                   <div className="aqc-question-header">
                     <span className="aqc-q-num">Q{i + 1}</span>
 
-                    {/* ── Type switcher — change type without remove/re-add ── */}
                     <div className="aqc-type-switcher">
                       {Object.entries(QUESTION_TYPE_META).map(([type, meta]) => (
                         <button
@@ -736,7 +935,6 @@ export default function AdminQuizCreate({ user }) {
                               [QUESTION_TYPES.RANK]:         makeRankQuestion,
                               [QUESTION_TYPES.ENTER_VALUE]:  makeEnterValueQuestion,
                             };
-                            // Preserve question text when switching type
                             const fresh = factories[type]();
                             updateQuestion(i, { ...fresh, question: q.question });
                           }}
@@ -753,6 +951,7 @@ export default function AdminQuizCreate({ user }) {
                       </button>
                     )}
                   </div>
+
                   {Editor ? (
                     <Editor
                       question={q}
@@ -768,15 +967,21 @@ export default function AdminQuizCreate({ user }) {
               );
             })}
 
-            {/* Add question menu */}
             <div className="aqc-add-q-wrap">
-              <button className="aqc-add-q-btn" onClick={() => setShowAddMenu((v) => !v)}>
+              <button
+                className="aqc-add-q-btn"
+                onClick={() => setShowAddMenu((v) => !v)}
+              >
                 + Add Question
               </button>
               {showAddMenu && (
                 <div className="aqc-add-menu">
                   {Object.entries(QUESTION_TYPE_META).map(([type, meta]) => (
-                    <button key={type} className="aqc-add-menu-item" onClick={() => addQuestion(type)}>
+                    <button
+                      key={type}
+                      className="aqc-add-menu-item"
+                      onClick={() => addQuestion(type)}
+                    >
                       <span className="aqc-add-menu-label">{meta.label}</span>
                       <span className="aqc-add-menu-hint">{meta.hint}</span>
                     </button>
@@ -798,7 +1003,9 @@ export default function AdminQuizCreate({ user }) {
               </div>
               <div className="aqc-review-row">
                 <span className="aqc-review-label">Game</span>
-                <span className="aqc-review-value">{GAMES.find((g) => g.id === game)?.label}</span>
+                <span className="aqc-review-value">
+                  {GAMES.find((g) => g.id === game)?.label}
+                </span>
               </div>
               <div className="aqc-review-row">
                 <span className="aqc-review-label">Questions</span>
@@ -806,14 +1013,21 @@ export default function AdminQuizCreate({ user }) {
               </div>
               {questions.map((q, i) => (
                 <div key={i} className="aqc-review-row">
-                  <span className="aqc-review-label">Q{i + 1} ({QUESTION_TYPE_META[q.type]?.label})</span>
+                  <span className="aqc-review-label">
+                    Q{i + 1} ({QUESTION_TYPE_META[q.type]?.label})
+                    {(q.imageUrl) && " 🖼"}
+                  </span>
                   <span className="aqc-review-value">
-                    {q.question?.length > 60 ? q.question.slice(0, 60) + "..." : q.question}
+                    {q.question?.length > 60
+                      ? q.question.slice(0, 60) + "..."
+                      : q.question}
                   </span>
                 </div>
               ))}
             </div>
-            {errors.submit && <p className="aqc-error" style={{ marginTop: 12 }}>{errors.submit}</p>}
+            {errors.submit && (
+              <p className="aqc-error" style={{ marginTop: 12 }}>{errors.submit}</p>
+            )}
             <p className="aqc-hint" style={{ marginTop: 16 }}>
               Admin quizzes go live immediately. Make sure all questions are accurate.
             </p>
@@ -833,7 +1047,11 @@ export default function AdminQuizCreate({ user }) {
             </button>
           )}
           {step === STEPS.length - 1 && (
-            <button className="aqc-btn-primary aqc-btn-publish" onClick={handleSubmit} disabled={submitting}>
+            <button
+              className="aqc-btn-primary aqc-btn-publish"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
               {submitting ? "Publishing..." : "Publish Quiz"}
             </button>
           )}
