@@ -49,7 +49,6 @@ npm install react-router-dom
 ```bash
 cd ../gitgud-server
 npm install node-schedule
-npm audit
 npm install jsonwebtoken@9.0.3 --save
 npm install uuid@11.1.1 --save
 npm install firebase-admin@12.7.0 --save
