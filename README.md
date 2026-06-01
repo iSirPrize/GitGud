@@ -48,12 +48,18 @@ npm install react-router-dom
 **Backend:**
 ```bash
 cd ../gitgud-server
-pip install -r requirements.txt
+npm install node-schedule
+npm audit
+npm install jsonwebtoken@9.0.3 --save
+npm install uuid@11.1.1 --save
+npm install firebase-admin@12.7.0 --save
+npm install node-schedule firebase-admin
 ```
 
 **Profanity Filter:**
 ```bash
 cd ../moderation-service
+pip install -r requirements.txt
 ```
 
 ### 3. Environment Variables
