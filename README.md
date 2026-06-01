@@ -76,7 +76,6 @@ VITE_CLOUDINARY_PRESET=
 **Backend** — create `.env` inside `gitgud-server/`:
 ```
 PORT=3001
-PORT=3001
 EMAILJS_SERVICE_ID=
 EMAILJS_TEMPLATE_ID=
 EMAILJS_PUBLIC_KEY=
