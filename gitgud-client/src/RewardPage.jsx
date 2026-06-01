@@ -122,7 +122,7 @@ export default function RewardPage({ user }) {
     function isUnlocked(id) {
 
       //For testing purposes only, uncomment to unlock all achievements
-    //return true;
+    return true;
 
   switch (id) {
       // AIM TRAINER ACHIEVEMENTS

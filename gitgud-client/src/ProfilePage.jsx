@@ -576,7 +576,7 @@ function ProfilePage({ user, targetUser })
   Equipped Achievements
 </h3>
 
-    <div className="equipped-grid">
+    <div className="achievement-badges">
 
       {equippedAchievements.length > 0 ? (
         equippedAchievements.map(id => {
