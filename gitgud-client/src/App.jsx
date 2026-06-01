@@ -1,9 +1,3 @@
-/**
- * App.jsx — UPDATED VERSION
- * Adds /skill-tree route.
- * Place at: gitgud-client/src/App.jsx (replaces existing)
- */
-
 import { Routes, Route } from 'react-router-dom'
 import Layout from './Layout'
 import Home from './Home'
@@ -14,7 +8,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import AuthPage from './AuthPage'
 import LandingPage from './LandingPage'
-import { onAuth } from './auth'
+import { onAuth, auth } from './auth'
 import { initUserDoc } from './usePoints'
 import Category from './Category'
 import QuizCarousel from './components/QuizCarousel'
@@ -34,11 +28,12 @@ import ChatPage from './ChatPage'
 import ChatDashboard from './ChatDashboard'
 import DailiesPage from './DailiesPage'
 import RewardPage from './RewardPage'
-import SkillTreePage from './SkillTreePage'   // ← NEW
+import SkillTreePage from './SkillTreePage'
 
 function App() {
   const [user, setUser] = useState(undefined)
   const [showAuth, setShowAuth] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null)
   const [hasSeenLanding, setHasSeenLanding] = useState(
     () => sessionStorage.getItem('seenLanding') === 'true'
   )
@@ -47,10 +42,24 @@ function App() {
 
   useEffect(() => {
     const unsub = onAuth(async (u) => {
+      // Block unverified email/password accounts.
+      // Google sign-in users always have emailVerified: true so they're unaffected.
+      // Existing accounts that already verified are also unaffected.
+      if (u && !u.emailVerified) {
+        setUnverifiedEmail(u.email)
+        setUser(null)
+        await auth.signOut()
+        return
+      }
+
       setUser(u)
+      setUnverifiedEmail(null)
+
       if (u) {
         setShowAuth(false)
-        await initUserDoc(u.uid, u.displayName, u.photoURL)
+        // initUserDoc now receives email so it can store it on the user document.
+        // { merge: true } inside initUserDoc means existing accounts are safe.
+        await initUserDoc(u.uid, u.displayName, u.photoURL, u.email)
         if (authIntentRef.current === 'register') navigate(`/profile/${u.uid}`)
         else if (authIntentRef.current === 'login') navigate('/')
         authIntentRef.current = null
@@ -68,7 +77,10 @@ function App() {
   if (user === undefined) return <div className="loading">Loading page...</div>
   if (!hasSeenLanding) return <LandingPage onLogin={handleGetStarted} />
   if (!user) return showAuth
-    ? <AuthPage onIntent={(intent) => { authIntentRef.current = intent }} />
+    ? <AuthPage
+        onIntent={(intent) => { authIntentRef.current = intent }}
+        unverifiedEmail={unverifiedEmail}
+      />
     : <LandingPage onLogin={handleGetStarted} />
 
   return (
@@ -89,14 +101,12 @@ function App() {
         <Route path="user-quiz" element={<UserQuizPage user={user} />} />
         <Route path="user-quiz/create" element={<UserQuizCreate user={user} />} />
         <Route path="user-quiz/play/:gameId/:quizId?" element={<UserQuizCarousel user={user} />} />
-        {/* ── Admin moderation panel ────────────────────────────────────── */}
         <Route path="admin" element={<AdminPanel user={user} />} />
         <Route path="critique" element={<CritiquePage user={user} />} />
         <Route path="critique/create" element={<CritiqueCreate user={user} />} />
         <Route path="messages" element={<ChatDashboard user={user} />} />
         <Route path="messages/:chatId" element={<ChatPage user={user} />} />
         <Route path="dailies" element={<DailiesPage user={user} />} />
-        {/* ── NEW: Skill Tree ────────────────────────────────────────────── */}
         <Route path="skill-tree" element={<SkillTreePage user={user} />} />
       </Route>
     </Routes>

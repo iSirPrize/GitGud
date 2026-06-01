@@ -24,16 +24,18 @@ export function getLevelProgress(xp) {
   return { level, xp, pct, xpToNext, isMax }
 }
 
-export async function initUserDoc(uid, displayName, photoURL) {
+export async function initUserDoc(uid, displayName, photoURL, email) {
   const ref = doc(db, "users", uid)
   const snap = await getDoc(ref)
   if (!snap.exists()) {
-    await setDoc(ref, { xp: 0, level: 1, displayName, photoURL }, { merge: true })
+    await setDoc(ref, { xp: 0, level: 1, displayName, photoURL, email }, { merge: true })
   } else {
     const d = snap.data(), updates = {}
     // migrate old points field to xp
     if (d.xp === undefined) updates.xp = d.points ?? 0
     if (d.level === undefined) updates.level = 1
+    // backfill email on existing accounts — merge:true means nothing else is touched
+    if (!d.email && email) updates.email = email
     if (Object.keys(updates).length) await updateDoc(ref, updates)
   }
 }
