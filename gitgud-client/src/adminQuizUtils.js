@@ -35,7 +35,13 @@ export function extractYouTubeId(url) {
   if (!url) return null;
   const trimmed = String(url).trim();
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+    // Standard watch URL — catches ?v= with any extra params (&t=, &list=, etc.)
+    /[?&]v=([A-Za-z0-9_-]{11})/,
+    // youtu.be short link
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,
+    // /embed/, /shorts/, /live/ paths
+    /youtube\.com\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/,
+    // Raw 11-char ID only
     /^([A-Za-z0-9_-]{11})$/,
   ];
   for (const p of patterns) {
@@ -110,7 +116,9 @@ export function isRankingCorrect(playerOrder, correctOrder) {
 function validateVideoMcQuestion(q, index) {
   const errors = {};
   const prefix = `q${index}`;
-  if (!q.videoId) errors[`${prefix}_ytUrl`] = "Valid YouTube URL or video ID is required.";
+  // Accept either a resolved videoId or a ytUrl that can be parsed (handles timing race)
+  const hasVideo = q.videoId || extractYouTubeId(q.ytUrl);
+  if (!hasVideo) errors[`${prefix}_ytUrl`] = "Valid YouTube URL or video ID is required.";
   const pa = Number(q.pauseAt);
   if (!q.pauseAt || isNaN(pa) || pa <= 0) errors[`${prefix}_pauseAt`] = "Enter a positive pause point in seconds.";
   if (!q.question?.trim()) errors[`${prefix}_question`] = "Question text is required.";
@@ -220,6 +228,7 @@ export function makeVideoMcQuestion() {
 export function makeMultiChoiceQuestion() {
   return {
     type:         QUESTION_TYPES.MULTI_CHOICE,
+    imageUrl:     "",
     question:     "",
     choices:      ["", "", "", ""],
     correctIndex: null,

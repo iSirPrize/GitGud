@@ -102,7 +102,7 @@
 .aqp-splash-content {
   position: relative;
   z-index: 1;
-  padding: 32px 36px;
+  padding: 32px 36px 32px 56px;
 }
 
 .aqp-splash-title {
@@ -123,7 +123,7 @@
 .aqp-actions-row {
   display: flex;
   gap: 14px;
-  padding: 24px 36px;
+  padding: 24px 36px 24px 56px;
   flex-wrap: wrap;
   align-items: flex-start;
   background: var(--aqp-bg, #0d0d0d);
@@ -203,7 +203,7 @@
 
 /* ── Quiz grid ────────────────────────────────────────────────────────────── */
 .aqp-quiz-grid {
-  padding: 0 36px 40px;
+  padding: 0 36px 40px 56px;
   background: var(--aqp-bg);
 }
 
@@ -303,9 +303,11 @@
 
 /* ── Question card ───────────────────────────────────────────────────────── */
 .aqp-question-card {
+  width: 100%;
   max-width: 700px;
   margin: 24px auto 0;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .aqp-q-header {
@@ -489,6 +491,10 @@
   padding: 14px 16px;
   border-radius: 9px;
   border-left: 3px solid;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--aqp-border) transparent;
 }
 .aqp-rank-result.correct { background: var(--aqp-correct-bg); border-color: var(--aqp-correct-border); }
 .aqp-rank-result.wrong   { background: var(--aqp-wrong-bg);   border-color: var(--aqp-wrong-border); }
@@ -512,6 +518,8 @@
   color: var(--aqp-subtext);
   margin: 0;
   line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .aqp-reason-label {
@@ -591,20 +599,7 @@
 .aqp-question-nav .aqc-btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Complete card ───────────────────────────────────────────────────────── */
-.aqp-complete-card {
-  max-width: 480px;
-  margin: 60px auto 0;
-  background: var(--aqp-complete-bg);
-  border: 1px solid var(--aqp-border);
-  border-radius: 16px;
-  padding: 36px 28px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-}
+/* .aqp-complete-card — see patch section below */
 
 .aqp-complete-title {
   font-size: 1.6rem;
@@ -660,13 +655,7 @@
   margin: 0;
 }
 
-.aqp-complete-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 8px;
-}
+/* .aqp-complete-actions — see patch section below */
 
 .aqp-complete-actions .aqc-btn-primary,
 .aqp-complete-actions .aqc-btn-secondary {
@@ -954,7 +943,7 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .aqp-splash-title { font-size: 1.6rem; }
-  .aqp-actions-row { padding: 16px 20px; }
+  .aqp-actions-row { padding: 16px 20px; }  /* mobile: nav is gone so no offset needed */
   .aqp-quiz-grid { padding: 0 20px 32px; }
   .aqp-question-card { padding: 0 14px; }
 }
@@ -1050,4 +1039,675 @@
   font-size: 0.9rem;
   color: var(--aqp-subtext);
   margin: 8px 0 0;
+}
+
+/* ── Context image (shown above question in quiz player) ──────────────────── */
+.aqp-context-image {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  max-height: 270px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin: 0 auto 16px auto;
+  border: 1px solid var(--aqp-border, rgba(255,255,255,0.1));
+}
+
+/* ── YouTube Video Player (VideoMcPlayer) ─────────────────────────────────── */
+.aqp-video-mc-player {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 660px;
+  box-sizing: border-box;
+}
+
+/* .aqp-video-wrap — canonical definition is in the patch section below */
+
+/* .aqp-video-inner kept for any legacy usage */
+.aqp-video-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.aqp-video-inner iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.aqp-video-hint {
+  font-size: 0.78rem;
+  color: var(--aqp-subtext);
+  text-align: center;
+  margin: 0;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+/* ── Per-Question Comment Section ─────────────────────────────────────────── */
+/* .aqc-comments-root — see patch section below */
+
+.aqc-comments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.aqc-comments-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--aqp-text);
+}
+
+.aqc-comments-count {
+  font-size: 0.8rem;
+  color: var(--aqp-subtext);
+}
+
+.aqc-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--aqp-border) transparent;
+}
+
+.aqc-comments-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--aqp-subtext);
+  font-size: 0.85rem;
+  padding: 16px 0;
+  justify-content: center;
+}
+
+.aqc-comments-empty {
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.aqc-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--aqp-border);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: aqc-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes aqc-spin { to { transform: rotate(360deg); } }
+
+/* Comment card */
+.aqc-comment-animated {
+  animation: aqc-fadein 0.2s ease both;
+}
+@keyframes aqc-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.aqc-comment {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.aqc-reply {
+  padding-left: 48px;
+  opacity: 0.95;
+}
+
+/* Avatar with frame */
+.aqc-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aqc-avatar-inner {
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.aqc-avatar-photo {
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+.aqc-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+.aqc-avatar-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  object-fit: contain;
+  z-index: 2;
+}
+
+.aqc-comment-body {
+  flex: 1;
+  min-width: 0;
+  background: var(--aqp-card-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--aqp-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.aqc-comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.aqc-username {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f97316;
+}
+
+.aqc-timestamp {
+  font-size: 0.73rem;
+  color: var(--aqp-subtext);
+}
+
+.aqc-edited {
+  font-size: 0.7rem;
+  color: var(--aqp-subtext);
+  font-style: italic;
+}
+
+.aqc-comment-text {
+  font-size: 0.875rem;
+  color: var(--aqp-text);
+  margin: 0 0 8px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Edit inline */
+.aqc-edit-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.aqc-edit-input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #f97316;
+  background: var(--aqp-input-bg, #1a1a1a);
+  color: var(--aqp-text);
+  font-size: 0.85rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.aqc-edit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.aqc-edit-save,
+.aqc-edit-cancel {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.aqc-edit-save   { background: #f97316; color: #fff; }
+.aqc-edit-cancel { background: var(--aqp-border); color: var(--aqp-text); }
+.aqc-edit-save:hover, .aqc-edit-cancel:hover { opacity: 0.8; }
+
+/* Footer actions */
+.aqc-comment-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aqc-react-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: 1px solid var(--aqp-border);
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--aqp-subtext);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.aqc-react-btn:disabled { opacity: 0.45; cursor: default; }
+.aqc-react-btn.active-like    { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,0.08); }
+.aqc-react-btn.active-dislike { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.08); }
+.aqc-react-count { font-size: 0.7rem; }
+
+.aqc-reply-btn,
+.aqc-owner-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--aqp-subtext);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.aqc-reply-btn:hover  { color: #f97316; background: rgba(249,115,22,0.08); }
+.aqc-owner-btn:hover  { color: var(--aqp-text); background: var(--aqp-border); }
+.aqc-delete-btn:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+/* Reply input */
+.aqc-reply-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Toggle replies */
+.aqc-toggle-replies {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: #f97316;
+  cursor: pointer;
+  padding: 0;
+  display: block;
+}
+.aqc-toggle-replies:hover { text-decoration: underline; }
+
+.aqc-replies-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Comment input row */
+.aqc-comment-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--aqp-border);
+}
+
+.aqc-input-wrap {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.aqc-comment-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--aqp-border);
+  background: var(--aqp-input-bg, #1a1a1a);
+  color: var(--aqp-text);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+.aqc-comment-input:focus { border-color: #f97316; }
+
+.aqc-post-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #f97316;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.aqc-post-btn:disabled { opacity: 0.45; cursor: default; }
+.aqc-post-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+
+.aqc-login-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--aqp-card-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--aqp-border);
+  font-size: 0.85rem;
+  color: var(--aqp-subtext);
+}
+
+.aqc-login-link {
+  color: #f97316;
+  font-weight: 600;
+  text-decoration: none;
+}
+.aqc-login-link:hover { text-decoration: underline; }
+
+/* ── Error text for unknown question types ────────────────────────────────── */
+.aqp-error-text {
+  color: #ef4444;
+  font-size: 0.85rem;
+  padding: 12px;
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  background: rgba(239,68,68,0.06);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PATCH v3 — layout fixes, video player, complete screen, nav buttons
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Centred content column ──────────────────────────────────────────────────
+   All quiz content (question card + comments) lives here.
+   max-width matches the video frame so nothing bleeds past the nav sidebar. */
+.aqp-content-col {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Override aqp-page to be a flex column ───────────────────────────────── */
+.aqp-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Progress row centred */
+.aqp-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 24px 8px;
+  justify-content: center;
+  width: 100%;
+  max-width: 720px;
+  box-sizing: border-box;
+}
+
+/* ── Video player ─────────────────────────────────────────────────────────── */
+.aqp-video-mc-player {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 660px;
+  box-sizing: border-box;
+}
+
+/* ── Video embed — always full 16:9 ──────────────────────────────────────── */
+.aqp-video-wrap {
+  width: 100%;
+  position: relative;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--aqp-border);
+}
+
+/* Padding-top trick: reserves 16:9 height before iframe loads.
+   This is the most reliable cross-browser approach — aspect-ratio
+   alone doesn't force height for absolutely-positioned children. */
+.aqp-video-wrap::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%; /* 9/16 = 56.25% */
+}
+
+/* Inner wrap sits over the ::before spacer and fills the box */
+.aqp-video-inner-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The stable wrapperRef div and any iframe YT injects */
+.aqp-video-inner-wrap > div {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.aqp-video-inner-wrap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.aqp-video-label {
+  display: flex;
+  justify-content: center;
+  padding: 6px 12px;
+  background: var(--aqp-card-bg, rgba(0,0,0,0.3));
+  border-bottom: 1px solid var(--aqp-border);
+}
+
+.aqp-video-hint {
+  font-size: 0.78rem;
+  color: var(--aqp-subtext);
+  font-style: italic;
+}
+.aqp-video-hint.paused  { color: #f59e0b; font-style: normal; font-weight: 600; }
+.aqp-video-hint.resumed { color: #22c55e; font-style: normal; font-weight: 600; }
+
+/* Waiting state shown before video pauses */
+.aqp-video-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  border: 1px dashed var(--aqp-border);
+  border-radius: 10px;
+  color: var(--aqp-subtext);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.aqp-waiting-icon {
+  font-size: 1.6rem;
+  opacity: 0.5;
+}
+.aqp-resume-note {
+  font-size: 0.78rem;
+  color: #22c55e;
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+/* ── Three-button nav row (Prev | Next | Submit) ─────────────────────────── */
+.aqp-question-nav {
+  display: flex;
+  gap: 10px;
+  padding-top: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Submitted state button */
+.aqc-btn-submitted {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--aqp-border);
+  background: transparent;
+  color: #22c55e;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* ── Complete screen ─────────────────────────────────────────────────────── */
+.aqp-complete-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  padding: 32px 16px 60px;
+  box-sizing: border-box;
+}
+
+.aqp-complete-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--aqp-card-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--aqp-border);
+  border-radius: 16px;
+  padding: 36px 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+
+.aqp-complete-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.aqp-complete-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--aqp-text);
+  margin: 0;
+}
+
+.aqp-complete-rank {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Score bar */
+.aqp-score-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.aqp-score-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--aqp-subtext);
+}
+.aqp-fraction { font-weight: 700; color: var(--aqp-text); }
+.aqp-score-track {
+  height: 10px;
+  background: var(--aqp-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.aqp-score-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+.aqp-score-pct {
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--aqp-text);
+}
+
+/* Per-question breakdown */
+.aqp-breakdown {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.aqp-bk-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+.aqp-bk-row.bk-correct { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.25); }
+.aqp-bk-row.bk-wrong   { background: rgba(239,68,68,0.07);  border: 1px solid rgba(239,68,68,0.22); }
+.aqp-bk-num  { font-weight: 700; color: var(--aqp-subtext); min-width: 28px; font-size: 0.78rem; }
+.aqp-bk-icon { font-weight: 800; font-size: 0.9rem; }
+.aqp-bk-row.bk-correct .aqp-bk-icon { color: #22c55e; }
+.aqp-bk-row.bk-wrong   .aqp-bk-icon { color: #ef4444; }
+.aqp-bk-text { flex: 1; color: var(--aqp-text); }
+
+.aqp-points-earned {
+  font-size: 0.9rem;
+  color: var(--aqp-subtext);
+  margin: 0;
+}
+
+/* Complete action buttons */
+.aqp-complete-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ── Comment section layout — constrained to content column ──────────────── */
+.aqc-comments-root {
+  margin-top: 24px;
+  border-top: 1px solid var(--aqp-border);
+  padding-top: 18px;
+  width: 100%;
 }

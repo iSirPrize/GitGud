@@ -209,10 +209,11 @@ function InstructionsModal({ onClose, isDark }) {
 
 // ─── Video Player with IFrame API ─────────────────────────────────────────────
 function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted, scenarioId, hidden }) {
-  const containerRef = useRef(null);
+  const wrapperRef   = useRef(null);   // stable outer wrapper — never replaced by YT
   const playerRef    = useRef(null);
   const pollRef      = useRef(null);
   const hasPausedRef = useRef(false);
+  const containerRef = wrapperRef;     // compat alias
 
   const stopPoll = () => {
     if (pollRef.current) {
@@ -251,7 +252,13 @@ function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted
       hasPausedRef.current = false;
       stopPoll();
 
-      playerRef.current = new window.YT.Player(containerRef.current, {
+      // Always create a fresh inner div — YT replaces it with an iframe.
+      // Reusing a div YT already replaced causes the black screen on re-mount.
+      wrapperRef.current.innerHTML = '';
+      const mountDiv = document.createElement('div');
+      wrapperRef.current.appendChild(mountDiv);
+
+      playerRef.current = new window.YT.Player(mountDiv, {
         videoId: youtubeId,
         playerVars: {
           autoplay: 0,
@@ -296,13 +303,14 @@ function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted
   return (
     <div className="video-wrapper">
       <div
-        ref={containerRef}
+        ref={wrapperRef}
         style={{
           position: "absolute",
           inset: 0,
           width: "100%",
           height: "100%",
           visibility: hidden ? "hidden" : "visible",
+          overflow: "hidden",
         }}
       />
     </div>

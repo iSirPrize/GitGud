@@ -478,11 +478,23 @@
 }
 
 .aqc-img-thumb {
-  width: 38px;
-  height: 38px;
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 5px;
+  border-radius: 6px;
   border: 1px solid var(--aqc-input-border);
+}
+
+/* Full preview — shown in non-compact uploader (not used for context images) */
+.aqc-img-preview {
+  width: 100%;
+  max-width: 320px;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--aqc-input-border);
+  margin-bottom: 8px;
+  display: block;
 }
 
 .aqc-img-btn {
