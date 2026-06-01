@@ -48,7 +48,12 @@ npm install react-router-dom
 **Backend:**
 ```bash
 cd ../gitgud-server
-npm install
+pip install -r requirements.txt
+```
+
+**Profanity Filter:**
+```bash
+cd ../moderation-service
 ```
 
 ### 3. Environment Variables
@@ -71,6 +76,11 @@ VITE_CLOUDINARY_PRESET=
 **Backend** — create `.env` inside `gitgud-server/`:
 ```
 PORT=3001
+PORT=3001
+EMAILJS_SERVICE_ID=
+EMAILJS_TEMPLATE_ID=
+EMAILJS_PUBLIC_KEY=
+EMAILJS_PRIVATE_KEY=
 ```
 
 ---
@@ -96,6 +106,12 @@ Runs at `http://localhost:3001`
 To confirm the backend is running, visit `http://localhost:3001/api/health`. A healthy response will return:
 ```json
 { "status": "Server is running" }
+```
+
+**Terminal 3 — Profanity Filter:**
+```bash
+cd moderation-service
+python app.py
 ```
 
 ---
