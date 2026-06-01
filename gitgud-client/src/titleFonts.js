@@ -4,9 +4,9 @@ export const TITLE_FONTS = [
     name: "Default"
   },
 
-  {
-    id: "double_struck",
-    name: "Double Struck"
+   {
+    id: "medieval",
+    name: "Medieval"
   },
 
   {

@@ -155,29 +155,52 @@
 .st-node-tooltip {
   background: var(--st-nt-bg);
   border: 1px solid var(--st-nt-border);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 16px;
   box-shadow: 0 4px 20px var(--st-nt-shadow);
+
   font-family: inherit;
-  font-size: 11px;
   color: var(--st-text);
+
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  pointer-events: none;
-  width: 155px;
+  gap: 8px;
+
+  width: 260px;
   z-index: 9999;
   animation: fade-in 0.12s ease;
 }
-.st-nt-title { font-weight: 800; font-size: 12px; color: var(--st-accent); }
+
+.st-nt-title {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--st-accent);
+}
+
 .st-nt-badge {
-  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-  padding: 1px 6px; border-radius: 10px; width: fit-content;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.st-nt-desc {
+  font-size: 14px;
+  color: var(--st-subtext);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.st-nt-status {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
 }
 .st-nt-badge.passive { background: rgba(156,163,175,0.2); color: var(--st-subtext); }
 .st-nt-badge.active  { background: rgba(255,106,0,0.15);  color: var(--st-accent); }
-.st-nt-desc   { font-size: 10px; color: var(--st-subtext); line-height: 1.4; margin: 0; }
-.st-nt-status { font-size: 9px; font-weight: 700; margin-top: 2px; color: var(--st-available); }
 
 /* ── Legend ───────────────────────────────────────────────────────────────── */
 .st-legend {

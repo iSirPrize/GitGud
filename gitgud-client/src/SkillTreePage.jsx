@@ -124,7 +124,7 @@ function HoverTooltip({ node, anchorEl, isUnlocked, isAvailable, canvasWrapRef }
   const nodeCenterX = nodeLeft + nodeRect.width / 2;
 
   const TOOLTIP_W = 180;
-  const TOOLTIP_H = 140;
+  const TOOLTIP_H = 180;
 
   // Prefer right; flip left if it would overflow the wrapper
   let left = nodeCenterX + nodeRect.width / 2 + 8;
