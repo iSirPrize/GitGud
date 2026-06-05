@@ -508,7 +508,20 @@ function RankEditor({ question, index, onChange, errors }) {
 
   return (
     <div className="aqc-qeditor">
+
+      {/* Optional context / situation image */}
       <label className="aqc-label">
+        Context Image <span className="aqc-optional">(optional)</span>
+        <Tooltip text="Upload a map screenshot or situation image to give players visual context — shown above the question, just like Multiple Choice." />
+      </label>
+      <ImageUploader
+        imageUrl={question.contextImageUrl ?? ""}
+        onUpload={(url) => onChange({ ...question, contextImageUrl: url })}
+        label="Upload Context Image"
+        compact={true}
+      />
+
+      <label className="aqc-label" style={{ marginTop: 16 }}>
         Question Text
         <Tooltip text="Ask players to rank the items you provide." />
       </label>
@@ -729,7 +742,7 @@ function EnterValueEditor({ question, index, onChange, errors }) {
 const QUESTION_TYPE_META = {
   [QUESTION_TYPES.VIDEO_MC]:     { label: "YouTube Video",   hint: "Embed a clip — pauses at a moment, players choose A B C D" },
   [QUESTION_TYPES.MULTI_CHOICE]: { label: "Multiple Choice", hint: "4 options, one correct answer, optional context image" },
-  [QUESTION_TYPES.RANK]:         { label: "Rank the Items",  hint: "Drag cards into the correct order, optional images per item" },
+  [QUESTION_TYPES.RANK]:         { label: "Rank the Items",  hint: "Drag cards into the correct order, optional context image + optional images per item" },
   [QUESTION_TYPES.ENTER_VALUE]:  { label: "Enter the Value", hint: "Player types a number or text answer, optional context image" },
 };
 
@@ -1015,7 +1028,7 @@ export default function AdminQuizCreate({ user }) {
                 <div key={i} className="aqc-review-row">
                   <span className="aqc-review-label">
                     Q{i + 1} ({QUESTION_TYPE_META[q.type]?.label})
-                    {(q.imageUrl) && " 🖼"}
+                    {(q.imageUrl || q.contextImageUrl) && " 🖼"}
                   </span>
                   <span className="aqc-review-value">
                     {q.question?.length > 60

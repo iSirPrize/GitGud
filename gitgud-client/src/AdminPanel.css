@@ -231,3 +231,8 @@
 
 /* ── Category tag variant ─────────────────────────────────────────────── */
 .ap-cat-tag { background: rgba(168,85,247,0.15); color: #a855f7; }
+
+/* ── Green badge for Approved Clips tab count ────────────────────────────── */
+.ap-badge--green {
+  background: #22c55e;
+}

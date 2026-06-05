@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 import { ACHIEVEMENTS } from "./achievement";
 import {FRAMES} from "./frames";
 import {TITLES} from "./titles";
+import CritiquePost from "./CritiquePost";
 
 function ProfilePage({ user, targetUser })
 {
@@ -36,6 +37,8 @@ function ProfilePage({ user, targetUser })
     const [equippedFrame, setEquippedFrame] = useState(null);
     const [equippedTitle, setEquippedTitle] = useState(null);
     const [titleFont, setTitleFont] = useState("default");
+    const [myCritiquePosts, setMyCritiquePosts] = useState([]);
+    const [critiqueLoading, setCritiqueLoading] = useState(false);
 
     useEffect(() => {
         async function loadProfileData() {
@@ -139,6 +142,30 @@ function ProfilePage({ user, targetUser })
         fetchFriends();
         fetchRequests();
     }, [targetId, user?.uid, isOwner]);
+
+    // Load the current user's own critique posts (all statuses)
+    useEffect(() => {
+        if (!isOwner || !user?.uid) return;
+        setCritiqueLoading(true);
+        getDocs(
+            query(
+                collection(db, "critiquePosts"),
+                where("creatorId", "==", user.uid)
+            )
+        )
+            .then((snap) => {
+                const docs = snap.docs
+                    .map((d) => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => {
+                        const ta = a.createdAt?.toMillis?.() ?? 0;
+                        const tb = b.createdAt?.toMillis?.() ?? 0;
+                        return tb - ta;
+                    });
+                setMyCritiquePosts(docs);
+            })
+            .catch((err) => console.error("Failed to load user critique posts:", err))
+            .finally(() => setCritiqueLoading(false));
+    }, [isOwner, user?.uid]);
 
     //adding add friend functionality with db updatess
     const handleAddFriend = async () => {
@@ -535,6 +562,15 @@ function ProfilePage({ user, targetUser })
     Favourite Clips
   </button>
 )}
+
+      {isOwner && (
+        <button
+          className={activeTab === "myclips" ? "tab-btn active" : "tab-btn"}
+          onClick={() => setActiveTab("myclips")}
+        >
+          My Clips
+        </button>
+      )}
     </div>
 
     {activeTab === "overview" && (
@@ -625,6 +661,43 @@ function ProfilePage({ user, targetUser })
     <ProfileFavouritesTab uidProp={targetId} />
   </div>
 )}
+
+    {/* My Clips tab: user's own critique submissions */}
+    {activeTab === "myclips" && isOwner && (
+      <div className="myclips-section">
+        <h3>My Critique Clips</h3>
+        {critiqueLoading ? (
+          <p className="myclips-loading">Loading your clips…</p>
+        ) : myCritiquePosts.length === 0 ? (
+          <div className="myclips-empty">
+            <p>You haven't posted any clips yet.</p>
+          </div>
+        ) : (
+          <div className="myclips-feed">
+            {myCritiquePosts.map((post) => (
+              <div key={post.id} className="myclips-item">
+                <div
+                  className={`myclips-status ${
+                    post.flagged
+                      ? "myclips-status--rejected"
+                      : post.approved
+                      ? "myclips-status--approved"
+                      : "myclips-status--pending"
+                  }`}
+                >
+                  {post.flagged
+                    ? "❌ Rejected"
+                    : post.approved
+                    ? "✅ Live"
+                    : "⏳ Pending Review"}
+                </div>
+                <CritiquePost post={post} user={user} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
   </>
 )}
         </div>
@@ -632,3 +705,5 @@ function ProfilePage({ user, targetUser })
 }
 
 export default ProfilePage;
+
+

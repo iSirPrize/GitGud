@@ -29,6 +29,7 @@ import { useState, useEffect, useRef } from "react";
 import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 import { useTheme } from "./context/ThemeContext";
+import CritiquePost from "./CritiquePost";
 import "./AdminPanel.css";
 
 // ── YouTube IFrame loader ─────────────────────────────────────────────────────
@@ -203,13 +204,14 @@ export default function AdminPanel({ user }) {
   const { theme } = useTheme();
   const isDark    = theme === "dark";
 
-  const [isAdmin,   setIsAdmin]   = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [activeTab, setActiveTab] = useState("quiz");
-  const [quizzes,   setQuizzes]   = useState([]);
-  const [critiques, setCritiques] = useState([]);
-  const [acting,    setActing]    = useState(null);
-  const [expanded,  setExpanded]  = useState(null);
+  const [isAdmin,           setIsAdmin]           = useState(null);
+  const [loading,           setLoading]           = useState(true);
+  const [activeTab,         setActiveTab]         = useState("quiz");
+  const [quizzes,           setQuizzes]           = useState([]);
+  const [critiques,         setCritiques]         = useState([]);
+  const [approvedCritiques, setApprovedCritiques] = useState([]);
+  const [acting,            setActing]            = useState(null);
+  const [expanded,          setExpanded]          = useState(null);
 
   useEffect(() => {
     if (!user?.uid) { setIsAdmin(false); setLoading(false); return; }
@@ -232,7 +234,7 @@ export default function AdminPanel({ user }) {
     if (!isAdmin) return;
     async function fetchPending() {
       try {
-        const [quizSnap, critiqueSnap] = await Promise.all([
+        const [quizSnap, critiqueSnap, approvedSnap] = await Promise.all([
           getDocs(query(
             collection(db, "userQuizzes"),
             where("approved", "==", false),
@@ -243,9 +245,18 @@ export default function AdminPanel({ user }) {
             where("approved", "==", false),
             where("flagged",  "==", false)
           )),
+          getDocs(query(
+            collection(db, "critiquePosts"),
+            where("approved", "==", true)
+          )),
         ]);
         setQuizzes(quizSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
         setCritiques(critiqueSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setApprovedCritiques(
+          approvedSnap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
+        );
       } catch (err) {
         console.error("Failed to load pending items:", err);
       }
@@ -297,7 +308,7 @@ export default function AdminPanel({ user }) {
     );
   }
 
-  const activeItems    = activeTab === "quiz" ? quizzes : critiques;
+  const pendingItems   = activeTab === "quiz" ? quizzes : critiques;
   const collectionName = activeTab === "quiz" ? "userQuizzes" : "critiquePosts";
   const setter         = activeTab === "quiz" ? setQuizzes  : setCritiques;
 
@@ -328,33 +339,72 @@ export default function AdminPanel({ user }) {
           Critique Posts
           {critiques.length > 0 && <span className="ap-badge">{critiques.length}</span>}
         </button>
+        <button
+          className={`ap-tab ${activeTab === "approved" ? "active" : ""}`}
+          onClick={() => { setActiveTab("approved"); setExpanded(null); }}
+        >
+          Approved Clips
+          {approvedCritiques.length > 0 && (
+            <span className="ap-badge ap-badge--green">{approvedCritiques.length}</span>
+          )}
+        </button>
       </div>
 
-      {activeItems.length === 0 ? (
-        <div className="ap-empty">
-          <h2>All caught up!</h2>
-          <p>No {activeTab === "quiz" ? "quiz submissions" : "critique posts"} awaiting review.</p>
-        </div>
-      ) : (
-        <>
-          <p className="ap-count">
-            {activeItems.length} item{activeItems.length !== 1 ? "s" : ""} awaiting review
-          </p>
-          <div className="ap-list">
-            {activeItems.map((item) => (
-              <ModerationCard
-                key={item.id}
-                item={item}
-                type={activeTab}
-                acting={acting}
-                expanded={expanded === item.id}
-                onToggleExpand={() => setExpanded(expanded === item.id ? null : item.id)}
-                onApprove={(id) => handleApprove(id, collectionName, setter)}
-                onReject={(id)  => handleReject(id, collectionName, setter)}
-              />
-            ))}
+      {/* ── Approved Clips tab ── */}
+      {activeTab === "approved" ? (
+        approvedCritiques.length === 0 ? (
+          <div className="ap-empty">
+            <h2>No approved clips yet.</h2>
+            <p>Clips you approve will appear here for review or removal.</p>
           </div>
-        </>
+        ) : (
+          <>
+            <p className="ap-count">
+              {approvedCritiques.length} approved clip{approvedCritiques.length !== 1 ? "s" : ""} — edit or delete any clip below
+            </p>
+            <div className="ap-list">
+              {approvedCritiques.map((post) => (
+                <CritiquePost
+                  key={post.id}
+                  post={post}
+                  user={user}
+                  isAdmin={true}
+                  onDeleted={(id) =>
+                    setApprovedCritiques((prev) => prev.filter((p) => p.id !== id))
+                  }
+                />
+              ))}
+            </div>
+          </>
+        )
+      ) : (
+        /* ── Pending / Queue tabs ── */
+        pendingItems.length === 0 ? (
+          <div className="ap-empty">
+            <h2>All caught up!</h2>
+            <p>No {activeTab === "quiz" ? "quiz submissions" : "critique posts"} awaiting review.</p>
+          </div>
+        ) : (
+          <>
+            <p className="ap-count">
+              {pendingItems.length} item{pendingItems.length !== 1 ? "s" : ""} awaiting review
+            </p>
+            <div className="ap-list">
+              {pendingItems.map((item) => (
+                <ModerationCard
+                  key={item.id}
+                  item={item}
+                  type={activeTab}
+                  acting={acting}
+                  expanded={expanded === item.id}
+                  onToggleExpand={() => setExpanded(expanded === item.id ? null : item.id)}
+                  onApprove={(id) => handleApprove(id, collectionName, setter)}
+                  onReject={(id)  => handleReject(id, collectionName, setter)}
+                />
+              ))}
+            </div>
+          </>
+        )
       )}
     </div>
   );
