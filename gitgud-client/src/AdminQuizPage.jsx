@@ -76,7 +76,7 @@ function loadYouTubeApi() {
 // - creates a fresh inner div for YT to replace with an iframe each mount
 // - answers hidden until video pauses at pauseAt seconds
 // - video resumes automatically after submit
-function VideoMcPlayer({ question, answer, onAnswer, submitted, onVideoEnded }) {
+function VideoMcPlayer({ question, answer, onAnswer, submitted, onVideoEnded, hiddenChoices = [], revealedWrong = null, revealedCorrect = null }) {
   const wrapperRef   = useRef(null);  // stable outer div ref
   const playerRef    = useRef(null);
   const pollRef      = useRef(null);
@@ -202,6 +202,7 @@ function VideoMcPlayer({ question, answer, onAnswer, submitted, onVideoEnded }) 
         <>
           <div className="aqp-choices">
             {question.choices.map((choice, idx) => {
+              if (hiddenChoices.includes(idx)) return null;
               let cls = "aqp-choice-btn";
               if (submitted) {
                 cls += " locked";
@@ -209,6 +210,10 @@ function VideoMcPlayer({ question, answer, onAnswer, submitted, onVideoEnded }) 
                 else if (idx === answer)            cls += " wrong";
               } else if (answer === idx) {
                 cls += " selected";
+              }
+              if (!submitted) {
+                if (idx === revealedCorrect) cls += " perk-correct";
+                if (idx === revealedWrong)   cls += " perk-wrong";
               }
               return (
                 <button key={idx} className={cls}
@@ -273,13 +278,6 @@ function RankPlayer({ question, answer, onAnswer, submitted }) {
 
   return (
     <div className="aqp-rank-player">
-      {question.contextImageUrl && (
-        <img
-          src={question.contextImageUrl}
-          alt="Question context"
-          className="aqp-context-image"
-        />
-      )}
       <p className="aqp-rank-instruction">Drag cards into the correct order — top is 1st, bottom is last.</p>
       <div className="aqp-rank-list">
         {order.map((itemIdx, pos) => {
@@ -755,7 +753,7 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
   const q           = questions[current];
   const isSubmitted = submitted[current];
   const currAnswer  = answers[current];
-  const isMC        = q?.type === QUESTION_TYPES.MULTI_CHOICE;
+  const isMC        = q?.type === QUESTION_TYPES.MULTI_CHOICE || q?.type === QUESTION_TYPES.VIDEO_MC;
   const isVideoMC   = q?.type === QUESTION_TYPES.VIDEO_MC;
 
   const handleAnswer = (val) => setAnswers(prev => prev.map((a, i) => i === current ? val : a));
@@ -963,16 +961,6 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
           sessionActivePerks={sessionActivePerks} onToggle={toggleSessionPerk} isDark={isDark} />
       </div>
 
-      {/* Perk action buttons */}
-      {hasPerkBtns && (
-        <div className="perk-actions" style={{ justifyContent: "center", marginBottom: 8 }}>
-          {showFiftyFiftyBtn  && <button className="perk-btn fifty-fifty"  onClick={handleFiftyFifty}>½ Use 50/50</button>}
-          {showCoinTossBtn    && <button className="perk-btn coin-toss"    onClick={handleFiftyFifty}>🪙 Coin Toss</button>}
-          {showRevealWrongBtn && <button className="perk-btn reveal-wrong" onClick={handleReveal1Wrong}>🚫 Reveal Wrong</button>}
-          {showRetryQBtn      && <button className="perk-btn retry-q"      onClick={handleRetryQuestion}>↩ Retry Question</button>}
-        </div>
-      )}
-
       {/* Progress dots */}
       <div className="aqp-progress-row">
         {questions.map((_, i) => (
@@ -983,6 +971,17 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
 
       {/* Centred content column — matches video/card width, clears nav */}
       <div className="aqp-content-col">
+
+        {/* Perk buttons — inside column so they left-align with the card */}
+        {hasPerkBtns && (
+          <div className="perk-actions">
+            {showFiftyFiftyBtn  && <button className="perk-btn fifty-fifty"  onClick={handleFiftyFifty}>½ 50/50</button>}
+            {showCoinTossBtn    && <button className="perk-btn coin-toss"    onClick={handleFiftyFifty}>🪙 Coin Toss</button>}
+            {showRevealWrongBtn && <button className="perk-btn reveal-wrong" onClick={handleReveal1Wrong}>🚫 Reveal Wrong</button>}
+            {showRetryQBtn      && <button className="perk-btn retry-q"      onClick={handleRetryQuestion}>↩ Retry Question</button>}
+          </div>
+        )}
+
         {/* Question card */}
         <div className="aqp-question-card">
           <div className="aqp-q-header">
@@ -997,6 +996,7 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
               key={`video-${quiz.id}-${current}`}
               question={q} answer={currAnswer} onAnswer={handleAnswer} submitted={isSubmitted}
               onVideoEnded={current === total - 1 ? handleLastVideoEnded : undefined}
+              hiddenChoices={hiddenChoices} revealedWrong={revealedWrong} revealedCorrect={revealedCorrect}
             />
           ) : isMC ? (
             <MultiChoicePlayer

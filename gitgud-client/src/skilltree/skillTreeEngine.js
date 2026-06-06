@@ -219,6 +219,7 @@ export function applyFiftyFifty(wrongIndices, correctIndex, unlockedPerks, activ
       hiddenIndices: [],
       revealedCorrect: correctIndex,
       revealedWrong,
+      coinTossUsed: true,   // flag so QuizCarousel can recharge on correct answer
     };
   }
 
@@ -228,6 +229,7 @@ export function applyFiftyFifty(wrongIndices, correctIndex, unlockedPerks, activ
     hiddenIndices: shuffled.slice(0, 2),
     revealedCorrect: null,
     revealedWrong: null,
+    coinTossUsed: false,
   };
 }
 

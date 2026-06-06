@@ -175,7 +175,7 @@ export const SKILL_NODES = [
   {
     id: PERK_KEY.COIN_TOSS,
     label: 'Coin Toss',
-    description: 'Reveals 1 correct answer AND 1 wrong answer simultaneously.',
+    description: 'Reveals 1 correct + 1 wrong answer. Get it right and the perk recharges for the next question — get it wrong and it is consumed.',
     type: SKILL_TYPE.ACTIVE,
     level: 3,
     parentIds: [PERK_KEY.REVEAL_1_WRONG],

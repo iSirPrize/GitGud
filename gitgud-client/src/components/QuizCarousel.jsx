@@ -344,6 +344,9 @@ export default function QuizCarousel({ user }) {
   const [questionRetryUsed, setQuestionRetryUsed] = useState(false);
   const [tryAgainUsed, setTryAgainUsed]           = useState(false);
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
+  // Coin Toss recharge: tracks whether Coin Toss was used on this question
+  // so we can recharge it (re-add to sessionActivePerks) when user answers correctly
+  const [coinTossUsedThisQ, setCoinTossUsedThisQ] = useState(false);
 
   // DAILIES: hook called directly — no prop threading or wrapper component needed
   const { recordProgress } = useDailies(user?.uid);
@@ -450,8 +453,12 @@ export default function QuizCarousel({ user }) {
   // ── SECTION 3: Perk action handlers ───────────────────────────────────────
 
   // ── Perk action: 50/50 (or Coin Toss if unlocked) ─────────────────────────
+  // Works for ALL question types including embedded YouTube multi-choice.
+  // hiddenChoices drives getChoiceClass which hides buttons regardless of panel type.
   const handleFiftyFifty = () => {
-    if (!sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY)) return;
+    if (!sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY) &&
+        !sessionActivePerks.includes(PERK_KEY.COIN_TOSS)) return;
+
     const wrongIndices = scenario.choices
       .map((_, i) => i)
       .filter(i => i !== scenario.correctIndex);
@@ -466,10 +473,13 @@ export default function QuizCarousel({ user }) {
     setHiddenChoices(result.hiddenIndices);
     setRevealedWrong(result.revealedWrong);
     setRevealedCorrect(result.revealedCorrect);
+    setCoinTossUsedThisQ(result.coinTossUsed);
 
-    // Consume the active perk for this question (deactivate after use)
-    toggleSessionPerk(PERK_KEY.FIFTY_FIFTY);
-    if (unlockedPerks.includes(PERK_KEY.COIN_TOSS)) {
+    // Consume the active perk(s) after use — Coin Toss recharge happens in handleSubmit
+    if (sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY)) {
+      toggleSessionPerk(PERK_KEY.FIFTY_FIFTY);
+    }
+    if (result.coinTossUsed) {
       toggleSessionPerk(PERK_KEY.COIN_TOSS);
     }
   };
@@ -498,6 +508,7 @@ export default function QuizCarousel({ user }) {
     setRevealedWrong(null);
     setRevealedCorrect(null);
     setQuestionRetryUsed(true);
+    setCoinTossUsedThisQ(false);
   };
 
   // ── Perk action: Try Again (whole quiz) ────────────────────────────────────
@@ -546,6 +557,14 @@ export default function QuizCarousel({ user }) {
     setRevealedWrong(null);
     setRevealedCorrect(null);
     setQuestionRetryUsed(false);
+
+    // ── Coin Toss recharge ─────────────────────────────────────────────────
+    // If Coin Toss was used this question AND the answer is correct,
+    // re-activate it so it can be used again on the next question.
+    if (coinTossUsedThisQ && correct && unlockedPerks.includes(PERK_KEY.COIN_TOSS)) {
+      toggleSessionPerk(PERK_KEY.COIN_TOSS); // adds it back to sessionActivePerks
+    }
+    setCoinTossUsedThisQ(false);
 
     // DAILIES: correct answer submitted — increment quiz correct-answer quests
     if (correct) recordProgress("quiz", { correct: 1 });
@@ -729,30 +748,6 @@ export default function QuizCarousel({ user }) {
         )}
       </div>
 
-      {/* Perk action buttons row */}
-      <div className="perk-actions">
-        {sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY) && !submitted[current] && (
-          <button className="perk-btn fifty-fifty" onClick={handleFiftyFifty}>
-            ½ Use 50/50
-          </button>
-        )}
-        {sessionActivePerks.includes(PERK_KEY.COIN_TOSS) && !submitted[current] && (
-          <button className="perk-btn coin-toss" onClick={handleFiftyFifty}>
-            🪙 Coin Toss
-          </button>
-        )}
-        {sessionActivePerks.includes(PERK_KEY.REVEAL_1_WRONG) && !submitted[current] && (
-          <button className="perk-btn reveal-wrong" onClick={handleReveal1Wrong}>
-            🚫 Reveal Wrong
-          </button>
-        )}
-        {unlockedPerks.includes(PERK_KEY.RETRY_QUESTION) && submitted[current] && !questionRetryUsed && (
-          <button className="perk-btn retry-q" onClick={handleRetryQuestion}>
-            ↩ Retry Question
-          </button>
-        )}
-      </div>
-
       {/* ── Progress dots ─────────────────────────────────────────────────────── */}
       <div className="quiz-progress">
         {SCENARIOS.map((_, i) => (
@@ -775,6 +770,9 @@ export default function QuizCarousel({ user }) {
           <button className="nav-arrow" onClick={() => goTo("prev")} aria-label="Previous question">
             &#9664;
           </button>
+
+          {/* Column: video only */}
+          <div className="video-col">
 
           <div className="video-frame">
   {showInstructions && (
@@ -806,7 +804,8 @@ export default function QuizCarousel({ user }) {
               scenarioId={scenario.id}
               hidden={showInstructions}
             />
-          </div>
+          </div>{/* end video-frame */}
+          </div>{/* end video-col */}
 
           <button className="nav-arrow" onClick={() => goTo("next")} aria-label="Next question">
             &#9654;
@@ -825,6 +824,30 @@ export default function QuizCarousel({ user }) {
           )}
 
           {/* Question + choices — shown after video pauses */}
+              {/* ── Perk action buttons — always visible when active, left-aligned with choices ── */}
+              <div className="perk-actions">
+                {sessionActivePerks.includes(PERK_KEY.FIFTY_FIFTY) && !submitted[current] && (
+                  <button className="perk-btn fifty-fifty" onClick={handleFiftyFifty}>
+                    ½ 50/50
+                  </button>
+                )}
+                {sessionActivePerks.includes(PERK_KEY.COIN_TOSS) && !submitted[current] && (
+                  <button className="perk-btn coin-toss" onClick={handleFiftyFifty}>
+                    🪙 Coin Toss
+                  </button>
+                )}
+                {sessionActivePerks.includes(PERK_KEY.REVEAL_1_WRONG) && !submitted[current] && (
+                  <button className="perk-btn reveal-wrong" onClick={handleReveal1Wrong}>
+                    🚫 Reveal Wrong
+                  </button>
+                )}
+                {unlockedPerks.includes(PERK_KEY.RETRY_QUESTION) && submitted[current] && !questionRetryUsed && (
+                  <button className="perk-btn retry-q" onClick={handleRetryQuestion}>
+                    ↩ Retry Question
+                  </button>
+                )}
+              </div>
+
           {(isVideoPaused || isSubmitted) && (
             <>
               <div className="panel-question">
