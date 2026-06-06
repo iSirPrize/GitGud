@@ -32,6 +32,7 @@
   transition: opacity 0.2s, transform 0.15s;
 }
 .cp-post-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.cp-post-btn--sm   { padding: 8px 18px; font-size: 0.85rem; }
 
 /* Category filter tabs */
 .cp-tabs {
@@ -55,13 +56,76 @@
 .cp-tab:hover  { border-color: var(--qc-frame); color: var(--qc-text); }
 .cp-tab.active { background: var(--qc-frame); border-color: var(--qc-frame); color: #fff; }
 
-/* Feed */
+/* Feed — single-category view */
 .cp-feed {
   display: flex;
   flex-direction: column;
   gap: 24px;
   width: 100%;
   max-width: 760px;
+}
+
+/* Feed — split "All Posts" view */
+.cp-feed--split {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* Section block (used in All Posts view) */
+.cp-section {
+  width: 100%;
+}
+
+.cp-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.cp-section-title {
+  color: var(--qc-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 0;
+}
+
+.cp-section-count {
+  color: var(--qc-subtext);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cp-section-divider {
+  height: 3px;
+  background: var(--qc-frame);
+  border-radius: 2px;
+  margin-bottom: 20px;
+  opacity: 0.6;
+}
+
+.cp-section-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cp-section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 0;
+}
+.cp-section-empty p {
+  color: var(--qc-subtext);
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 /* States */

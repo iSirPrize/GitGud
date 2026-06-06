@@ -273,6 +273,13 @@ function RankPlayer({ question, answer, onAnswer, submitted }) {
 
   return (
     <div className="aqp-rank-player">
+      {question.contextImageUrl && (
+        <img
+          src={question.contextImageUrl}
+          alt="Question context"
+          className="aqp-context-image"
+        />
+      )}
       <p className="aqp-rank-instruction">Drag cards into the correct order — top is 1st, bottom is last.</p>
       <div className="aqp-rank-list">
         {order.map((itemIdx, pos) => {

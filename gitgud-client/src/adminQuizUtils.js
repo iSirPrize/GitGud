@@ -238,10 +238,11 @@ export function makeMultiChoiceQuestion() {
 
 export function makeRankQuestion() {
   return {
-    type:         QUESTION_TYPES.RANK,
-    question:     "",
-    useImages:    false,
-    items:        [
+    type:             QUESTION_TYPES.RANK,
+    contextImageUrl:  "",   // optional situation/map image shown above the question
+    question:         "",
+    useImages:        false,
+    items:            [
       { label: "", imageUrl: "" },
       { label: "", imageUrl: "" },
       { label: "", imageUrl: "" },

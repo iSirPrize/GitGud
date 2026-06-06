@@ -733,3 +733,69 @@
 
     color: var(--qc-frame);
 }
+/* ── My Clips tab ─────────────────────────────────────────────────────────── */
+
+.myclips-section {
+    width: 100%;
+    padding: 8px 0 20px;
+}
+
+.myclips-section h3 {
+    color: var(--qc-text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0 0 20px;
+}
+
+.myclips-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.myclips-item {
+    position: relative;
+}
+
+.myclips-status {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+
+.myclips-status--approved {
+    background: rgba(72, 199, 142, 0.15);
+    color: #48c78e;
+    border: 1px solid #48c78e;
+}
+
+.myclips-status--pending {
+    background: rgba(255, 183, 0, 0.12);
+    color: #ffb700;
+    border: 1px solid #ffb700;
+}
+
+.myclips-status--rejected {
+    background: rgba(255, 80, 80, 0.12);
+    color: #ff5050;
+    border: 1px solid #ff5050;
+}
+
+.myclips-loading {
+    color: var(--qc-subtext);
+    font-size: 0.9rem;
+    padding: 20px 0;
+}
+
+.myclips-empty {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--qc-subtext);
+    font-size: 0.9rem;
+}
