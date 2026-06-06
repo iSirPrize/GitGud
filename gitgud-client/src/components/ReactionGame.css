@@ -324,6 +324,15 @@
   transform: scale(0.97);
 }
 
+.xp-bonus-note {
+  grid-column: 1 / -1; /* span full width */
+  text-align: center;
+  margin-top: 4px;
+  color: var(--qc-frame);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 /* Results Panel */
 .results-panel {
   max-width: 700px;
@@ -346,6 +355,7 @@
   display: grid;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
+  justify-content: center;
 }
 .results-grid div {
   color: var(--qc-subtext);

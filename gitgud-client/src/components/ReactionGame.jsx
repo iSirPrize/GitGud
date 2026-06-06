@@ -27,7 +27,6 @@ export default function ReactionGame() {
 
   const [round, setRound] = useState(1);
   const [reactionTimes, setReactionTimes] = useState([]);
-  const [xpEarned, setXpEarned] = useState(0);
   const [currentReaction, setCurrentReaction] = useState(null);
   const [message, setMessage] = useState("Press Start to Begin");
   const [targetVisible, setTargetVisible] = useState(false);
@@ -40,6 +39,9 @@ export default function ReactionGame() {
   const [isFocused, setIsFocused] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  const [sessionResult, setSessionResult] = useState(null);
+  const [unlockedPerks, setUnlockedPerks] = useState([]);
 
   useEffect(() => {
   const hideInstructions = localStorage.getItem("hideReactionInstructions");
@@ -82,6 +84,12 @@ async function saveReactionResult(avg, best, rounds) {
 
     if (user) {
       const userSnap = await getDoc(doc(db, "users", user.uid));
+
+      const unlockedPerks =
+      userSnap.data()?.skillTree?.unlockedPerks || [];
+
+    const perks = userSnap.data()?.skillTree?.unlockedPerks || []; 
+      setUnlockedPerks(perks);
 
       if (userSnap.exists()) {
         const data = userSnap.data();
@@ -209,7 +217,7 @@ if (auth.currentUser) {
     userSnap.data()?.skillTree?.unlockedPerks || [];
 }
 
-let xpEarned = 0;
+let xpEarned = 15; // base XP for completing session
 
 if (finalAvg <= 250) {
   xpEarned += 25;
@@ -223,11 +231,24 @@ if (finalAvg <= 190) {
   xpEarned += 50;
 }
 
-if (unlockedPerks.includes(PERK_KEY.REACTION_PASSIVE_1)) {
-  xpEarned = Math.floor(xpEarned * 1.1);
-}
+let perkText = "";
 
-setXpEarned(xpEarned);
+if (unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_2)) {
+  xpEarned = Math.floor(xpEarned * 1.5);
+  perkText = "(+50% XP perk applied)";
+} else if (unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_1)) {
+  xpEarned = Math.floor(xpEarned * 1.25);
+  perkText = "(+25% XP perk applied)";
+}
+const resultData = {
+  average: finalAvg,
+  best: finalBest,
+  shots: updatedTimes.length,
+  xpEarned,
+  perkText,
+};
+
+setSessionResult(resultData);
 
 saveReactionResult(finalAvg, finalBest, updatedTimes.length);
 
@@ -486,10 +507,15 @@ useEffect(() => {
             <h2>Session Complete!</h2>
 
             <div className="results-grid">
-              <div><strong>Average:</strong> {averageReaction} ms</div>
-              <div><strong>Best:</strong> {bestReaction} ms</div>
-              <div><strong>Shots:</strong> {reactionTimes.length}</div>
-              <div><strong>XP Earned:</strong> +{xpEarned}</div>
+              <div><strong>Average:</strong> {sessionResult?.average || "--"} ms</div>
+              <div><strong>Best:</strong> {sessionResult?.best || "--"} ms</div>
+              <div><strong>Shots:</strong> {sessionResult?.shots || "--"}</div>
+              <div><strong>XP Earned:</strong> +{sessionResult?.xpEarned ?? "--"}</div>
+              {sessionResult?.perkText && (
+  <div className="xp-bonus-note">
+    {sessionResult.perkText}
+  </div>
+)}
             </div>
 
             <div className="rank-display">
