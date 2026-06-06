@@ -36,6 +36,7 @@ export default function AimGame() {
 
   const [showInstructions, setShowInstructions] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [showHitPopup, setShowHitPopup] = useState(false);
 
   const crosshairSymbols = {
     dotCross: "✚",
@@ -70,6 +71,8 @@ export default function AimGame() {
     setScore((s) => s + 1);
     setClicks((c) => c + 1);
     spawnTarget();
+    setShowHitPopup(true);
+    setTimeout(() => setShowHitPopup(false), 1000);
   };
 
   useEffect(() => {
@@ -185,6 +188,14 @@ async function endGame(finalScore, finalClicks) {
       snap.data()?.skillTree?.unlockedPerks || [];
   }
 
+    let displayedScore = finalScore;
+
+if (unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_2)) {
+  displayedScore += 3;
+} else if (unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_1)) {
+  displayedScore += 1;
+}
+
     const misses = finalClicks - finalScore;
     const accuracy =
       finalClicks === 0 ? 0 : Number(((finalScore / finalClicks) * 100).toFixed(2));
@@ -210,7 +221,7 @@ if (accuracy === 100) {
 }
 
 const resultData = {
-  hits: finalScore,
+  hits: displayedScore,
   misses,
   accuracy,
   duration: GAME_TIME,
