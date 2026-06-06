@@ -23,9 +23,7 @@ export default function AimGame() {
   const [gameActive, setGameActive] = useState(false);
   const [clicks, setClicks] = useState(0);
   const [result, setResult] = useState(null);
-
-  //xp variables to prevent stale closures in setInterval and endGame
-  const [xpEarned, setXpEarned] = useState(0);
+  const [unlockedPerks, setUnlockedPerks] = useState([]);
 
 
   const [crosshairType, setCrosshairType] = useState("plus");
@@ -115,6 +113,9 @@ export default function AimGame() {
     const unlockedPerks =
       snap.data()?.skillTree?.unlockedPerks || [];
 
+    const perks = snap.data()?.skillTree?.unlockedPerks || []; 
+      setUnlockedPerks(perks);
+
     if (unlockedPerks.includes(PERK_KEY.AIM_ACTIVE_1)) {
       setTargetSize(90);
     } else {
@@ -188,35 +189,36 @@ async function endGame(finalScore, finalClicks) {
     const accuracy =
       finalClicks === 0 ? 0 : Number(((finalScore / finalClicks) * 100).toFixed(2));
 
-    const resultData = {
-      hits: finalScore,
-      misses,
-      accuracy,
-      duration: GAME_TIME,
-      createdAt: serverTimestamp(),
-    };
+let xpEarned = finalScore;
 
-    let xpEarned = finalScore;
-
-if ( unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_2) ) {
+if (unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_2)) {
   xpEarned = Math.floor(xpEarned * 1.5);
-} else if ( unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_1) ) {
+} else if (unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_1)) {
   xpEarned = Math.floor(xpEarned * 1.25);
 }
 
-    if (accuracy >= 90) {
-      xpEarned += 25;
-    }
+if (accuracy >= 90) {
+  xpEarned += 25;
+}
 
-    if (accuracy >= 95) {
-      xpEarned += 25;
-    }
+if (accuracy >= 95) {
+  xpEarned += 25;
+}
 
-    if (accuracy === 100) {
-      xpEarned += 50;
-    }
+if (accuracy === 100) {
+  xpEarned += 50;
+}
 
-setXpEarned(xpEarned);
+const resultData = {
+  hits: finalScore,
+  misses,
+  accuracy,
+  duration: GAME_TIME,
+  xpEarned,
+  createdAt: serverTimestamp(),
+};
+
+setResult(resultData);
 
     setResult(resultData);
 
@@ -421,7 +423,18 @@ setXpEarned(xpEarned);
                 <p><strong>Hits:</strong> {result.hits}</p>
                 <p><strong>Misses:</strong> {result.misses}</p>
                 <p><strong>Accuracy:</strong> {result.accuracy}%</p>
-                <p><strong>XP Earned:</strong> +{xpEarned}</p>
+                <p><strong>XP Earned:</strong> +{result.xpEarned}</p>
+                {unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_1) && (
+  <p className="xp-bonus-note">
+    (+25% XP perk applied)
+  </p>
+)}
+
+{unlockedPerks.includes(PERK_KEY.AIM_PASSIVE_2) && (
+  <p className="xp-bonus-note">
+    (+50% XP perk applied)
+  </p>
+)}
                 <button
                   className="start-button"
                   onClick={() => {
