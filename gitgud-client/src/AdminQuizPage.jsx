@@ -724,12 +724,35 @@ function QuizQuestionComments({ quizId, questionIndex }) {
   );
 }
 
+// ── Shuffle helper ────────────────────────────────────────────────────────────
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ── Quiz Player ───────────────────────────────────────────────────────────────
 function AdminQuizPlayer({ quiz, user, onBack }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const questions = quiz.questions ?? [];
+  const baseQuestions = quiz.questions ?? [];
+
+  // Shuffle questions on mount; reshuffled on every retry
+  const [questions, setQuestions] = useState(() => shuffleArray(baseQuestions));
   const total = questions.length;
+
+  const reshuffleAndReset = () => {
+    const shuffled = shuffleArray(baseQuestions);
+    setQuestions(shuffled);
+    setCurrent(0);
+    setAnswers(Array(shuffled.length).fill(null));
+    setSubmitted(Array(shuffled.length).fill(false));
+    resetQuestionPerkState();
+    setConsecutiveCorrect(0);
+  };
 
   const [current,       setCurrent]       = useState(0);
   const [answers,       setAnswers]       = useState(Array(total).fill(null));
@@ -784,9 +807,9 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
   };
   const handleTryAgain = () => {
     if (tryAgainUsed) return;
-    setShowComplete(false); setCurrent(0);
-    setAnswers(Array(total).fill(null)); setSubmitted(Array(total).fill(false));
-    resetQuestionPerkState(); setConsecutiveCorrect(0); setTryAgainUsed(true); resetSessionPerks();
+    setShowComplete(false);
+    reshuffleAndReset();
+    setTryAgainUsed(true); resetSessionPerks();
   };
 
   const handleSubmit = async () => {
@@ -925,9 +948,8 @@ function AdminQuizPlayer({ quiz, user, onBack }) {
               <button className="aqc-btn-primary" onClick={() => {
                 if (canTryAgain(unlockedPerks) && !tryAgainUsed) handleTryAgain();
                 else {
-                  setShowComplete(false); setCurrent(0);
-                  setAnswers(Array(total).fill(null)); setSubmitted(Array(total).fill(false));
-                  resetQuestionPerkState(); setConsecutiveCorrect(0);
+                  setShowComplete(false);
+                  reshuffleAndReset();
                 }
               }}>
                 {canTryAgain(unlockedPerks) && !tryAgainUsed ? "🔄 Try Again (perk)" : "Try Again"}
