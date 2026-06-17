@@ -52,7 +52,21 @@ function normaliseScenario(data) {
   };
 }
 
-// ── YouTube IFrame loader ──────────────────────────────────────────────────────
+// ── Shuffle helper ─────────────────────────────────────────────────────────────
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Shuffle questions within each scenario doc
+function shuffleScenarioQuestions(docs) {
+  return docs.map(d => ({ ...d, questions: shuffleArray(d.questions) }));
+}
+
 let ytApiReady = false;
 let ytApiCallbacks = [];
 function loadYouTubeApi() {
@@ -312,7 +326,8 @@ export default function UserQuizCarousel({ user }) {
     async function load() {
       try {
         const snap = await getDocs(query(collection(db, "userQuizzes"), where("game", "==", gameId), where("approved", "==", true)));
-        const docs = snap.docs.map(d => normaliseScenario({ id: d.id, ...d.data() }));
+        const rawDocs = snap.docs.map(d => normaliseScenario({ id: d.id, ...d.data() }));
+        const docs = shuffleScenarioQuestions(shuffleArray(rawDocs));
         setScenarios(docs);
         if (scenarioId) { const idx = docs.findIndex(s => String(s.id) === String(scenarioId)); if (idx >= 0) setCurrent(idx); }
         setAnswers(docs.map(d => Array(d.questions.length).fill(null)));
@@ -408,10 +423,12 @@ export default function UserQuizCarousel({ user }) {
   // ── Perk: Try Again ────────────────────────────────────────────────────────
   const handleTryAgain = () => {
     if (tryAgainUsed) return;
+    const reshuffled = shuffleScenarioQuestions(shuffleArray(scenarios));
+    setScenarios(reshuffled);
     setShowComplete(false); setCurrent(0); setCurrentQ(0);
-    setAnswers(scenarios.map(d => Array(d.questions.length).fill(null)));
-    setSubmitted(scenarios.map(d => Array(d.questions.length).fill(false)));
-    setVideoPaused(scenarios.map(d => Array(d.questions.length).fill(false)));
+    setAnswers(reshuffled.map(d => Array(d.questions.length).fill(null)));
+    setSubmitted(reshuffled.map(d => Array(d.questions.length).fill(false)));
+    setVideoPaused(reshuffled.map(d => Array(d.questions.length).fill(false)));
     resetQuestionPerkState(); setConsecutiveCorrect(0); setTryAgainUsed(true); resetSessionPerks();
   };
 
@@ -489,10 +506,12 @@ export default function UserQuizCarousel({ user }) {
               <button className="complete-retry-btn" onClick={() => {
                 if (canTryAgain(unlockedPerks) && !tryAgainUsed) { handleTryAgain(); }
                 else {
+                  const reshuffled = shuffleScenarioQuestions(shuffleArray(scenarios));
+                  setScenarios(reshuffled);
                   setShowComplete(false); setCurrent(0); setCurrentQ(0);
-                  setAnswers(scenarios.map(d => Array(d.questions.length).fill(null)));
-                  setSubmitted(scenarios.map(d => Array(d.questions.length).fill(false)));
-                  setVideoPaused(scenarios.map(d => Array(d.questions.length).fill(false)));
+                  setAnswers(reshuffled.map(d => Array(d.questions.length).fill(null)));
+                  setSubmitted(reshuffled.map(d => Array(d.questions.length).fill(false)));
+                  setVideoPaused(reshuffled.map(d => Array(d.questions.length).fill(false)));
                   resetQuestionPerkState(); setConsecutiveCorrect(0);
                 }
               }}>

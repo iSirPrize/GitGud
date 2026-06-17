@@ -317,13 +317,23 @@ function YoutubePlayer({ youtubeId, pauseAt, onPaused, onVideoEnded, isSubmitted
   );
 }
 
+// ─── Shuffle helper ───────────────────────────────────────────────────────────
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function QuizCarousel({ user }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   const { gameId, scenarioId } = useParams();
-  const SCENARIOS = SCENARIOS_BY_GAME[gameId] ?? FALLBACK_SCENARIOS;
+  const BASE_SCENARIOS = SCENARIOS_BY_GAME[gameId] ?? FALLBACK_SCENARIOS;
 
   // ── SECTION 2: Skill tree hooks ───────────────────────────────────────────
   const {
@@ -350,6 +360,23 @@ export default function QuizCarousel({ user }) {
 
   // DAILIES: hook called directly — no prop threading or wrapper component needed
   const { recordProgress } = useDailies(user?.uid);
+
+  // ── Shuffled scenarios — randomised on mount and on every retry ───────────
+  const [SCENARIOS, setScenarios] = useState(() => shuffleArray(BASE_SCENARIOS));
+
+  const reshuffleAndReset = () => {
+    const shuffled = shuffleArray(BASE_SCENARIOS);
+    setScenarios(shuffled);
+    setCurrent(0);
+    setSelected(Array(shuffled.length).fill(null));
+    setSubmitted(Array(shuffled.length).fill(false));
+    setVideoPaused(Array(shuffled.length).fill(false));
+    setFeedback(null);
+    setHiddenChoices([]);
+    setRevealedWrong(null);
+    setRevealedCorrect(null);
+    setConsecutiveCorrect(0);
+  };
 
   const initialIndex = scenarioId
   ? Math.max(
@@ -515,15 +542,7 @@ export default function QuizCarousel({ user }) {
   const handleTryAgain = () => {
     if (tryAgainUsed) return;
     setShowComplete(false);
-    setCurrent(0);
-    setSelected(Array(SCENARIOS.length).fill(null));
-    setSubmitted(Array(SCENARIOS.length).fill(false));
-    setVideoPaused(Array(SCENARIOS.length).fill(false));
-    setFeedback(null);
-    setHiddenChoices([]);
-    setRevealedWrong(null);
-    setRevealedCorrect(null);
-    setConsecutiveCorrect(0);
+    reshuffleAndReset();
     setTryAgainUsed(true);
     resetSessionPerks();
   };
@@ -674,13 +693,9 @@ export default function QuizCarousel({ user }) {
                   if (canTryAgain(unlockedPerks) && !tryAgainUsed) {
                     handleTryAgain();
                   } else {
-                    // original reset (no perk)
+                    // original reset (no perk) — also reshuffles for variety
                     setShowComplete(false);
-                    setCurrent(0);
-                    setSelected(Array(SCENARIOS.length).fill(null));
-                    setSubmitted(Array(SCENARIOS.length).fill(false));
-                    setVideoPaused(Array(SCENARIOS.length).fill(false));
-                    setFeedback(null);
+                    reshuffleAndReset();
                   }
                 }}
               >
