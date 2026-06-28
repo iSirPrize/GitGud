@@ -38,6 +38,12 @@ const GAME_META = {
     accent: "#eeb02a",
     description: "Master your CS2 knowledge",
   },
+  fortnite: {
+    name: "Fortnite",
+    image: "https://res.cloudinary.com/dyis0klmz/image/upload/v1748997619/FortniteChapter2_Reloaded_kkqgad.jpg",
+    accent: "#00d4ff",
+    description: "Test your Fortnite knowledge on weapons, POIs, and game mechanics",
+  },
   other: {
     name: "Other Games",
     image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop",

@@ -39,9 +39,16 @@ const GAMES = [
     accent:      "#eeb02a",
   },
   {
+    id:          "fortnite",
+    name:        "Fortnite",
+    description: "Test your Fortnite knowledge on weapons, POIs, and game mechanics",
+    image:       "https://res.cloudinary.com/dyis0klmz/image/upload/v1748997619/FortniteChapter2_Reloaded_kkqgad.jpg",
+    accent:      "#00d4ff",
+  },
+  {
     id:          "other",
     name:        "Other Games",
-    description: "Apex, Overwatch, Fortnite and more",
+    description: "Apex, Overwatch, Valorant and more",
     image:       "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop",
     accent:      "#a855f7",
   },

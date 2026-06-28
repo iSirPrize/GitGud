@@ -26,8 +26,9 @@ import "./AdminQuizCreate.css";
 // ── Supported games ───────────────────────────────────────────────────────────
 const GAMES = [
   { id: "valorant", label: "Valorant" },
-  { id: "cs2",     label: "Counter-Strike 2" },
-  { id: "other",   label: "Other Games" },
+  { id: "cs2",      label: "Counter-Strike 2" },
+  { id: "fortnite", label: "Fortnite" },
+  { id: "other",    label: "Other Games" },
 ];
 
 const STEPS = ["Details", "Questions", "Review"];
