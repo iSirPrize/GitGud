@@ -60,24 +60,24 @@
 .games-grid {
   display: flex;
   flex-direction: row;
-  gap: 32px;
-  max-width: 1100px;
+  gap: 28px;
+  max-width: 1400px;
   width: 100%;
   justify-content: center;
   flex-wrap: wrap;
-  transform: scale(0.9);
+  transform: none;
   transform-origin: top center;
 }
 
 @media (min-height: 900px) {
-  .games-grid { transform: scale(1); }
+  .games-grid { transform: none; }
 }
 
 /* -- Game card ------------------------------------------------------------- */
 .game-card {
   flex: 1;
-  min-width: 240px;
-  max-width: 340px;
+  min-width: 280px;
+  max-width: 380px;
   background-color: var(--qc-surface);
   border: 1px solid var(--qc-input-border);
   border-radius: 12px;
@@ -92,6 +92,7 @@
 
 .game-card.valorant { --game-accent: #ff4655; }
 .game-card.cs2      { --game-accent: #eeb02a; }
+.game-card.fortnite { --game-accent: #00d4ff; }
 .game-card.other    { --game-accent: #a855f7; }
 
 .game-card:hover {
@@ -102,7 +103,7 @@
 
 /* -- Card image ------------------------------------------------------------ */
 .card-image-container {
-  height: 180px;
+  height: 220px;
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -129,7 +130,7 @@
 
 /* -- Card content ---------------------------------------------------------- */
 .card-content {
-  padding: 18px 20px 20px;
+  padding: 20px 22px 22px;
   position: relative;
   z-index: 2;
   flex-grow: 1;
@@ -142,7 +143,7 @@
 .card-content h2 {
   color: var(--qc-text);
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   transition: color 0.25s ease;
 }
@@ -160,13 +161,15 @@
 /* -- Card action buttons --------------------------------------------------- */
 .card-actions {
   display: flex;
+  flex-direction: row;
   gap: 10px;
-  margin-top: 8px;
-  flex-wrap: wrap;
+  margin-top: 10px;
+  flex-wrap: nowrap;
 }
 
 .card-action-btn {
-  padding: 9px 18px;
+  flex: 1;
+  padding: 10px 14px;
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 700;
@@ -174,6 +177,8 @@
   border: none;
   transition: opacity 0.15s, transform 0.12s;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .card-action-btn:hover {

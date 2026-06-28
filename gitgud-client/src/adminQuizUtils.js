@@ -15,7 +15,7 @@
 //   src/tests/adminQuizUtils.test.js
 
 // ── Supported game IDs ────────────────────────────────────────────────────────
-export const VALID_GAMES = ["valorant", "cs2", "other"];
+export const VALID_GAMES = ["valorant", "cs2", "fortnite", "other"];
 
 // ── Question type identifiers ─────────────────────────────────────────────────
 export const QUESTION_TYPES = {
