@@ -40,7 +40,7 @@ const GAME_META = {
   },
   fortnite: {
     name: "Fortnite",
-    image: "https://res.cloudinary.com/dyis0klmz/image/upload/v1748997619/FortniteChapter2_Reloaded_kkqgad.jpg",
+    image: "https://res.cloudinary.com/dyis0klmz/image/upload/v1782844829/fortnite-banner-3974983786_tps2zl.jpg",
     accent: "#00d4ff",
     description: "Test your Fortnite knowledge on weapons, POIs, and game mechanics",
   },
