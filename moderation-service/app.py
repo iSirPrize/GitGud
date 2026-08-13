@@ -8,6 +8,7 @@
 #
 # Run:  python app.py
 # Port: 5001  (set VITE_MODERATION_URL=http://localhost:5001 in the React .env)
+
 import os
 
 from detoxify import Detoxify
