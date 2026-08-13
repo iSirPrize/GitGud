@@ -3,3 +3,7 @@ node_modules/
 dist/
 build/
 uploads/
+.DS_Store
+
+venv
+.venv
