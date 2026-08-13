@@ -8,10 +8,11 @@
 #
 # Run:  python app.py
 # Port: 5001  (set VITE_MODERATION_URL=http://localhost:5001 in the React .env)
+import os
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 from detoxify import Detoxify
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
 
@@ -71,11 +72,13 @@ def moderate():
     # Collect whichever categories breached their threshold
     violations = {k: scores[k] for k in THRESHOLDS if scores[k] >= THRESHOLDS[k]}
 
-    return jsonify({
-        "allowed": len(violations) == 0,
-        "violations": violations,  # returned so the frontend could show specific reasons if needed
-        "scores": scores,          # full scores for debugging / future logging
-    })
+    return jsonify(
+        {
+            "allowed": len(violations) == 0,
+            "violations": violations,  # returned so the frontend could show specific reasons if needed
+            "scores": scores,  # full scores for debugging / future logging
+        }
+    )
 
 
 @app.route("/health", methods=["GET"])
@@ -88,6 +91,5 @@ def health():
 
 
 if __name__ == "__main__":
-    # 0.0.0.0 makes the service reachable outside localhost (e.g. inside Docker).
-    # Change to "127.0.0.1" if you only ever run it locally without containers.
-    app.run(host="0.0.0.0", port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port)

@@ -27,3 +27,6 @@ flask-cors
 # NLP toxicity detection model — wraps PyTorch under the hood.
 # Pulls in torch + transformers automatically as dependencies.
 detoxify
+
+#to run the app
+gunicorn
